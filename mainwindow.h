@@ -8,9 +8,11 @@
 #include <QTimer>
 #include <QMediaPlayer>
 #include <QAudioOutput>
+#include "wasapirecorder.h"
 
 class QLabel;
 class QPushButton;
+class QComboBox;
 
 class MainWindow : public QMainWindow
 {
@@ -26,13 +28,20 @@ private slots:
     void onUpdateTimer();
     void onPlayLastRecording();
     void onPlaybackStateChanged(QMediaPlayer::PlaybackState state);
+    void refreshAppList();
+    void onStatsUpdated(qint64 bytes, double seconds);
 
 private:
     QLabel *statusLabel;
     QLabel *timerLabel;
+    QLabel *statsLabel;
+    QComboBox *appSelector;
     QPushButton *startBtn;
     QPushButton *stopBtn;
     QPushButton *playBtn;
+    QPushButton *refreshBtn;
+
+    QTimer *sessionRefreshTimer;
 
     QMediaCaptureSession *session;
     QAudioInput *audioInput;
@@ -43,5 +52,7 @@ private:
 
     QMediaPlayer *player;
     QAudioOutput *audioOutput;
+    
+    WasapiRecorder *wasapiRecorder;
 };
 #endif // MAINWINDOW_H
