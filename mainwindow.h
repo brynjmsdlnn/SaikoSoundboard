@@ -2,12 +2,15 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QMediaCaptureSession>
+#include <QAudioInput>
+#include <QMediaRecorder>
+#include <QTimer>
+#include <QMediaPlayer>
+#include <QAudioOutput>
 
-QT_BEGIN_NAMESPACE
-namespace Ui {
-class MainWindow;
-}
-QT_END_NAMESPACE
+class QLabel;
+class QPushButton;
 
 class MainWindow : public QMainWindow
 {
@@ -17,7 +20,28 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow() override;
 
+private slots:
+    void onStartRecording();
+    void onStopRecording();
+    void onUpdateTimer();
+    void onPlayLastRecording();
+    void onPlaybackStateChanged(QMediaPlayer::PlaybackState state);
+
 private:
-    Ui::MainWindow *ui;
+    QLabel *statusLabel;
+    QLabel *timerLabel;
+    QPushButton *startBtn;
+    QPushButton *stopBtn;
+    QPushButton *playBtn;
+
+    QMediaCaptureSession *session;
+    QAudioInput *audioInput;
+    QMediaRecorder *recorder;
+    QTimer *stopTimer;
+    QTimer *updateTimer;
+    int remainingSeconds;
+
+    QMediaPlayer *player;
+    QAudioOutput *audioOutput;
 };
 #endif // MAINWINDOW_H
