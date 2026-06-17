@@ -30,6 +30,8 @@ private slots:
     void onPlaybackStateChanged(QMediaPlayer::PlaybackState state);
     void refreshAppList();
     void onStatsUpdated(qint64 bytes, double seconds);
+    void onOpenFolder();
+    void onChangeFolder();
 
 private:
     QLabel *statusLabel;
@@ -40,6 +42,9 @@ private:
     QPushButton *stopBtn;
     QPushButton *playBtn;
     QPushButton *refreshBtn;
+    class QLineEdit *saveDirEdit;
+    QPushButton *openFolderBtn;
+    QPushButton *changeFolderBtn;
 
     QTimer *sessionRefreshTimer;
 
@@ -54,5 +59,7 @@ private:
     QAudioOutput *audioOutput;
     
     WasapiRecorder *wasapiRecorder;
+    QString lastRecordingPath;
+    QString saveDirectory;
 };
 #endif // MAINWINDOW_H

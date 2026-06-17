@@ -9,6 +9,14 @@
 #include <QUrl>
 #include <QStandardPaths>
 #include <QMessageBox>
+#include <QFileInfo>
+#include <QDateTime>
+#include <QInputDialog>
+#include <QDir>
+#include <QSettings>
+#include <QFileDialog>
+#include <QDesktopServices>
+#include <QLineEdit>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -22,6 +30,13 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , remainingSeconds(0)
 {
+    resize(600, 200);
+
+    QSettings settings("Saiko", "SaikoSoundboard");
+    QString defaultDir = QDir::homePath() + "/Recordings/Saiko Soundboard";
+    saveDirectory = settings.value("saveDirectory", defaultDir).toString();
+    QDir().mkpath(saveDirectory);
+
     statusLabel = new QLabel("Ready", this);
     timerLabel = new QLabel("", this);
     statsLabel = new QLabel("Size: 0 KB | Time: 0s", this);
@@ -37,6 +52,11 @@ MainWindow::MainWindow(QWidget *parent)
     playBtn = new QPushButton("Play Last Recording", this);
     playBtn->setEnabled(false);
 
+    saveDirEdit = new QLineEdit(saveDirectory, this);
+    saveDirEdit->setReadOnly(true);
+    openFolderBtn = new QPushButton("Open", this);
+    changeFolderBtn = new QPushButton("Change...", this);
+
     auto *layout = new QVBoxLayout();
     layout->addWidget(statusLabel);
     layout->addWidget(timerLabel);
@@ -48,6 +68,13 @@ MainWindow::MainWindow(QWidget *parent)
     appLayout->addWidget(refreshBtn);
     layout->addLayout(appLayout);
     
+    auto *dirLayout = new QHBoxLayout();
+    dirLayout->addWidget(new QLabel("Save to:"));
+    dirLayout->addWidget(saveDirEdit, 1);
+    dirLayout->addWidget(openFolderBtn);
+    dirLayout->addWidget(changeFolderBtn);
+    layout->addLayout(dirLayout);
+
     layout->addWidget(startBtn);
     layout->addWidget(stopBtn);
     layout->addWidget(playBtn);
@@ -73,11 +100,20 @@ MainWindow::MainWindow(QWidget *parent)
     connect(stopBtn, &QPushButton::clicked, this, &MainWindow::onStopRecording);
     connect(playBtn, &QPushButton::clicked, this, &MainWindow::onPlayLastRecording);
     connect(refreshBtn, &QPushButton::clicked, this, &MainWindow::refreshAppList);
+    connect(openFolderBtn, &QPushButton::clicked, this, &MainWindow::onOpenFolder);
+    connect(changeFolderBtn, &QPushButton::clicked, this, &MainWindow::onChangeFolder);
     connect(stopTimer, &QTimer::timeout, this, &MainWindow::onStopRecording);
     connect(updateTimer, &QTimer::timeout, this, &MainWindow::onUpdateTimer);
     connect(sessionRefreshTimer, &QTimer::timeout, this, &MainWindow::refreshAppList);
     connect(player, &QMediaPlayer::playbackStateChanged, this, &MainWindow::onPlaybackStateChanged);
     
+    connect(player, &QMediaPlayer::errorOccurred, this, [this](QMediaPlayer::Error error, const QString &errorString){
+        QMessageBox::critical(this, "Playback Error", errorString);
+        statusLabel->setText("Ready");
+        startBtn->setEnabled(true);
+        playBtn->setEnabled(true);
+    });
+
     connect(wasapiRecorder, &WasapiRecorder::error, this, [this](const QString &msg){
         QMessageBox::critical(this, "Recording Error", msg);
         onStopRecording();
@@ -158,13 +194,15 @@ void MainWindow::refreshAppList()
 
 void MainWindow::onStartRecording()
 {
-    QString filePath = QStandardPaths::writableLocation(QStandardPaths::MusicLocation) + "/recording.wav";
+    QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
+    lastRecordingPath = saveDirectory + QString("/Recording_%1.wav").arg(timestamp);
+
     DWORD pid = (DWORD)appSelector->currentData().toULongLong();
     
     QString targetName = appSelector->currentText();
     qDebug() << "UI: Starting loopback recording. Focused app:" << targetName << "(PID:" << pid << ")";
     
-    wasapiRecorder->start(filePath, pid);
+    wasapiRecorder->start(lastRecordingPath, pid);
     statusLabel->setText(QString("Recording... (Monitoring: %1)").arg(targetName));
     
     remainingSeconds = 10;
@@ -187,8 +225,42 @@ void MainWindow::onStopRecording()
     // Unconditionally safe to call; does nothing if already stopped
     wasapiRecorder->stop();
 
-    statusLabel->setText("Ready - Saved to Music folder");
-    playBtn->setEnabled(true);
+    QFileInfo fileInfo(lastRecordingPath);
+    if (fileInfo.exists() && fileInfo.size() > 100) {
+        bool ok;
+        QString defaultBaseName = fileInfo.baseName();
+        QString newName = QInputDialog::getText(this, "Save Recording",
+                                             "Enter name for the recording (leave blank for timestamp):", 
+                                             QLineEdit::Normal, "", &ok);
+        
+        if (ok && !newName.trimmed().isEmpty()) {
+            QString dir = fileInfo.absolutePath();
+            QString newPath = dir + "/" + newName.trimmed();
+            if (!newPath.endsWith(".wav", Qt::CaseInsensitive)) {
+                newPath += ".wav";
+            }
+            
+            // Handle name collisions by adding (1), (2), etc if necessary
+            QFileInfo check(newPath);
+            int counter = 1;
+            QString finalPath = newPath;
+            while (check.exists()) {
+                QString base = QFileInfo(newPath).path() + "/" + QFileInfo(newPath).baseName();
+                finalPath = QString("%1 (%2).wav").arg(base).arg(counter++);
+                check = QFileInfo(finalPath);
+            }
+            
+            if (QFile::rename(lastRecordingPath, finalPath)) {
+                lastRecordingPath = finalPath;
+            }
+        }
+        
+        statusLabel->setText(QString("Saved: %1").arg(QFileInfo(lastRecordingPath).fileName()));
+        playBtn->setEnabled(true);
+    } else {
+        statusLabel->setText("Recording failed or was empty");
+        playBtn->setEnabled(false);
+    }
 
     timerLabel->setText("");
     stopTimer->stop();
@@ -218,10 +290,17 @@ void MainWindow::onStatsUpdated(qint64 bytes, double seconds)
 
 void MainWindow::onPlayLastRecording()
 {
-    QString filePath = QStandardPaths::writableLocation(QStandardPaths::MusicLocation) + "/recording.wav";
-    player->setSource(QUrl::fromLocalFile(filePath));
+    if (lastRecordingPath.isEmpty()) return;
+
+    QFileInfo fileInfo(lastRecordingPath);
+    if (!fileInfo.exists() || fileInfo.size() <= 100) {
+        QMessageBox::warning(this, "Playback Error", "The recording is empty or invalid.");
+        return;
+    }
+
+    player->setSource(QUrl::fromLocalFile(lastRecordingPath));
     player->play();
-    statusLabel->setText("Playing last recording...");
+    statusLabel->setText(QString("Playing: %1").arg(fileInfo.fileName()));
     startBtn->setEnabled(false);
     playBtn->setEnabled(false);
 }
@@ -232,5 +311,23 @@ void MainWindow::onPlaybackStateChanged(QMediaPlayer::PlaybackState state)
         statusLabel->setText("Ready");
         startBtn->setEnabled(true);
         playBtn->setEnabled(true);
+    }
+}
+
+void MainWindow::onOpenFolder()
+{
+    QDir().mkpath(saveDirectory);
+    QDesktopServices::openUrl(QUrl::fromLocalFile(saveDirectory));
+}
+
+void MainWindow::onChangeFolder()
+{
+    QString dir = QFileDialog::getExistingDirectory(this, "Select Save Directory", saveDirectory, 
+                                                    QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    if (!dir.isEmpty()) {
+        saveDirectory = dir;
+        saveDirEdit->setText(saveDirectory);
+        QSettings settings("Saiko", "SaikoSoundboard");
+        settings.setValue("saveDirectory", saveDirectory);
     }
 }
