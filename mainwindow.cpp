@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "sourcesdock.h"
 #include <QLabel>
 #include <QPushButton>
 #include <QComboBox>
@@ -17,6 +18,7 @@
 #include <QFileDialog>
 #include <QDesktopServices>
 #include <QLineEdit>
+#include <QFileIconProvider>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -122,9 +124,71 @@ MainWindow::MainWindow(QWidget *parent)
 
     refreshAppList();
     sessionRefreshTimer->start();
+
+    m_sourcesDock = new SourcesDock(this);
+    addDockWidget(Qt::RightDockWidgetArea, m_sourcesDock);
+
+    connect(m_sourcesDock, &SourcesDock::sourceAdded, this, [this](const AudioSource& src) {
+        m_sources.append(src);
+        m_sourcesDock->updateSourceList(m_sources);
+        saveSources();
+    });
+
+    connect(m_sourcesDock, &SourcesDock::sourceRemoved, this, [this](const QString& id) {
+        for (int i = 0; i < m_sources.size(); ++i) {
+            if (m_sources[i].id == id) {
+                m_sources.removeAt(i);
+                break;
+            }
+        }
+        m_sourcesDock->updateSourceList(m_sources);
+        saveSources();
+    });
+
+    loadSources();
+    m_sourcesDock->updateSourceList(m_sources);
 }
 
-MainWindow::~MainWindow() {}
+MainWindow::~MainWindow()
+{
+    saveSources();
+}
+
+QString MainWindow::getSettingsFilePath() const
+{
+    QString appData = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(appData);
+    return appData + "/settings.json";
+}
+
+void MainWindow::loadSources()
+{
+    QFile file(getSettingsFilePath());
+    if (!file.open(QIODevice::ReadOnly)) return;
+
+    QByteArray data = file.readAll();
+    QJsonDocument doc = QJsonDocument::fromJson(data);
+    QJsonArray arr = doc.array();
+
+    m_sources.clear();
+    for (const QJsonValue& val : arr) {
+        m_sources.append(AudioSource::fromJson(val.toObject()));
+    }
+}
+
+void MainWindow::saveSources()
+{
+    QJsonArray arr;
+    for (const AudioSource& src : m_sources) {
+        arr.append(src.toJson());
+    }
+
+    QJsonDocument doc(arr);
+    QFile file(getSettingsFilePath());
+    if (file.open(QIODevice::WriteOnly)) {
+        file.write(doc.toJson());
+    }
+}
 
 void MainWindow::refreshAppList()
 {
@@ -134,6 +198,8 @@ void MainWindow::refreshAppList()
 
     appSelector->clear();
     appSelector->addItem("System Output (Global)", 0);
+    
+    QFileIconProvider iconProvider;
 
     IMMDeviceEnumerator* deviceEnumerator = NULL;
     HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&deviceEnumerator);
@@ -170,11 +236,14 @@ void MainWindow::refreshAppList()
                 if (processId != 0 && processId != 4) {
                     HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, processId);
                     if (hProcess) {
-                        WCHAR processName[MAX_PATH];
-                        if (GetModuleBaseNameW(hProcess, NULL, processName, MAX_PATH)) {
-                            QString name = QString::fromWCharArray(processName);
+                        WCHAR szPath[MAX_PATH];
+                        if (GetModuleFileNameExW(hProcess, NULL, szPath, MAX_PATH)) {
+                            QString fullPath = QString::fromWCharArray(szPath);
+                            QFileInfo fileInfo(fullPath);
+                            QString name = fileInfo.fileName();
                             QString label = name + " (PID: " + QString::number(processId) + ")";
-                            appSelector->addItem(label, QVariant::fromValue(qulonglong(processId)));
+                            
+                            appSelector->addItem(iconProvider.icon(fileInfo), label, QVariant::fromValue(qulonglong(processId)));
 
                             if (processId == currentPid) {
                                 appSelector->setCurrentIndex(appSelector->count() - 1);

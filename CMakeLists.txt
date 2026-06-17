@@ -18,8 +18,10 @@ set(PROJECT_SOURCES
         mainwindow.h
         wasapirecorder.cpp
         wasapirecorder.h
-)
-
+        sourcesdock.cpp
+        sourcesdock.h
+        audiosource.h
+        )
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(SaikoSoundboard
         MANUAL_FINALIZATION

@@ -8,7 +8,10 @@
 #include <QTimer>
 #include <QMediaPlayer>
 #include <QAudioOutput>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include "wasapirecorder.h"
+#include "audiosource.h"
 
 class QLabel;
 class QPushButton;
@@ -34,6 +37,10 @@ private slots:
     void onChangeFolder();
 
 private:
+    void loadSources();
+    void saveSources();
+    QString getSettingsFilePath() const;
+
     QLabel *statusLabel;
     QLabel *timerLabel;
     QLabel *statsLabel;
@@ -61,5 +68,8 @@ private:
     WasapiRecorder *wasapiRecorder;
     QString lastRecordingPath;
     QString saveDirectory;
+
+    QList<AudioSource> m_sources;
+    class SourcesDock *m_sourcesDock;
 };
 #endif // MAINWINDOW_H
