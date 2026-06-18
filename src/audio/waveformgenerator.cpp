@@ -202,6 +202,118 @@ WaveformData WaveformGenerator::generate(const QString &filePath, int resolution
     return data;
 }
 
+WaveformData WaveformGenerator::generateFromPcm(const QByteArray &pcmData, const WAVEFORMATEXTENSIBLE &format, int resolution)
+{
+    WaveformData data;
+    data.resolution = resolution;
+
+    if (format.Format.nSamplesPerSec == 0 || format.Format.nChannels == 0) {
+        return generateDummyWaveform(0, 44100, 2, resolution);
+    }
+
+    data.sampleRate = format.Format.nSamplesPerSec;
+    data.channels = format.Format.nChannels;
+
+    int bytesPerSample = format.Format.wBitsPerSample / 8;
+    if (bytesPerSample <= 0) bytesPerSample = 2; // Default fallback to 16-bit
+
+    qint64 totalSamples = pcmData.size() / (data.channels * bytesPerSample);
+    data.durationMs = (totalSamples * 1000) / data.sampleRate;
+
+    int numSamples = pcmData.size() / bytesPerSample;
+    if (numSamples == 0) {
+        return generateDummyWaveform(data.durationMs, data.sampleRate, data.channels, resolution);
+    }
+
+    QList<float> allSamples;
+    allSamples.reserve(numSamples / data.channels);
+
+    static const GUID guidIeeeFloat = { 0x00000003, 0x0000, 0x0010, { 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71 } };
+    bool isFloat = (format.Format.wFormatTag == WAVE_FORMAT_IEEE_FLOAT ||
+                   (format.Format.wFormatTag == WAVE_FORMAT_EXTENSIBLE &&
+                    memcmp(&format.SubFormat, &guidIeeeFloat, sizeof(GUID)) == 0));
+
+    if (isFloat && bytesPerSample == 4) {
+        const float *ptr = reinterpret_cast<const float*>(pcmData.constData());
+        int count = pcmData.size() / sizeof(float);
+        for (int i = 0; i < count; i += data.channels) {
+            if (i + data.channels > count) break;
+            float mix = 0;
+            for (int c = 0; c < data.channels; ++c) {
+                mix += std::abs(ptr[i + c]);
+            }
+            allSamples.append(mix / data.channels);
+        }
+    }
+    else if (bytesPerSample == 2) { // 16-bit integer PCM
+        const qint16 *ptr = reinterpret_cast<const qint16*>(pcmData.constData());
+        int count = pcmData.size() / sizeof(qint16);
+        for (int i = 0; i < count; i += data.channels) {
+            if (i + data.channels > count) break;
+            float mix = 0;
+            for (int c = 0; c < data.channels; ++c) {
+                mix += std::abs(static_cast<float>(ptr[i + c]) / 32768.0f);
+            }
+            allSamples.append(mix / data.channels);
+        }
+    }
+    else if (bytesPerSample == 1) { // 8-bit unsigned PCM
+        const quint8 *ptr = reinterpret_cast<const quint8*>(pcmData.constData());
+        int count = pcmData.size();
+        for (int i = 0; i < count; i += data.channels) {
+            if (i + data.channels > count) break;
+            float mix = 0;
+            for (int c = 0; c < data.channels; ++c) {
+                float sampleVal = (static_cast<float>(ptr[i + c]) - 128.0f) / 128.0f;
+                mix += std::abs(sampleVal);
+            }
+            allSamples.append(mix / data.channels);
+        }
+    }
+    else {
+        return generateDummyWaveform(data.durationMs, data.sampleRate, data.channels, resolution);
+    }
+
+    int totalPcmSamples = allSamples.size();
+    if (totalPcmSamples == 0) {
+        return generateDummyWaveform(data.durationMs, data.sampleRate, data.channels, resolution);
+    }
+
+    double chunkSizeDouble = static_cast<double>(totalPcmSamples) / resolution;
+    float maxVal = 0.0f;
+
+    QList<float> peaks;
+    peaks.reserve(resolution);
+
+    for (int i = 0; i < resolution; ++i) {
+        int startIdx = static_cast<int>(i * chunkSizeDouble);
+        int endIdx = static_cast<int>((i + 1) * chunkSizeDouble);
+        endIdx = std::clamp(endIdx, startIdx + 1, totalPcmSamples);
+
+        float peak = 0.0f;
+        for (int j = startIdx; j < endIdx; ++j) {
+            if (allSamples[j] > peak) {
+                peak = allSamples[j];
+            }
+        }
+        peaks.append(peak);
+        if (peak > maxVal) {
+            maxVal = peak;
+        }
+    }
+
+    // Normalize peaks
+    if (maxVal > 0.00001f) {
+        for (int i = 0; i < resolution; ++i) {
+            peaks[i] = std::clamp(peaks[i] / maxVal, 0.0f, 1.0f);
+        }
+    }
+
+    data.peaks = peaks;
+    data.isValid = true;
+    return data;
+}
+
 WaveformData WaveformGenerator::generateDummyWaveform(qint64 durationMs, int sampleRate, int channels, int resolution)
 {
     WaveformData data;

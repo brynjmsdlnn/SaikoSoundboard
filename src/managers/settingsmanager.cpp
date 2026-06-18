@@ -6,7 +6,7 @@ SettingsManager::SettingsManager(QObject *parent)
     , m_replayEnabled(false)
     , m_replayDuration(30)
 {
-    m_saveDirectory = QDir::homePath() + "/Recordings/Saiko Soundboard";
+    m_saveDirectory = QDir::toNativeSeparators(QDir::homePath() + "/Saiko Soundboard/recordings");
 }
 
 void SettingsManager::load()

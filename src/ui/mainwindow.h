@@ -69,6 +69,7 @@ private:
     QSpinBox *replayDurationSpin;
     QLabel *replayStatusLabel;
     QPushButton *saveReplayBtn;
+    class WaveformWidget *replayWaveformWidget;
 
     QTimer *sessionRefreshTimer;
 

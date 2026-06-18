@@ -1,6 +1,8 @@
 #include "ui/mainwindow.h"
 #include "ui/sourcesdock.h"
 #include "ui/soundboarddock.h"
+#include "ui/waveformwidget.h"
+#include "audio/waveformgenerator.h"
 #include "core/adapters/WindowsHotkeyBackend.h"
 #include <QLabel>
 #include <QPushButton>
@@ -88,6 +90,12 @@ MainWindow::MainWindow(QWidget *parent)
     replayTopLayout->addWidget(new QLabel("Duration:"));
     replayTopLayout->addWidget(replayDurationSpin);
     replayLayout->addLayout(replayTopLayout);
+
+    // Replay Buffer Waveform Widget
+    replayWaveformWidget = new WaveformWidget(this);
+    replayWaveformWidget->setFixedHeight(65);
+    replayWaveformWidget->setReadOnly(true);
+    replayLayout->addWidget(replayWaveformWidget);
     
     auto *replayBottomLayout = new QHBoxLayout();
     replayStatusLabel = new QLabel("Status: Inactive", this);
@@ -197,6 +205,20 @@ MainWindow::MainWindow(QWidget *parent)
     // Initial visibility
     onCaptureModeChanged(appSelector->currentIndex());
     onCaptureStateChanged(m_recordingManager->state());
+
+    // Timer to update replay buffer waveform visualizer in real time
+    QTimer *replayWaveformTimer = new QTimer(this);
+    connect(replayWaveformTimer, &QTimer::timeout, this, [this]() {
+        if (m_recordingManager && m_recordingManager->replayBuffer()) {
+            QByteArray rawPcm = m_recordingManager->replayBuffer()->getBufferData();
+            WAVEFORMATEXTENSIBLE fmt = m_recordingManager->mixer()->getOutputFormat();
+            if (!rawPcm.isEmpty() && fmt.Format.nSamplesPerSec > 0) {
+                WaveformData wData = WaveformGenerator::generateFromPcm(rawPcm, fmt, 256);
+                replayWaveformWidget->setWaveformData(wData);
+            }
+        }
+    });
+    replayWaveformTimer->start(200);
 }
 
 MainWindow::~MainWindow()

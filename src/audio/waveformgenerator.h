@@ -6,6 +6,11 @@
 #include <QString>
 #include <QFuture>
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#include <mmreg.h>
+#endif
+
 struct WaveformData {
     QList<float> peaks; // amplitude peaks normalized from 0.0 to 1.0
     qint64 durationMs = 0;
@@ -22,6 +27,7 @@ public:
     explicit WaveformGenerator(QObject *parent = nullptr);
 
     static WaveformData generate(const QString &filePath, int resolution = 256);
+    static WaveformData generateFromPcm(const QByteArray &pcmData, const WAVEFORMATEXTENSIBLE &format, int resolution = 256);
     static WaveformData generateDummyWaveform(qint64 durationMs, int sampleRate, int channels, int resolution = 256);
 };
 

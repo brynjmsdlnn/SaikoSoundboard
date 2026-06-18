@@ -13,6 +13,7 @@ public:
     void setWaveformData(const WaveformData &data);
     void setClipRange(qint64 startMs, qint64 endMs);
     void setPlayPosition(qint64 positionMs);
+    void setReadOnly(bool readOnly);
 
 signals:
     void trimRangeChanged(qint64 startMs, qint64 endMs);
@@ -31,6 +32,7 @@ private:
     qint64 m_startMs = 0;
     qint64 m_endMs = -1;
     qint64 m_playPositionMs = -1;
+    bool m_readOnly = false;
 
     DragState m_dragState = DragNone;
 };
