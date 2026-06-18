@@ -38,6 +38,8 @@ set(UI_SOURCES
     src/ui/soundboarddock.h
     src/ui/hotkeydialog.cpp
     src/ui/hotkeydialog.h
+    src/ui/waveformwidget.cpp
+    src/ui/waveformwidget.h
 )
 
 set(AUDIO_SOURCES
@@ -51,6 +53,8 @@ set(AUDIO_SOURCES
     src/audio/wavwriter.h
     src/audio/soundplayer.cpp
     src/audio/soundplayer.h
+    src/audio/waveformgenerator.cpp
+    src/audio/waveformgenerator.h
 )
 
 set(MANAGER_SOURCES

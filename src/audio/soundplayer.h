@@ -25,17 +25,23 @@ public:
     void setRouting(OutputRouting routing);
     void setGlobalOverrides(bool micEnabled, bool localEnabled);
     void setDevices(const QAudioDevice &micDevice, const QAudioDevice &localDevice);
+    void setClipRange(qint64 startMs, qint64 endMs);
+    void playPreview();
 
     // Getters for status & testing
     bool shouldPlayMic() const;
     bool shouldPlayLocal() const;
+    qint64 startTimeMs() const { return m_startTimeMs; }
+    qint64 endTimeMs() const { return m_endTimeMs; }
 
 signals:
     void stateChanged(QMediaPlayer::PlaybackState newState);
     void errorOccurred(QMediaPlayer::Error error, const QString &errorString);
+    void positionChanged(qint64 position);
 
 private slots:
     void handlePlayerStateChanged(QMediaPlayer::PlaybackState state);
+    void handlePositionChanged(qint64 position);
 
 private:
     void applyRoutingAndOverrides();
@@ -50,6 +56,9 @@ private:
     OutputRouting m_routing = OutputRouting::Both;
     bool m_globalMicEnabled = true;
     bool m_globalLocalEnabled = true;
+    qint64 m_startTimeMs = 0;
+    qint64 m_endTimeMs = -1;
+    bool m_isPreviewMode = false;
 };
 
 #endif // SOUNDPLAYER_H

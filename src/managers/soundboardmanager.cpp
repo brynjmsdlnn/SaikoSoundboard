@@ -1,6 +1,9 @@
 #include "soundboardmanager.h"
 #include <QDebug>
 #include <QMediaDevices>
+#include <QFuture>
+#include <QFutureWatcher>
+#include <QtConcurrent>
 
 SoundboardManager::SoundboardManager(SettingsManager *settings, QObject *parent)
     : QObject(parent)
@@ -55,13 +58,20 @@ void SoundboardManager::assignAudioFile(const QString &id, const QString &filePa
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
         slot->filePath = filePath;
+        slot->startTimeMs = 0;
+        slot->endTimeMs = -1;
+
         if (SoundPlayer *player = getPlayer(id)) {
             player->load(filePath);
             player->setRouting(slot->outputRouting);
             player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
             player->setDevices(m_micDevice, m_localDevice);
+            player->setClipRange(slot->startTimeMs, slot->endTimeMs);
         }
         emit slotsChanged();
+
+        // Trigger waveform loading/generation
+        loadWaveformData(id, filePath);
     }
 }
 
@@ -100,7 +110,22 @@ void SoundboardManager::playPlayer(const QString &id)
             player->setRouting(slot->outputRouting);
             player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
             player->setDevices(m_micDevice, m_localDevice);
+            player->setClipRange(slot->startTimeMs, slot->endTimeMs);
             player->play();
+        }
+    }
+}
+
+void SoundboardManager::playPlayerPreview(const QString &id)
+{
+    if (SoundPlayerSlot *slot = getSlot(id)) {
+        if (!slot->enabled) return;
+        if (SoundPlayer *player = getPlayer(id)) {
+            player->setRouting(slot->outputRouting);
+            player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
+            player->setDevices(m_micDevice, m_localDevice);
+            player->setClipRange(slot->startTimeMs, slot->endTimeMs);
+            player->playPreview();
         }
     }
 }
@@ -139,6 +164,9 @@ void SoundboardManager::loadFromSettings()
     // Create new engines
     for (const auto &slot : m_slots) {
         updatePlayerEngine(slot);
+        if (!slot.filePath.isEmpty()) {
+            loadWaveformData(slot.id, slot.filePath);
+        }
     }
     
     emit slotsChanged();
@@ -222,6 +250,49 @@ void SoundboardManager::setPlayerRouting(const QString &id, OutputRouting routin
     }
 }
 
+void SoundboardManager::setPlayerClipRange(const QString &id, qint64 startMs, qint64 endMs)
+{
+    if (SoundPlayerSlot *slot = getSlot(id)) {
+        slot->startTimeMs = startMs;
+        slot->endTimeMs = endMs;
+        if (SoundPlayer *player = getPlayer(id)) {
+            player->setClipRange(startMs, endMs);
+        }
+        saveToSettings();
+    }
+}
+
+void SoundboardManager::loadWaveformData(const QString &playerId, const QString &filePath)
+{
+    if (filePath.isEmpty()) return;
+
+    if (m_waveformCache.contains(filePath)) {
+        emit waveformGenerated(playerId, m_waveformCache[filePath]);
+        return;
+    }
+
+    QFutureWatcher<WaveformData> *watcher = new QFutureWatcher<WaveformData>(this);
+    connect(watcher, &QFutureWatcher<WaveformData>::finished, this, [this, watcher, playerId, filePath]() {
+        WaveformData data = watcher->result();
+        m_waveformCache.insert(filePath, data);
+        emit waveformGenerated(playerId, data);
+        watcher->deleteLater();
+    });
+
+    QFuture<WaveformData> future = QtConcurrent::run([filePath]() {
+        return WaveformGenerator::generate(filePath, 256);
+    });
+    watcher->setFuture(future);
+}
+
+WaveformData SoundboardManager::getWaveformData(const QString &playerId)
+{
+    if (SoundPlayerSlot *slot = getSlot(playerId)) {
+        return m_waveformCache.value(slot->filePath, WaveformData());
+    }
+    return WaveformData();
+}
+
 void SoundboardManager::updatePlayerEngine(const SoundPlayerSlot &slot)
 {
     if (!m_players.contains(slot.id)) {
@@ -230,6 +301,7 @@ void SoundboardManager::updatePlayerEngine(const SoundPlayerSlot &slot)
         player->setRouting(slot.outputRouting);
         player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
         player->setDevices(m_micDevice, m_localDevice);
+        player->setClipRange(slot.startTimeMs, slot.endTimeMs);
 
         if (!slot.filePath.isEmpty()) {
             player->load(slot.filePath);
@@ -237,6 +309,10 @@ void SoundboardManager::updatePlayerEngine(const SoundPlayerSlot &slot)
         
         connect(player, &SoundPlayer::stateChanged, this, [this, id = slot.id](QMediaPlayer::PlaybackState state) {
             emit playerStateChanged(id, state);
+        });
+
+        connect(player, &SoundPlayer::positionChanged, this, [this, id = slot.id](qint64 pos) {
+            emit playerPositionChanged(id, pos);
         });
         
         m_players.insert(slot.id, player);

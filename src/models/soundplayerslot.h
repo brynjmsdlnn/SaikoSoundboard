@@ -35,6 +35,8 @@ struct SoundPlayerSlot {
     float volume = 1.0f;
     bool enabled = true;
     OutputRouting outputRouting = OutputRouting::Both;
+    qint64 startTimeMs = 0;
+    qint64 endTimeMs = -1;
 
     SoundPlayerSlot() {
         id = QUuid::createUuid().toString();
@@ -50,6 +52,8 @@ struct SoundPlayerSlot {
         obj["volume"] = static_cast<double>(volume);
         obj["enabled"] = enabled;
         obj["outputRouting"] = outputRoutingToString(outputRouting);
+        obj["startTimeMs"] = startTimeMs;
+        obj["endTimeMs"] = endTimeMs;
         return obj;
     }
 
@@ -63,6 +67,11 @@ struct SoundPlayerSlot {
         slot.volume = static_cast<float>(obj["volume"].toDouble(1.0));
         slot.enabled = obj["enabled"].toBool(true);
         slot.outputRouting = stringToOutputRouting(obj["outputRouting"].toString("Both"));
+        slot.startTimeMs = obj["startTimeMs"].toVariant().toLongLong();
+        slot.endTimeMs = obj["endTimeMs"].toVariant().toLongLong();
+        if (obj.contains("endTimeMs") == false) {
+            slot.endTimeMs = -1;
+        }
         return slot;
     }
 };

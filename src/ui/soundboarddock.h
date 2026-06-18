@@ -9,6 +9,7 @@
 class QHBoxLayout;
 class QScrollArea;
 class ActionManager;
+class WaveformWidget;
 
 class SoundboardDock : public QDockWidget
 {
@@ -25,11 +26,14 @@ private slots:
     void onAssignFile(const QString &id);
     void onAssignReplay(const QString &id, bool preserveExisting);
     void onPlayPlayer(const QString &id);
+    void onPlayPreview(const QString &id);
     void onStopPlayer(const QString &id);
     void onVolumeChanged(const QString &id, int volume);
     void onRenamePlayer(const QString &id);
     void onHotkeySetup(const QString &id);
     void onMakePermanent(const QString &id);
+    void onWaveformGenerated(const QString &playerId, const WaveformData &data);
+    void onPlayerPositionChanged(const QString &playerId, qint64 position);
 
 private:
     SoundboardManager *m_manager;
@@ -37,6 +41,7 @@ private:
     QWidget *m_scrollContent;
     QHBoxLayout *m_scrollLayout;
     QScrollArea *m_scrollArea;
+    QMap<QString, WaveformWidget*> m_waveformWidgets;
 
     void clearLayout();
 };

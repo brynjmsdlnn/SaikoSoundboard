@@ -7,6 +7,7 @@
 #include <QAudioDevice>
 #include "models/soundplayerslot.h"
 #include "audio/soundplayer.h"
+#include "audio/waveformgenerator.h"
 #include "domain/PlayerAllocator.h"
 #include "managers/settingsmanager.h"
 
@@ -28,6 +29,7 @@ public:
 
     // Playback Control
     void playPlayer(const QString &id);
+    void playPlayerPreview(const QString &id);
     void stopPlayer(const QString &id);
     void stopAll();
 
@@ -54,15 +56,23 @@ public:
     void setLocalMonitorDevice(const QString &description);
     void setPlayerRouting(const QString &id, OutputRouting routing);
 
+    // Clipping and Waveforms
+    void setPlayerClipRange(const QString &id, qint64 startMs, qint64 endMs);
+    void loadWaveformData(const QString &playerId, const QString &filePath);
+    WaveformData getWaveformData(const QString &playerId);
+
 signals:
     void slotsChanged();
     void playerStateChanged(const QString &id, QMediaPlayer::PlaybackState state);
+    void playerPositionChanged(const QString &id, qint64 position);
+    void waveformGenerated(const QString &playerId, const WaveformData &data);
 
 private:
     SettingsManager *m_settings;
     Saiko::Domain::PlayerAllocator m_allocator;
     QList<SoundPlayerSlot> m_slots;
     QMap<QString, SoundPlayer*> m_players;
+    QMap<QString, WaveformData> m_waveformCache;
 
     QAudioDevice m_micDevice;
     QAudioDevice m_localDevice;

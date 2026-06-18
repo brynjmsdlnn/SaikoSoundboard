@@ -17,6 +17,10 @@ SoundPlayer::SoundPlayer(QObject *parent)
     connect(m_micPlayer, &QMediaPlayer::playbackStateChanged, this, &SoundPlayer::handlePlayerStateChanged);
     connect(m_localPlayer, &QMediaPlayer::playbackStateChanged, this, &SoundPlayer::handlePlayerStateChanged);
 
+    // Monitor position changes for clipping and timeline updates
+    connect(m_micPlayer, &QMediaPlayer::positionChanged, this, &SoundPlayer::handlePositionChanged);
+    connect(m_localPlayer, &QMediaPlayer::positionChanged, this, &SoundPlayer::handlePositionChanged);
+
     connect(m_micPlayer, &QMediaPlayer::errorOccurred, this, [this](QMediaPlayer::Error error, const QString &errorString) {
         emit errorOccurred(error, "Mic Player: " + errorString);
     });
@@ -47,9 +51,22 @@ void SoundPlayer::play()
     bool playLocal = shouldPlayLocal();
 
     if (playMic) {
+        m_micPlayer->setPosition(m_startTimeMs);
         m_micPlayer->play();
     }
     if (playLocal) {
+        m_localPlayer->setPosition(m_startTimeMs);
+        m_localPlayer->play();
+    }
+}
+
+void SoundPlayer::playPreview()
+{
+    stop(); // Reset and align
+    m_isPreviewMode = true;
+
+    if (shouldPlayLocal()) {
+        m_localPlayer->setPosition(m_startTimeMs);
         m_localPlayer->play();
     }
 }
@@ -58,6 +75,7 @@ void SoundPlayer::stop()
 {
     m_micPlayer->stop();
     m_localPlayer->stop();
+    m_isPreviewMode = false;
 }
 
 void SoundPlayer::setVolume(float volume)
@@ -98,13 +116,22 @@ void SoundPlayer::setDevices(const QAudioDevice &micDevice, const QAudioDevice &
     m_localOutput->setDevice(localDevice);
 }
 
+void SoundPlayer::setClipRange(qint64 startMs, qint64 endMs)
+{
+    m_startTimeMs = startMs;
+    m_endTimeMs = endMs;
+    applyRoutingAndOverrides();
+}
+
 bool SoundPlayer::shouldPlayMic() const
 {
+    if (m_isPreviewMode) return false;
     return m_globalMicEnabled && (m_routing == OutputRouting::Both || m_routing == OutputRouting::MicOnly);
 }
 
 bool SoundPlayer::shouldPlayLocal() const
 {
+    if (m_isPreviewMode) return m_globalLocalEnabled;
     return m_globalLocalEnabled && (m_routing == OutputRouting::Both || m_routing == OutputRouting::LocalOnly);
 }
 
@@ -116,7 +143,32 @@ void SoundPlayer::handlePlayerStateChanged(QMediaPlayer::PlaybackState state)
     if (current != lastOverallState) {
         lastOverallState = current;
         emit stateChanged(current);
+        if (current == QMediaPlayer::StoppedState) {
+            emit positionChanged(-1); // Clear UI cursor
+        }
     }
+}
+
+void SoundPlayer::handlePositionChanged(qint64 position)
+{
+    QMediaPlayer* senderPlayer = qobject_cast<QMediaPlayer*>(sender());
+    if (!senderPlayer) return;
+
+    // Filter duplicate signals: if both players are playing, prefer reporting local player's position
+    if (!m_isPreviewMode && 
+        m_localPlayer->playbackState() == QMediaPlayer::PlayingState && 
+        m_micPlayer->playbackState() == QMediaPlayer::PlayingState && 
+        senderPlayer == m_micPlayer) {
+        return; 
+    }
+
+    // Stop playback immediately when end boundary is reached
+    if (m_endTimeMs != -1 && position >= m_endTimeMs) {
+        stop();
+        return;
+    }
+
+    emit positionChanged(position);
 }
 
 void SoundPlayer::applyRoutingAndOverrides()

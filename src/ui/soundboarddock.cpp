@@ -1,6 +1,7 @@
 #include "soundboarddock.h"
 #include "hotkeydialog.h"
 #include "managers/actionmanager.h"
+#include "ui/waveformwidget.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -18,6 +19,8 @@
 #include <QComboBox>
 #include <QMediaDevices>
 #include <QAudioDevice>
+#include <QDoubleSpinBox>
+#include <QFormLayout>
 
 SoundboardDock::SoundboardDock(SoundboardManager *manager, ActionManager *actionManager, QWidget *parent)
     : QDockWidget("Soundboard", parent)
@@ -89,11 +92,13 @@ SoundboardDock::SoundboardDock(SoundboardManager *manager, ActionManager *action
     mainLayout->addWidget(m_scrollArea);
 
     setWidget(mainWidget);
-    setMinimumHeight(355); // Adjusted height for added combobox
+    setMinimumHeight(390); // Adjusted height for embedded waveforms & controls
     setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
 
     connect(addBtn, &QPushButton::clicked, this, &SoundboardDock::onAddPlayer);
     connect(m_manager, &SoundboardManager::slotsChanged, this, &SoundboardDock::refresh);
+    connect(m_manager, &SoundboardManager::waveformGenerated, this, &SoundboardDock::onWaveformGenerated);
+    connect(m_manager, &SoundboardManager::playerPositionChanged, this, &SoundboardDock::onPlayerPositionChanged);
 
     connect(micCb, &QCheckBox::toggled, this, [this](bool checked) {
         m_manager->setMicOutputEnabled(checked);
@@ -114,6 +119,7 @@ SoundboardDock::SoundboardDock(SoundboardManager *manager, ActionManager *action
 void SoundboardDock::refresh()
 {
     clearLayout();
+    m_waveformWidgets.clear();
 
     const auto playerSlots = m_manager->getSlots();
     for (const auto &slot : playerSlots) {
@@ -126,7 +132,7 @@ void SoundboardDock::refresh()
         auto *topLayout = new QHBoxLayout();
         auto *nameLabel = new QLabel(QString("<b>%1</b>").arg(slot.name), card);
         nameLabel->setWordWrap(true);
-        auto *renameBtn = new QPushButton("...", card); // Compact rename
+        auto *renameBtn = new QPushButton("...", card);
         renameBtn->setFixedWidth(25);
         topLayout->addWidget(nameLabel, 1);
         topLayout->addWidget(renameBtn);
@@ -147,7 +153,7 @@ void SoundboardDock::refresh()
         connect(renameAction, &QAction::triggered, this, [this, id = slot.id]() { onRenamePlayer(id); });
         connect(hotkeyAction, &QAction::triggered, this, [this, id = slot.id]() { onHotkeySetup(id); });
         renameBtn->setMenu(menu);
-        renameBtn->setStyleSheet("QPushButton::menu-indicator { image: none; }"); // Hide arrow
+        renameBtn->setStyleSheet("QPushButton::menu-indicator { image: none; }");
 
         // File Path & Temp Badge
         QString fileName = slot.filePath.isEmpty() ? "No file" : QFileInfo(slot.filePath).fileName();
@@ -159,20 +165,77 @@ void SoundboardDock::refresh()
         fileLabel->setWordWrap(true);
         cardLayout->addWidget(fileLabel);
 
-        // Volume Slider (Vertical for DJ feel)
+        // Waveform Visualizer
+        auto *waveform = new WaveformWidget(card);
+        waveform->setFixedHeight(45);
+        cardLayout->addWidget(waveform);
+        m_waveformWidgets.insert(slot.id, waveform);
+
+        // Selected Clip Inputs
+        auto *clipGroup = new QGroupBox("Selected Clip", card);
+        auto *clipLayout = new QFormLayout(clipGroup);
+        clipLayout->setContentsMargins(4, 4, 4, 4);
+        clipLayout->setSpacing(4);
+        clipGroup->setStyleSheet("QGroupBox { font-size: 9px; font-weight: bold; }");
+
+        auto *startSpin = new QDoubleSpinBox(card);
+        startSpin->setDecimals(1);
+        startSpin->setSingleStep(0.1);
+        startSpin->setSuffix("s");
+        startSpin->setRange(0.0, 3600.0);
+        startSpin->setValue(slot.startTimeMs / 1000.0);
+        startSpin->setStyleSheet("font-size: 9px;");
+
+        auto *endSpin = new QDoubleSpinBox(card);
+        endSpin->setDecimals(1);
+        endSpin->setSingleStep(0.1);
+        endSpin->setSuffix("s");
+        endSpin->setRange(0.0, 3600.0);
+        endSpin->setStyleSheet("font-size: 9px;");
+
+        // Set duration boundaries and default values
+        double durSec = 0.0;
+        WaveformData wdata = m_manager->getWaveformData(slot.id);
+        if (wdata.isValid && wdata.durationMs > 0) {
+            durSec = wdata.durationMs / 1000.0;
+        }
+        
+        startSpin->setMaximum(durSec > 0.0 ? durSec : 3600.0);
+        endSpin->setMaximum(durSec > 0.0 ? durSec : 3600.0);
+
+        if (slot.endTimeMs == -1) {
+            endSpin->setValue(durSec > 0.0 ? durSec : 0.0);
+        } else {
+            endSpin->setValue(slot.endTimeMs / 1000.0);
+        }
+
+        clipLayout->addRow("Start:", startSpin);
+        clipLayout->addRow("End:", endSpin);
+        cardLayout->addWidget(clipGroup);
+
+        // Volume Slider (Vertical for DJ feel) and Playback controls
         auto *volLayout = new QHBoxLayout();
         auto *volumeSlider = new QSlider(Qt::Vertical, card);
         volumeSlider->setRange(0, 100);
         volumeSlider->setValue(static_cast<int>(slot.volume * 100));
-        volumeSlider->setFixedHeight(60);
+        volumeSlider->setFixedHeight(65);
         
-        // Play/Stop buttons stacked next to slider
         auto *btnStack = new QVBoxLayout();
+        auto *playRow = new QHBoxLayout();
+        
         auto *playBtn = new QPushButton("PLAY", card);
-        playBtn->setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; height: 30px;");
+        playBtn->setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; height: 26px; font-size: 10px;");
+        
+        auto *previewBtn = new QPushButton("PREV", card);
+        previewBtn->setStyleSheet("background-color: #00bcd4; color: white; font-weight: bold; height: 26px; font-size: 10px;");
+        previewBtn->setToolTip("Preview locally only");
+
+        playRow->addWidget(playBtn, 1);
+        playRow->addWidget(previewBtn, 1);
+        btnStack->addLayout(playRow);
+
         auto *stopBtn = new QPushButton("STOP", card);
-        stopBtn->setStyleSheet("background-color: #f44336; color: white; font-weight: bold; height: 20px;");
-        btnStack->addWidget(playBtn);
+        stopBtn->setStyleSheet("background-color: #f44336; color: white; font-weight: bold; height: 20px; font-size: 10px;");
         btnStack->addWidget(stopBtn);
 
         volLayout->addWidget(volumeSlider);
@@ -222,13 +285,67 @@ void SoundboardDock::refresh()
 
         m_scrollLayout->addWidget(card);
 
+        // Populate cached waveform if it exists
+        if (!slot.filePath.isEmpty()) {
+            if (wdata.isValid) {
+                waveform->setWaveformData(wdata);
+                waveform->setClipRange(slot.startTimeMs, slot.endTimeMs);
+            } else {
+                m_manager->loadWaveformData(slot.id, slot.filePath);
+            }
+        }
+
         // Connections
         connect(playBtn, &QPushButton::clicked, this, [this, id = slot.id]() { onPlayPlayer(id); });
+        connect(previewBtn, &QPushButton::clicked, this, [this, id = slot.id]() { onPlayPreview(id); });
         connect(stopBtn, &QPushButton::clicked, this, [this, id = slot.id]() { onStopPlayer(id); });
         connect(removeBtn, &QPushButton::clicked, this, [this, id = slot.id]() { onRemovePlayer(id); });
         connect(volumeSlider, &QSlider::valueChanged, this, [this, id = slot.id](int val) { onVolumeChanged(id, val); });
         connect(routingCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this, id = slot.id](int index) {
             m_manager->setPlayerRouting(id, static_cast<OutputRouting>(index));
+        });
+
+        // Double SpinBox input connections
+        auto updateRangeFunc = [this, id = slot.id, startSpin, endSpin, waveform]() {
+            qint64 startMs = static_cast<qint64>(startSpin->value() * 1000.0);
+            qint64 endMs = static_cast<qint64>(endSpin->value() * 1000.0);
+            
+            if (startMs > endMs - 50) {
+                if (this->sender() == startSpin) {
+                    startSpin->blockSignals(true);
+                    startSpin->setValue(std::max(0.0, (endMs - 50) / 1000.0));
+                    startSpin->blockSignals(false);
+                    startMs = std::max(0LL, endMs - 50);
+                } else {
+                    endSpin->blockSignals(true);
+                    endSpin->setValue((startMs + 50) / 1000.0);
+                    endSpin->blockSignals(false);
+                    endMs = startMs + 50;
+                }
+            }
+
+            m_manager->setPlayerClipRange(id, startMs, endMs);
+            waveform->setClipRange(startMs, endMs);
+        };
+
+        connect(startSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, updateRangeFunc);
+        connect(endSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, updateRangeFunc);
+
+        // Interactive dragging connections
+        connect(waveform, &WaveformWidget::trimRangeChanged, this, [startSpin, endSpin, waveform](qint64 startMs, qint64 endMs) {
+            startSpin->blockSignals(true);
+            endSpin->blockSignals(true);
+            startSpin->setValue(startMs / 1000.0);
+            qint64 maxVal = static_cast<qint64>(endSpin->maximum() * 1000.0);
+            qint64 currentEnd = endMs == -1 ? maxVal : endMs;
+            endSpin->setValue(currentEnd / 1000.0);
+            startSpin->blockSignals(false);
+            endSpin->blockSignals(false);
+            waveform->setClipRange(startMs, endMs);
+        });
+
+        connect(waveform, &WaveformWidget::trimRangeCommit, this, [this, id = slot.id](qint64 startMs, qint64 endMs) {
+            m_manager->setPlayerClipRange(id, startMs, endMs);
         });
     }
 }
@@ -274,6 +391,11 @@ void SoundboardDock::onPlayPlayer(const QString &id)
     m_manager->playPlayer(id);
 }
 
+void SoundboardDock::onPlayPreview(const QString &id)
+{
+    m_manager->playPlayerPreview(id);
+}
+
 void SoundboardDock::onStopPlayer(const QString &id)
 {
     m_manager->stopPlayer(id);
@@ -300,6 +422,23 @@ void SoundboardDock::onMakePermanent(const QString &id)
 {
     if (m_actionManager) {
         m_actionManager->dispatch(Action::createMakePermanent(id));
+    }
+}
+
+void SoundboardDock::onWaveformGenerated(const QString &playerId, const WaveformData &data)
+{
+    (void)data;
+    // Refresh the UI to rebuild cards with correct SpinBox ranges and loaded waveforms
+    SoundPlayerSlot *slot = m_manager->getSlot(playerId);
+    if (slot) {
+        refresh();
+    }
+}
+
+void SoundboardDock::onPlayerPositionChanged(const QString &playerId, qint64 position)
+{
+    if (WaveformWidget *widget = m_waveformWidgets.value(playerId, nullptr)) {
+        widget->setPlayPosition(position);
     }
 }
 
