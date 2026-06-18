@@ -17,6 +17,7 @@
 #include "wasapirecorder.h"
 #include "audiosource.h"
 #include "replaybuffer.h"
+#include "wavwriter.h"
 
 class QLabel;
 class QPushButton;
@@ -92,6 +93,6 @@ private:
     class SourcesDock *m_sourcesDock;
     class AudioMixer *m_mixer;
     QList<WasapiRecorder*> m_activeRecorders;
-    QFile *m_mixedFile;
+    WavWriter *m_wavWriter;
 };
 #endif // MAINWINDOW_H

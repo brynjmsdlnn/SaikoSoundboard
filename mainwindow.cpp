@@ -172,11 +172,11 @@ MainWindow::MainWindow(QWidget *parent)
     addDockWidget(Qt::RightDockWidgetArea, m_sourcesDock);
 
     m_mixer = new AudioMixer(this);
-    m_mixedFile = nullptr;
+    m_wavWriter = new WavWriter(this);
 
     connect(m_mixer, &AudioMixer::mixedPcmReady, this, [this](const QByteArray &data){
-        if (m_mixedFile && m_mixedFile->isOpen()) {
-            m_mixedFile->write(data);
+        if (m_wavWriter->isOpen()) {
+            m_wavWriter->writePcm(data);
         }
         if (replayEnableCb->isChecked()) {
             m_replayBuffer->pushPcmChunk(data);
@@ -250,26 +250,23 @@ void MainWindow::onSaveReplay()
         return;
     }
 
-    QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
-    QString path = saveDirectory + QString("/Replay_%1.wav").arg(timestamp);
-    
-    QFile file(path);
-    if (!file.open(QIODevice::WriteOnly)) {
-        statusLabel->setText("Failed to save replay");
-        return;
-    }
-
     WAVEFORMATEXTENSIBLE fmt = m_mixer->getOutputFormat();
     if (fmt.Format.nSamplesPerSec == 0) {
         statusLabel->setText("Invalid audio format for replay");
         return;
     }
 
-    // Use WasapiRecorder helper to write header
-    wasapiRecorder->writeWavHeader(file, &fmt);
-    file.write(data);
-    wasapiRecorder->updateWavHeader(file);
-    file.close();
+    QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
+    QString path = saveDirectory + QString("/Replay_%1.wav").arg(timestamp);
+    
+    WavWriter replayWriter;
+    if (!replayWriter.open(path, fmt)) {
+        statusLabel->setText("Failed to save replay");
+        return;
+    }
+
+    replayWriter.writePcm(data);
+    replayWriter.close();
 
     statusLabel->setText(QString("Replay Saved: %1").arg(QFileInfo(path).fileName()));
     lastRecordingPath = path;
@@ -338,21 +335,14 @@ void MainWindow::onStartRecording()
     QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
     lastRecordingPath = saveDirectory + QString("/Recording_%1.wav").arg(timestamp);
 
-    m_mixedFile = new QFile(lastRecordingPath, this);
-    if (!m_mixedFile->open(QIODevice::WriteOnly)) {
-        delete m_mixedFile;
-        m_mixedFile = nullptr;
+    WAVEFORMATEXTENSIBLE fmt = m_mixer->getOutputFormat();
+    if (!m_wavWriter->open(lastRecordingPath, fmt)) {
+        statusLabel->setText("Failed to start manual recording");
         return;
     }
 
     m_isRecording = true;
     startCaptureEngine();
-
-    // If engine was already running, we need to write the header now
-    WAVEFORMATEXTENSIBLE fmt = m_mixer->getOutputFormat();
-    if (fmt.Format.nSamplesPerSec != 0) {
-        wasapiRecorder->writeWavHeader(*m_mixedFile, &fmt);
-    }
 
     QString mode = appSelector->currentData().toString();
     if (mode == "global") {
@@ -382,14 +372,7 @@ void MainWindow::onStopRecording()
     m_isRecording = false;
     updateTimer->stop(); 
 
-    if (m_mixedFile) {
-        if (m_mixedFile->isOpen()) {
-            wasapiRecorder->updateWavHeader(*m_mixedFile);
-            m_mixedFile->close();
-        }
-        delete m_mixedFile;
-        m_mixedFile = nullptr;
-    }
+    m_wavWriter->close();
 
     if (!replayEnableCb->isChecked()) {
         stopCaptureEngine();
@@ -448,8 +431,7 @@ void MainWindow::onUpdateTimer()
     int remaining = std::max(0, 10 - (int)elapsed);
     timerLabel->setText(QString("Time remaining: %1s").arg(remaining));
     
-    qint64 fileSize = m_mixedFile ? m_mixedFile->size() : 0;
-    onStatsUpdated(fileSize, elapsed);
+    onStatsUpdated(m_wavWriter->size(), elapsed);
 }
 
 void MainWindow::onStatsUpdated(qint64 bytes, double seconds)
@@ -547,9 +529,9 @@ void MainWindow::startRecorderForPid(DWORD pid, const QString& sourceId, float v
             m_mixer->setOutputFormat(fmt);
             m_replayBuffer->setFormat(fmt);
             
-            // If we are currently recording to a file, write the header now
-            if (m_mixedFile && m_mixedFile->isOpen() && m_mixedFile->pos() == 0) {
-                wasapiRecorder->writeWavHeader(*m_mixedFile, &fmt);
+            // If we are currently recording to a file, open it with the newly discovered format
+            if (m_wavWriter->isOpen() && m_wavWriter->size() == 0) {
+                m_wavWriter->open(m_wavWriter->fileName(), fmt);
             }
         }
     });
