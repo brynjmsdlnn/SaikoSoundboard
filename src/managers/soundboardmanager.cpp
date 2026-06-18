@@ -75,6 +75,15 @@ void SoundboardManager::setEnabled(const QString &id, bool enabled)
     }
 }
 
+void SoundboardManager::setHotkeys(const QString &id, const QString &playHotkey, const QString &assignHotkey)
+{
+    if (SoundPlayerSlot *slot = getSlot(id)) {
+        slot->playHotkey = playHotkey;
+        slot->assignHotkey = assignHotkey;
+        emit slotsChanged();
+    }
+}
+
 void SoundboardManager::playPlayer(const QString &id)
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {

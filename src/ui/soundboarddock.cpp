@@ -1,4 +1,5 @@
 #include "soundboarddock.h"
+#include "hotkeydialog.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -9,6 +10,8 @@
 #include <QInputDialog>
 #include <QFileInfo>
 #include <QFrame>
+#include <QMenu>
+#include <QAction>
 
 SoundboardDock::SoundboardDock(SoundboardManager *manager, QWidget *parent)
     : QDockWidget("Soundboard", parent)
@@ -59,6 +62,15 @@ void SoundboardDock::refresh()
         topLayout->addWidget(renameBtn);
         cardLayout->addLayout(topLayout);
 
+        // Menu for options button
+        auto *menu = new QMenu(renameBtn);
+        auto *renameAction = menu->addAction("Rename");
+        auto *hotkeyAction = menu->addAction("Hotkey Bindings");
+        connect(renameAction, &QAction::triggered, this, [this, id = slot.id]() { onRenamePlayer(id); });
+        connect(hotkeyAction, &QAction::triggered, this, [this, id = slot.id]() { onHotkeySetup(id); });
+        renameBtn->setMenu(menu);
+        renameBtn->setStyleSheet("QPushButton::menu-indicator { image: none; }"); // Hide arrow
+
         // File Path
         QString fileName = slot.filePath.isEmpty() ? "No file" : QFileInfo(slot.filePath).fileName();
         auto *fileLabel = new QLabel(fileName, card);
@@ -98,12 +110,22 @@ void SoundboardDock::refresh()
         m_scrollLayout->addWidget(card);
 
         // Connections
-        connect(renameBtn, &QPushButton::clicked, this, [this, id = slot.id]() { onRenamePlayer(id); });
         connect(playBtn, &QPushButton::clicked, this, [this, id = slot.id]() { onPlayPlayer(id); });
         connect(stopBtn, &QPushButton::clicked, this, [this, id = slot.id]() { onStopPlayer(id); });
         connect(assignBtn, &QPushButton::clicked, this, [this, id = slot.id]() { onAssignFile(id); });
         connect(removeBtn, &QPushButton::clicked, this, [this, id = slot.id]() { onRemovePlayer(id); });
         connect(volumeSlider, &QSlider::valueChanged, this, [this, id = slot.id](int val) { onVolumeChanged(id, val); });
+    }
+}
+
+void SoundboardDock::onHotkeySetup(const QString &id)
+{
+    SoundPlayerSlot *slot = m_manager->getSlot(id);
+    if (!slot) return;
+
+    HotkeyDialog dlg(slot->playHotkey, slot->assignHotkey, this);
+    if (dlg.exec() == QDialog::Accepted) {
+        m_manager->setHotkeys(id, dlg.playHotkey(), dlg.assignHotkey());
     }
 }
 

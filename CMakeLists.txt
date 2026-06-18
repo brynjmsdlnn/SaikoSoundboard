@@ -21,6 +21,8 @@ set(UI_SOURCES
     src/ui/sourcesdock.h
     src/ui/soundboarddock.cpp
     src/ui/soundboarddock.h
+    src/ui/hotkeydialog.cpp
+    src/ui/hotkeydialog.h
 )
 
 set(AUDIO_SOURCES

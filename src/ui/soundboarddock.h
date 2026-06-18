@@ -26,6 +26,7 @@ private slots:
     void onStopPlayer(const QString &id);
     void onVolumeChanged(const QString &id, int volume);
     void onRenamePlayer(const QString &id);
+    void onHotkeySetup(const QString &id);
 
 private:
     SoundboardManager *m_manager;

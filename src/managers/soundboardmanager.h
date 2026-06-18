@@ -22,6 +22,7 @@ public:
     void assignAudioFile(const QString &id, const QString &filePath);
     void setVolume(const QString &id, float volume);
     void setEnabled(const QString &id, bool enabled);
+    void setHotkeys(const QString &id, const QString &playHotkey, const QString &assignHotkey);
 
     // Playback Control
     void playPlayer(const QString &id);
