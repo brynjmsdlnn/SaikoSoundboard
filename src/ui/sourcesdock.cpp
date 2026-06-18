@@ -26,6 +26,7 @@ SourcesDock::SourcesDock(QWidget *parent) : QDockWidget("Audio Sources", parent)
     layout->addWidget(m_removeBtn);
 
     setWidget(content);
+    setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
 
     connect(m_addBtn, &QPushButton::clicked, this, &SourcesDock::onAddSourceClicked);
     connect(m_removeBtn, &QPushButton::clicked, this, &SourcesDock::onRemoveSourceClicked);

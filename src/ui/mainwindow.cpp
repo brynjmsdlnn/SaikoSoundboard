@@ -1,5 +1,6 @@
 #include "ui/mainwindow.h"
 #include "ui/sourcesdock.h"
+#include "ui/soundboarddock.h"
 #include <QLabel>
 #include <QPushButton>
 #include <QComboBox>
@@ -24,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , remainingSeconds(0)
 {
-    resize(600, 200);
+    resize(850, 600);
 
     m_settings = new SettingsManager(this);
     m_settings->load();
@@ -176,6 +177,10 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     m_sourcesDock->updateSourceList(m_sources);
+
+    m_soundboardDock = new SoundboardDock(m_soundboardManager, this);
+    addDockWidget(Qt::BottomDockWidgetArea, m_soundboardDock);
+
     replayEnableCb->setChecked(m_settings->replayEnabled());
     
     // Initial visibility

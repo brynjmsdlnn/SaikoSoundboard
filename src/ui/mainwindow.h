@@ -24,6 +24,7 @@ class QPushButton;
 class QComboBox;
 class QLineEdit;
 class SourcesDock;
+class SoundboardDock;
 
 class MainWindow : public QMainWindow
 {
@@ -83,6 +84,7 @@ private:
 
     QList<AudioSource> m_sources;
     SourcesDock *m_sourcesDock;
+    SoundboardDock *m_soundboardDock;
     SettingsManager *m_settings;
     RecordingManager *m_recordingManager;
     SoundboardManager *m_soundboardManager;
