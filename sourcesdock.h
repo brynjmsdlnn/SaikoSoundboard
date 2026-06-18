@@ -14,6 +14,7 @@ public:
     explicit SourcesDock(QWidget *parent = nullptr);
 
     void updateSourceList(const QList<AudioSource>& sources);
+    void setLocked(bool locked);
 
 signals:
     void sourceAdded(const AudioSource& source);

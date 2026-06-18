@@ -32,6 +32,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , remainingSeconds(0)
+    , m_isRecording(false)
 {
     resize(600, 200);
 
@@ -81,6 +82,36 @@ MainWindow::MainWindow(QWidget *parent)
     dirLayout->addWidget(changeFolderBtn);
     layout->addLayout(dirLayout);
 
+    // Replay Buffer Group Box
+    replayGroupBox = new QGroupBox("Replay Buffer", this);
+    auto *replayLayout = new QVBoxLayout();
+    
+    auto *replayTopLayout = new QHBoxLayout();
+    replayEnableCb = new QCheckBox("Enable Replay Buffer", this);
+    replayDurationSpin = new QSpinBox(this);
+    replayDurationSpin->setRange(1, 120);
+    replayDurationSpin->setSuffix("s");
+    replayDurationSpin->setValue(30); // Default 30s
+    
+    replayTopLayout->addWidget(replayEnableCb);
+    replayTopLayout->addStretch();
+    replayTopLayout->addWidget(new QLabel("Duration:"));
+    replayTopLayout->addWidget(replayDurationSpin);
+    replayLayout->addLayout(replayTopLayout);
+    
+    auto *replayBottomLayout = new QHBoxLayout();
+    replayStatusLabel = new QLabel("Status: Inactive", this);
+    saveReplayBtn = new QPushButton("Save Replay", this);
+    saveReplayBtn->setEnabled(false);
+    
+    replayBottomLayout->addWidget(replayStatusLabel);
+    replayBottomLayout->addStretch();
+    replayBottomLayout->addWidget(saveReplayBtn);
+    replayLayout->addLayout(replayBottomLayout);
+    
+    replayGroupBox->setLayout(replayLayout);
+    layout->addWidget(replayGroupBox);
+
     layout->addWidget(startBtn);
     layout->addWidget(stopBtn);
     layout->addWidget(playBtn);
@@ -90,6 +121,7 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(centralWidget);
 
     wasapiRecorder = new WasapiRecorder(this);
+    m_replayBuffer = new ReplayBuffer(this);
 
     player = new QMediaPlayer(this);
     audioOutput = new QAudioOutput(this);
@@ -111,6 +143,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(updateTimer, &QTimer::timeout, this, &MainWindow::onUpdateTimer);
     connect(player, &QMediaPlayer::playbackStateChanged, this, &MainWindow::onPlaybackStateChanged);
     connect(appSelector, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onCaptureModeChanged);
+    connect(replayEnableCb, &QCheckBox::toggled, this, &MainWindow::onReplayEnableToggled);
+    connect(saveReplayBtn, &QPushButton::clicked, this, &MainWindow::onSaveReplay);
+    connect(replayDurationSpin, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int val){ 
+        m_replayBuffer->setDuration(val);
+        saveSources(); 
+    });
     
     connect(player, &QMediaPlayer::errorOccurred, this, [this](QMediaPlayer::Error error, const QString &errorString){
         QMessageBox::critical(this, "Playback Error", errorString);
@@ -139,6 +177,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_mixer, &AudioMixer::mixedPcmReady, this, [this](const QByteArray &data){
         if (m_mixedFile && m_mixedFile->isOpen()) {
             m_mixedFile->write(data);
+        }
+        if (replayEnableCb->isChecked()) {
+            m_replayBuffer->pushPcmChunk(data);
         }
     });
 
@@ -184,6 +225,57 @@ QString MainWindow::getSettingsFilePath() const
     return appData + "/settings.json";
 }
 
+void MainWindow::onReplayEnableToggled(bool checked)
+{
+    replayStatusLabel->setText(checked ? "Status: Active" : "Status: Inactive");
+    saveReplayBtn->setEnabled(checked);
+    
+    if (checked) {
+        startCaptureEngine();
+    } else {
+        m_replayBuffer->clear();
+        if (!m_isRecording) {
+            stopCaptureEngine();
+        }
+    }
+    
+    saveSources();
+}
+
+void MainWindow::onSaveReplay()
+{
+    QByteArray data = m_replayBuffer->getBufferData();
+    if (data.isEmpty()) {
+        statusLabel->setText("Replay Buffer empty");
+        return;
+    }
+
+    QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
+    QString path = saveDirectory + QString("/Replay_%1.wav").arg(timestamp);
+    
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly)) {
+        statusLabel->setText("Failed to save replay");
+        return;
+    }
+
+    WAVEFORMATEXTENSIBLE fmt = m_mixer->getOutputFormat();
+    if (fmt.Format.nSamplesPerSec == 0) {
+        statusLabel->setText("Invalid audio format for replay");
+        return;
+    }
+
+    // Use WasapiRecorder helper to write header
+    wasapiRecorder->writeWavHeader(file, &fmt);
+    file.write(data);
+    wasapiRecorder->updateWavHeader(file);
+    file.close();
+
+    statusLabel->setText(QString("Replay Saved: %1").arg(QFileInfo(path).fileName()));
+    lastRecordingPath = path;
+    playBtn->setEnabled(true);
+}
+
 void MainWindow::loadSources()
 {
     QFile file(getSettingsFilePath());
@@ -191,22 +283,50 @@ void MainWindow::loadSources()
 
     QByteArray data = file.readAll();
     QJsonDocument doc = QJsonDocument::fromJson(data);
-    QJsonArray arr = doc.array();
-
+    
     m_sources.clear();
-    for (const QJsonValue& val : std::as_const(arr)) {
-        m_sources.append(AudioSource::fromJson(val.toObject()));
+
+    if (doc.isArray()) {
+        // Backward compatibility: Old format was just an array of sources
+        QJsonArray arr = doc.array();
+        for (const QJsonValue& val : std::as_const(arr)) {
+            m_sources.append(AudioSource::fromJson(val.toObject()));
+        }
+    } else if (doc.isObject()) {
+        // New format: Object containing sources and replay settings
+        QJsonObject obj = doc.object();
+        
+        QJsonArray arr = obj["sources"].toArray();
+        for (const QJsonValue& val : std::as_const(arr)) {
+            m_sources.append(AudioSource::fromJson(val.toObject()));
+        }
+        
+        bool replayEnabled = obj["replayEnabled"].toBool(false);
+        int replayDuration = obj["replayDuration"].toInt(30);
+        
+        replayEnableCb->setChecked(replayEnabled);
+        m_replayBuffer->setDuration(replayDuration);
+        replayDurationSpin->setValue(replayDuration);
+
+        // This will trigger engine start if replayEnabled is true
+        onReplayEnableToggled(replayEnabled);
     }
 }
 
 void MainWindow::saveSources()
 {
-    QJsonArray arr;
+    QJsonObject root;
+    
+    QJsonArray sourcesArr;
     for (const AudioSource& src : std::as_const(m_sources)) {
-        arr.append(src.toJson());
+        sourcesArr.append(src.toJson());
     }
+    root["sources"] = sourcesArr;
+    
+    root["replayEnabled"] = replayEnableCb->isChecked();
+    root["replayDuration"] = replayDurationSpin->value();
 
-    QJsonDocument doc(arr);
+    QJsonDocument doc(root);
     QFile file(getSettingsFilePath());
     if (file.open(QIODevice::WriteOnly)) {
         file.write(doc.toJson());
@@ -218,8 +338,21 @@ void MainWindow::onStartRecording()
     QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
     lastRecordingPath = saveDirectory + QString("/Recording_%1.wav").arg(timestamp);
 
-    qDebug() << "UI: Starting multi-source capture orchestration...";
-    setupMultiTrackRecording();
+    m_mixedFile = new QFile(lastRecordingPath, this);
+    if (!m_mixedFile->open(QIODevice::WriteOnly)) {
+        delete m_mixedFile;
+        m_mixedFile = nullptr;
+        return;
+    }
+
+    m_isRecording = true;
+    startCaptureEngine();
+
+    // If engine was already running, we need to write the header now
+    WAVEFORMATEXTENSIBLE fmt = m_mixer->getOutputFormat();
+    if (fmt.Format.nSamplesPerSec != 0) {
+        wasapiRecorder->writeWavHeader(*m_mixedFile, &fmt);
+    }
 
     QString mode = appSelector->currentData().toString();
     if (mode == "global") {
@@ -246,9 +379,21 @@ void MainWindow::onStartRecording()
 
 void MainWindow::onStopRecording()
 {
-    qDebug() << "UI: Stopping multi-source capture orchestration...";
-    updateTimer->stop(); // Stop updates immediately to freeze stats at end
-    cleanupMultiTrackRecording();
+    m_isRecording = false;
+    updateTimer->stop(); 
+
+    if (m_mixedFile) {
+        if (m_mixedFile->isOpen()) {
+            wasapiRecorder->updateWavHeader(*m_mixedFile);
+            m_mixedFile->close();
+        }
+        delete m_mixedFile;
+        m_mixedFile = nullptr;
+    }
+
+    if (!replayEnableCb->isChecked()) {
+        stopCaptureEngine();
+    }
 
     QFileInfo fileInfo(lastRecordingPath);
     if (fileInfo.exists() && fileInfo.size() > 100) {
@@ -289,7 +434,6 @@ void MainWindow::onStopRecording()
 
     timerLabel->setText("");
     stopTimer->stop();
-    updateTimer->stop();
 
     startBtn->setEnabled(true);
     stopBtn->setEnabled(false);
@@ -332,16 +476,13 @@ void MainWindow::onPlayLastRecording()
     playBtn->setEnabled(false);
 }
 
-void MainWindow::setupMultiTrackRecording()
+void MainWindow::startCaptureEngine()
 {
-    cleanupMultiTrackRecording();
-    
-    m_mixedFile = new QFile(lastRecordingPath, this);
-    if (!m_mixedFile->open(QIODevice::WriteOnly)) {
-        delete m_mixedFile;
-        m_mixedFile = nullptr;
-        return;
-    }
+    if (!m_activeRecorders.isEmpty()) return; // Already running
+
+    // Lock configuration UI
+    appSelector->setEnabled(false);
+    m_sourcesDock->setLocked(true);
 
     // Default format (will be updated by the first recorder that starts)
     WAVEFORMATEXTENSIBLE format;
@@ -352,14 +493,11 @@ void MainWindow::setupMultiTrackRecording()
     QString mode = appSelector->currentData().toString();
     
     if (mode == "global") {
-        // Option 1: Record everything
         startRecorderForPid(0, "global", 1.0f);
     } else {
-        // Option 2: Record specific apps from the dock
         for (const auto& src : std::as_const(m_sources)) {
             if (!src.enabled) continue;
 
-            // Find PID for executableName
             DWORD pid = 0;
 #ifdef Q_OS_WIN
             DWORD processes[1024], cbNeeded, cProcesses;
@@ -402,13 +540,17 @@ void MainWindow::startRecorderForPid(DWORD pid, const QString& sourceId, float v
 
     connect(rec, &WasapiRecorder::finished, rec, &QObject::deleteLater);
     
-    // First recorder sets the master format for the mixer
+    // First recorder sets the master format for the mixer and replay buffer
     connect(rec, &WasapiRecorder::statsUpdated, this, [this, rec](qint64, double){
         if (m_mixer->getOutputFormat().Format.nSamplesPerSec == 0) {
             WAVEFORMATEXTENSIBLE fmt = rec->getFormat();
             m_mixer->setOutputFormat(fmt);
-            // Write header to the file once we have the format
-            wasapiRecorder->writeWavHeader(*m_mixedFile, &fmt);
+            m_replayBuffer->setFormat(fmt);
+            
+            // If we are currently recording to a file, write the header now
+            if (m_mixedFile && m_mixedFile->isOpen() && m_mixedFile->pos() == 0) {
+                wasapiRecorder->writeWavHeader(*m_mixedFile, &fmt);
+            }
         }
     });
 
@@ -416,7 +558,7 @@ void MainWindow::startRecorderForPid(DWORD pid, const QString& sourceId, float v
     m_activeRecorders.append(rec);
 }
 
-void MainWindow::cleanupMultiTrackRecording()
+void MainWindow::stopCaptureEngine()
 {
     m_mixer->stop();
     for (auto rec : std::as_const(m_activeRecorders)) {
@@ -424,15 +566,9 @@ void MainWindow::cleanupMultiTrackRecording()
     }
     m_activeRecorders.clear();
 
-    if (m_mixedFile) {
-        if (m_mixedFile->isOpen()) {
-            // Update WAV header
-            wasapiRecorder->updateWavHeader(*m_mixedFile);
-            m_mixedFile->close();
-        }
-        delete m_mixedFile;
-        m_mixedFile = nullptr;
-    }
+    // Unlock configuration UI
+    appSelector->setEnabled(true);
+    m_sourcesDock->setLocked(false);
 }
 
 void MainWindow::onPlaybackStateChanged(QMediaPlayer::PlaybackState state)

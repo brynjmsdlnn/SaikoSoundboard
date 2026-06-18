@@ -47,6 +47,13 @@ void SourcesDock::updateSourceList(const QList<AudioSource>& sources)
     }
 }
 
+void SourcesDock::setLocked(bool locked)
+{
+    m_addBtn->setEnabled(!locked);
+    m_removeBtn->setEnabled(!locked);
+    m_listWidget->setEnabled(!locked);
+}
+
 void SourcesDock::onAddSourceClicked()
 {
     QDialog dialog(this);

@@ -23,6 +23,8 @@ set(PROJECT_SOURCES
         audiomixer.cpp
         audiomixer.h
         audiosource.h
+        replaybuffer.cpp
+        replaybuffer.h
         )
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(SaikoSoundboard

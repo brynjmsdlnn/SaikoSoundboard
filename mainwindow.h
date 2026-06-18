@@ -11,8 +11,12 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QElapsedTimer>
+#include <QGroupBox>
+#include <QCheckBox>
+#include <QSpinBox>
 #include "wasapirecorder.h"
 #include "audiosource.h"
+#include "replaybuffer.h"
 
 class QLabel;
 class QPushButton;
@@ -36,13 +40,15 @@ private slots:
     void onOpenFolder();
     void onChangeFolder();
     void onCaptureModeChanged(int index);
+    void onReplayEnableToggled(bool checked);
+    void onSaveReplay();
 
 private:
     void loadSources();
     void saveSources();
     QString getSettingsFilePath() const;
-    void setupMultiTrackRecording();
-    void cleanupMultiTrackRecording();
+    void startCaptureEngine();
+    void stopCaptureEngine();
     void startRecorderForPid(DWORD pid, const QString& sourceId, float volume);
 
     QLabel *statusLabel;
@@ -56,6 +62,12 @@ private:
     class QLineEdit *saveDirEdit;
     QPushButton *openFolderBtn;
     QPushButton *changeFolderBtn;
+
+    QGroupBox *replayGroupBox;
+    QCheckBox *replayEnableCb;
+    QSpinBox *replayDurationSpin;
+    QLabel *replayStatusLabel;
+    QPushButton *saveReplayBtn;
 
     QTimer *sessionRefreshTimer;
 
@@ -71,8 +83,10 @@ private:
     QAudioOutput *audioOutput;
     
     WasapiRecorder *wasapiRecorder;
+    ReplayBuffer *m_replayBuffer;
     QString lastRecordingPath;
     QString saveDirectory;
+    bool m_isRecording;
 
     QList<AudioSource> m_sources;
     class SourcesDock *m_sourcesDock;
