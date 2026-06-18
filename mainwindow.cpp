@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "sourcesdock.h"
-#include "audiomixer.h"
 #include <QLabel>
 #include <QPushButton>
 #include <QComboBox>
@@ -21,14 +20,6 @@
 #include <QLineEdit>
 #include <QFileIconProvider>
 
-#ifdef Q_OS_WIN
-#include <windows.h>
-#include <mmdeviceapi.h>
-#include <audiopolicy.h>
-#include <psapi.h>
-#include <audioclient.h>
-#endif
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , remainingSeconds(0)
@@ -48,7 +39,6 @@ MainWindow::MainWindow(QWidget *parent)
     appSelector->addItem("System Output (Global)", "global");
     appSelector->addItem("Multi-Track (Sources Dock)", "multi");
     
-    // refreshBtn and sessionRefreshTimer are no longer needed for the main dropdown
     refreshBtn = new QPushButton("Refresh List", this);
     refreshBtn->hide(); 
     
@@ -119,9 +109,12 @@ MainWindow::MainWindow(QWidget *parent)
     centralWidget->setLayout(layout);
     setCentralWidget(centralWidget);
 
-    wasapiRecorder = new WasapiRecorder(this);
-    m_replayBuffer = new ReplayBuffer(this);
-    m_replayBuffer->setDuration(m_settings->replayDuration());
+    m_recordingManager = new RecordingManager(m_settings, this);
+
+    connect(m_recordingManager, &RecordingManager::errorOccurred, this, [this](const QString &msg){
+        QMessageBox::critical(this, "Recording Error", msg);
+        onStopRecording();
+    });
 
     player = new QMediaPlayer(this);
     audioOutput = new QAudioOutput(this);
@@ -146,7 +139,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(replayEnableCb, &QCheckBox::toggled, this, &MainWindow::onReplayEnableToggled);
     connect(saveReplayBtn, &QPushButton::clicked, this, &MainWindow::onSaveReplay);
     connect(replayDurationSpin, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int val){ 
-        m_replayBuffer->setDuration(val);
+        m_recordingManager->setReplayDuration(val);
         m_settings->setReplayDuration(val);
         m_settings->save(); 
     });
@@ -158,31 +151,8 @@ MainWindow::MainWindow(QWidget *parent)
         playBtn->setEnabled(true);
     });
 
-    connect(wasapiRecorder, &WasapiRecorder::error, this, [this](const QString &msg){
-        QMessageBox::critical(this, "Recording Error", msg);
-        onStopRecording();
-    });
-    connect(wasapiRecorder, &WasapiRecorder::statsUpdated, this, &MainWindow::onStatsUpdated);
-    
-    connect(wasapiRecorder, &WasapiRecorder::pcmDataReady, this, [](const QByteArray &data){
-        // Test slot to verify PCM data flow
-        // qDebug() << "MainWindow: Received PCM chunk of size:" << data.size();
-    });
-
     m_sourcesDock = new SourcesDock(this);
     addDockWidget(Qt::RightDockWidgetArea, m_sourcesDock);
-
-    m_mixer = new AudioMixer(this);
-    m_wavWriter = new WavWriter(this);
-
-    connect(m_mixer, &AudioMixer::mixedPcmReady, this, [this](const QByteArray &data){
-        if (m_wavWriter->isOpen()) {
-            m_wavWriter->writePcm(data);
-        }
-        if (replayEnableCb->isChecked()) {
-            m_replayBuffer->pushPcmChunk(data);
-        }
-    });
 
     connect(m_sourcesDock, &SourcesDock::sourceAdded, this, [this](const AudioSource& src) {
         m_sources.append(src);
@@ -226,13 +196,15 @@ void MainWindow::onReplayEnableToggled(bool checked)
     replayStatusLabel->setText(checked ? "Status: Active" : "Status: Inactive");
     saveReplayBtn->setEnabled(checked);
     
-    if (checked) {
-        startCaptureEngine();
-    } else {
-        m_replayBuffer->clear();
-        if (!m_isRecording) {
-            stopCaptureEngine();
-        }
+    QString mode = appSelector->currentData().toString();
+    m_recordingManager->setReplayEnabled(checked, mode);
+    
+    if (m_recordingManager->isEngineRunning()) {
+        appSelector->setEnabled(false);
+        m_sourcesDock->setLocked(true);
+    } else if (!m_isRecording) {
+        appSelector->setEnabled(true);
+        m_sourcesDock->setLocked(false);
     }
     
     m_settings->setReplayEnabled(checked);
@@ -241,33 +213,16 @@ void MainWindow::onReplayEnableToggled(bool checked)
 
 void MainWindow::onSaveReplay()
 {
-    QByteArray data = m_replayBuffer->getBufferData();
-    if (data.isEmpty()) {
-        statusLabel->setText("Replay Buffer empty");
-        return;
-    }
-
-    WAVEFORMATEXTENSIBLE fmt = m_mixer->getOutputFormat();
-    if (fmt.Format.nSamplesPerSec == 0) {
-        statusLabel->setText("Invalid audio format for replay");
-        return;
-    }
-
     QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
     QString path = m_settings->saveDirectory() + QString("/Replay_%1.wav").arg(timestamp);
     
-    WavWriter replayWriter;
-    if (!replayWriter.open(path, fmt)) {
-        statusLabel->setText("Failed to save replay");
-        return;
+    if (m_recordingManager->saveReplay(path)) {
+        statusLabel->setText(QString("Replay Saved: %1").arg(QFileInfo(path).fileName()));
+        lastRecordingPath = path;
+        playBtn->setEnabled(true);
+    } else {
+        statusLabel->setText("Failed to save replay or buffer empty");
     }
-
-    replayWriter.writePcm(data);
-    replayWriter.close();
-
-    statusLabel->setText(QString("Replay Saved: %1").arg(QFileInfo(path).fileName()));
-    lastRecordingPath = path;
-    playBtn->setEnabled(true);
 }
 
 void MainWindow::onStartRecording()
@@ -275,16 +230,17 @@ void MainWindow::onStartRecording()
     QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
     lastRecordingPath = m_settings->saveDirectory() + QString("/Recording_%1.wav").arg(timestamp);
 
-    WAVEFORMATEXTENSIBLE fmt = m_mixer->getOutputFormat();
-    if (!m_wavWriter->open(lastRecordingPath, fmt)) {
+    QString mode = appSelector->currentData().toString();
+    if (!m_recordingManager->isEngineRunning()) {
+        m_recordingManager->startEngine(mode);
+    }
+
+    if (!m_recordingManager->startRecording(lastRecordingPath)) {
         statusLabel->setText("Failed to start manual recording");
         return;
     }
 
     m_isRecording = true;
-    startCaptureEngine();
-
-    QString mode = appSelector->currentData().toString();
     if (mode == "global") {
         statusLabel->setText("Recording System Output...");
     } else {
@@ -301,6 +257,7 @@ void MainWindow::onStartRecording()
     playBtn->setEnabled(false);
     refreshBtn->setEnabled(false);
     appSelector->setEnabled(false);
+    m_sourcesDock->setLocked(true);
     sessionRefreshTimer->stop();
     
     stopTimer->start(10000); 
@@ -312,10 +269,11 @@ void MainWindow::onStopRecording()
     m_isRecording = false;
     updateTimer->stop(); 
 
-    m_wavWriter->close();
+    m_recordingManager->stopRecording();
 
-    if (!replayEnableCb->isChecked()) {
-        stopCaptureEngine();
+    if (!m_recordingManager->isEngineRunning()) {
+        appSelector->setEnabled(true);
+        m_sourcesDock->setLocked(false);
     }
 
     QFileInfo fileInfo(lastRecordingPath);
@@ -333,7 +291,6 @@ void MainWindow::onStopRecording()
                 newPath += ".wav";
             }
             
-            // Handle name collisions by adding (1), (2), etc if necessary
             QFileInfo check(newPath);
             int counter = 1;
             QString finalPath = newPath;
@@ -361,7 +318,6 @@ void MainWindow::onStopRecording()
     startBtn->setEnabled(true);
     stopBtn->setEnabled(false);
     refreshBtn->setEnabled(true);
-    appSelector->setEnabled(true);
     sessionRefreshTimer->start();
 }
 
@@ -371,7 +327,7 @@ void MainWindow::onUpdateTimer()
     int remaining = std::max(0, 10 - (int)elapsed);
     timerLabel->setText(QString("Time remaining: %1s").arg(remaining));
     
-    onStatsUpdated(m_wavWriter->size(), elapsed);
+    onStatsUpdated(m_recordingManager->wavWriter()->size(), elapsed);
 }
 
 void MainWindow::onStatsUpdated(qint64 bytes, double seconds)
@@ -396,101 +352,6 @@ void MainWindow::onPlayLastRecording()
     statusLabel->setText(QString("Playing: %1").arg(fileInfo.fileName()));
     startBtn->setEnabled(false);
     playBtn->setEnabled(false);
-}
-
-void MainWindow::startCaptureEngine()
-{
-    if (!m_activeRecorders.isEmpty()) return; // Already running
-
-    // Lock configuration UI
-    appSelector->setEnabled(false);
-    m_sourcesDock->setLocked(true);
-
-    // Default format (will be updated by the first recorder that starts)
-    WAVEFORMATEXTENSIBLE format;
-    memset(&format, 0, sizeof(format));
-    m_mixer->setOutputFormat(format);
-    m_mixer->start();
-
-    QString mode = appSelector->currentData().toString();
-    
-    if (mode == "global") {
-        startRecorderForPid(0, "global", 1.0f);
-    } else {
-        for (const auto& src : std::as_const(m_sources)) {
-            if (!src.enabled) continue;
-
-            DWORD pid = 0;
-#ifdef Q_OS_WIN
-            DWORD processes[1024], cbNeeded, cProcesses;
-            if (EnumProcesses(processes, sizeof(processes), &cbNeeded)) {
-                cProcesses = cbNeeded / sizeof(DWORD);
-                for (unsigned int i = 0; i < cProcesses; i++) {
-                    if (processes[i] != 0) {
-                        HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, processes[i]);
-                        if (hProcess) {
-                            WCHAR szPath[MAX_PATH];
-                            if (GetModuleFileNameExW(hProcess, NULL, szPath, MAX_PATH)) {
-                                QString exeName = QFileInfo(QString::fromWCharArray(szPath)).fileName();
-                                if (exeName.compare(src.executableName, Qt::CaseInsensitive) == 0) {
-                                    pid = processes[i];
-                                    CloseHandle(hProcess);
-                                    break;
-                                }
-                            }
-                            CloseHandle(hProcess);
-                        }
-                    }
-                }
-            }
-#endif
-            if (pid != 0) {
-                startRecorderForPid(pid, src.id, src.volume);
-            }
-        }
-    }
-}
-
-void MainWindow::startRecorderForPid(DWORD pid, const QString& sourceId, float volume)
-{
-    WasapiRecorder *rec = new WasapiRecorder(this);
-    m_mixer->addSource(sourceId, volume);
-    
-    connect(rec, &WasapiRecorder::pcmDataReady, this, [this, sourceId](const QByteArray &data){
-        m_mixer->pushPcmData(sourceId, data);
-    });
-
-    connect(rec, &WasapiRecorder::finished, rec, &QObject::deleteLater);
-    
-    // First recorder sets the master format for the mixer and replay buffer
-    connect(rec, &WasapiRecorder::statsUpdated, this, [this, rec](qint64, double){
-        if (m_mixer->getOutputFormat().Format.nSamplesPerSec == 0) {
-            WAVEFORMATEXTENSIBLE fmt = rec->getFormat();
-            m_mixer->setOutputFormat(fmt);
-            m_replayBuffer->setFormat(fmt);
-            
-            // If we are currently recording to a file, open it with the newly discovered format
-            if (m_wavWriter->isOpen() && m_wavWriter->size() == 0) {
-                m_wavWriter->open(m_wavWriter->fileName(), fmt);
-            }
-        }
-    });
-
-    rec->start(pid);
-    m_activeRecorders.append(rec);
-}
-
-void MainWindow::stopCaptureEngine()
-{
-    m_mixer->stop();
-    for (auto rec : std::as_const(m_activeRecorders)) {
-        rec->stop();
-    }
-    m_activeRecorders.clear();
-
-    // Unlock configuration UI
-    appSelector->setEnabled(true);
-    m_sourcesDock->setLocked(false);
 }
 
 void MainWindow::onPlaybackStateChanged(QMediaPlayer::PlaybackState state)

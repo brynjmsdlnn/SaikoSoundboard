@@ -14,11 +14,8 @@
 #include <QGroupBox>
 #include <QCheckBox>
 #include <QSpinBox>
-#include "wasapirecorder.h"
-#include "audiosource.h"
-#include "replaybuffer.h"
-#include "wavwriter.h"
 #include "settingsmanager.h"
+#include "recordingmanager.h"
 
 class QLabel;
 class QPushButton;
@@ -46,10 +43,6 @@ private slots:
     void onSaveReplay();
 
 private:
-    void startCaptureEngine();
-    void stopCaptureEngine();
-    void startRecorderForPid(DWORD pid, const QString& sourceId, float volume);
-
     QLabel *statusLabel;
     QLabel *timerLabel;
     QLabel *statsLabel;
@@ -81,16 +74,12 @@ private:
     QMediaPlayer *player;
     QAudioOutput *audioOutput;
     
-    WasapiRecorder *wasapiRecorder;
-    ReplayBuffer *m_replayBuffer;
     QString lastRecordingPath;
     bool m_isRecording;
 
     QList<AudioSource> m_sources;
     class SourcesDock *m_sourcesDock;
-    class AudioMixer *m_mixer;
-    QList<WasapiRecorder*> m_activeRecorders;
-    WavWriter *m_wavWriter;
     SettingsManager *m_settings;
+    RecordingManager *m_recordingManager;
 };
 #endif // MAINWINDOW_H
