@@ -109,6 +109,8 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(centralWidget);
 
     m_recordingManager = new RecordingManager(m_settings, this);
+    m_soundboardManager = new SoundboardManager(m_settings, this);
+    m_soundboardManager->loadFromSettings();
 
     connect(m_recordingManager, &RecordingManager::errorOccurred, this, [this](const QString &msg){
         QMessageBox::critical(this, "Recording Error", msg);
@@ -183,6 +185,9 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    if (m_soundboardManager) {
+        m_soundboardManager->saveToSettings();
+    }
     m_settings->save();
 }
 

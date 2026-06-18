@@ -30,6 +30,8 @@ set(AUDIO_SOURCES
     src/audio/replaybuffer.h
     src/audio/wavwriter.cpp
     src/audio/wavwriter.h
+    src/audio/soundplayer.cpp
+    src/audio/soundplayer.h
 )
 
 set(MANAGER_SOURCES
@@ -37,11 +39,14 @@ set(MANAGER_SOURCES
     src/managers/recordingmanager.h
     src/managers/settingsmanager.cpp
     src/managers/settingsmanager.h
+    src/managers/soundboardmanager.cpp
+    src/managers/soundboardmanager.h
 )
 
 set(MODEL_SOURCES
     src/models/audiosource.h
     src/models/capturestate.h
+    src/models/soundplayerslot.h
 )
 
 set(PROJECT_SOURCES

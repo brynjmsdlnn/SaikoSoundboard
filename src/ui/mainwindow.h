@@ -16,11 +16,14 @@
 #include <QSpinBox>
 #include "managers/settingsmanager.h"
 #include "managers/recordingmanager.h"
+#include "managers/soundboardmanager.h"
 #include "models/audiosource.h"
 
 class QLabel;
 class QPushButton;
 class QComboBox;
+class QLineEdit;
+class SourcesDock;
 
 class MainWindow : public QMainWindow
 {
@@ -53,7 +56,7 @@ private:
     QPushButton *stopBtn;
     QPushButton *playBtn;
     QPushButton *refreshBtn;
-    class QLineEdit *saveDirEdit;
+    QLineEdit *saveDirEdit;
     QPushButton *openFolderBtn;
     QPushButton *changeFolderBtn;
 
@@ -79,8 +82,9 @@ private:
     QString lastRecordingPath;
 
     QList<AudioSource> m_sources;
-    class SourcesDock *m_sourcesDock;
+    SourcesDock *m_sourcesDock;
     SettingsManager *m_settings;
     RecordingManager *m_recordingManager;
+    SoundboardManager *m_soundboardManager;
 };
 #endif // MAINWINDOW_H

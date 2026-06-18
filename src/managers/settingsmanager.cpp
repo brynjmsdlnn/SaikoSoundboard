@@ -35,6 +35,12 @@ void SettingsManager::load()
         m_replayEnabled = obj["replayEnabled"].toBool(false);
         m_replayDuration = obj["replayDuration"].toInt(30);
         m_saveDirectory = obj["saveDirectory"].toString(m_saveDirectory);
+
+        m_soundBoardSlots.clear();
+        QJsonArray slotsArr = obj["soundBoardSlots"].toArray();
+        for (const QJsonValue& val : std::as_const(slotsArr)) {
+            m_soundBoardSlots.append(SoundPlayerSlot::fromJson(val.toObject()));
+        }
     }
 }
 
@@ -47,6 +53,12 @@ void SettingsManager::save()
         sourcesArr.append(src.toJson());
     }
     root["sources"] = sourcesArr;
+
+    QJsonArray slotsArr;
+    for (const SoundPlayerSlot& slot : std::as_const(m_soundBoardSlots)) {
+        slotsArr.append(slot.toJson());
+    }
+    root["soundBoardSlots"] = slotsArr;
     
     root["replayEnabled"] = m_replayEnabled;
     root["replayDuration"] = m_replayDuration;
