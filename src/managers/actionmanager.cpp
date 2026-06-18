@@ -27,7 +27,7 @@ void ActionManager::dispatch(const Action &action)
         handleSaveReplay();
         break;
     case ActionType::MakePermanent:
-        handleMakePermanent(action.parameters.value("playerId").toString());
+        handleMakePermanent(action.parameters.value("playerId").toString(), action.parameters.value("customFileName").toString());
         break;
     }
     emit actionDispatched(action);
@@ -81,7 +81,7 @@ void ActionManager::handleSaveReplay()
     }
 }
 
-void ActionManager::handleMakePermanent(const QString &playerId)
+void ActionManager::handleMakePermanent(const QString &playerId, const QString &customFileName)
 {
     if (!m_sb || !m_settings) return;
 
@@ -97,12 +97,16 @@ void ActionManager::handleMakePermanent(const QString &playerId)
     QString dirPath = m_settings->saveDirectory() + "/replays";
     QDir().mkpath(dirPath);
 
-    QString permanentPath = dirPath + "/" + fileInfo.fileName();
+    QString targetName = customFileName.isEmpty() ? fileInfo.fileName() : customFileName;
+    QString permanentPath = dirPath + "/" + targetName;
     
+    if (QFile::exists(permanentPath)) {
+        QFile::remove(permanentPath);
+    }
+
     // Copy file to permanent directory
     if (QFile::copy(slot->filePath, permanentPath)) {
-        m_sb->assignAudioFile(playerId, permanentPath);
-        m_sb->saveToSettings();
+        m_sb->promoteTempFile(playerId, permanentPath);
         qDebug() << "ActionManager: Replay made permanent at" << permanentPath;
     } else {
         qWarning() << "ActionManager: Failed to copy temporary replay to permanent path";

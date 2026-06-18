@@ -5,6 +5,9 @@
 #include <QList>
 #include <QMap>
 #include <QAudioDevice>
+#include <QMediaCaptureSession>
+#include <QAudioInput>
+#include <QAudioOutput>
 #include "models/soundplayerslot.h"
 #include "audio/soundplayer.h"
 #include "audio/waveformgenerator.h"
@@ -23,6 +26,7 @@ public:
     void removePlayer(const QString &id);
     void renamePlayer(const QString &id, const QString &newName);
     void assignAudioFile(const QString &id, const QString &filePath);
+    void promoteTempFile(const QString &id, const QString &newPath);
     void setVolume(const QString &id, float volume);
     void setEnabled(const QString &id, bool enabled);
     void setHotkeys(const QString &id, const QString &playHotkey, const QString &assignHotkey);
@@ -61,6 +65,11 @@ public:
     void loadWaveformData(const QString &playerId, const QString &filePath);
     WaveformData getWaveformData(const QString &playerId);
 
+    // Microphone Passthrough
+    bool isMicPassthroughEnabled() const;
+    void setMicPassthroughEnabled(bool enabled);
+    void setVoiceInputDevice(const QString &description);
+
 signals:
     void slotsChanged();
     void playerStateChanged(const QString &id, QMediaPlayer::PlaybackState state);
@@ -77,8 +86,14 @@ private:
     QAudioDevice m_micDevice;
     QAudioDevice m_localDevice;
 
+    QMediaCaptureSession *m_passthroughSession = nullptr;
+    QAudioInput *m_passthroughInput = nullptr;
+    QAudioOutput *m_passthroughOutput = nullptr;
+
     void updatePlayerEngine(const SoundPlayerSlot &slot);
     QAudioDevice findAudioDevice(const QString &description);
+    QAudioDevice findAudioInputDevice(const QString &description);
+    void updatePassthroughEngine();
 };
 
 #endif // SOUNDBOARDMANAGER_H

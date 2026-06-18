@@ -39,6 +39,8 @@ void SettingsManager::load()
         m_enableLocalMonitoring = obj["enableLocalMonitoring"].toBool(true);
         m_micOutputDevice = obj["micOutputDevice"].toString("");
         m_localMonitorDevice = obj["localMonitorDevice"].toString("");
+        m_enableMicPassthrough = obj["enableMicPassthrough"].toBool(false);
+        m_voiceInputDevice = obj["voiceInputDevice"].toString("");
 
         m_soundBoardSlots.clear();
         QJsonArray slotsArr = obj["soundBoardSlots"].toArray();
@@ -71,6 +73,8 @@ void SettingsManager::save()
     root["enableLocalMonitoring"] = m_enableLocalMonitoring;
     root["micOutputDevice"] = m_micOutputDevice;
     root["localMonitorDevice"] = m_localMonitorDevice;
+    root["enableMicPassthrough"] = m_enableMicPassthrough;
+    root["voiceInputDevice"] = m_voiceInputDevice;
 
     QJsonDocument doc(root);
     QFile file(getSettingsFilePath());

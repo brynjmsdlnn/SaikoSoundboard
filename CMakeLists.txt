@@ -40,6 +40,8 @@ set(UI_SOURCES
     src/ui/hotkeydialog.h
     src/ui/waveformwidget.cpp
     src/ui/waveformwidget.h
+    src/ui/routingdialog.cpp
+    src/ui/routingdialog.h
 )
 
 set(AUDIO_SOURCES

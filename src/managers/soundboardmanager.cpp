@@ -12,6 +12,16 @@ SoundboardManager::SoundboardManager(SettingsManager *settings, QObject *parent)
     // Initialize device caches
     m_micDevice = findAudioDevice(m_settings->micOutputDevice());
     m_localDevice = findAudioDevice(m_settings->localMonitorDevice());
+
+    // Create passthrough loopback session
+    m_passthroughSession = new QMediaCaptureSession(this);
+    m_passthroughInput = new QAudioInput(this);
+    m_passthroughOutput = new QAudioOutput(this);
+
+    m_passthroughSession->setAudioInput(m_passthroughInput);
+    m_passthroughSession->setAudioOutput(m_passthroughOutput);
+
+    updatePassthroughEngine();
 }
 
 SoundboardManager::~SoundboardManager()
@@ -72,6 +82,26 @@ void SoundboardManager::assignAudioFile(const QString &id, const QString &filePa
 
         // Trigger waveform loading/generation
         loadWaveformData(id, filePath);
+    }
+}
+
+void SoundboardManager::promoteTempFile(const QString &id, const QString &newPath)
+{
+    if (SoundPlayerSlot *slot = getSlot(id)) {
+        slot->filePath = newPath;
+
+        if (SoundPlayer *player = getPlayer(id)) {
+            player->load(newPath);
+            player->setRouting(slot->outputRouting);
+            player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
+            player->setDevices(m_micDevice, m_localDevice);
+            player->setClipRange(slot->startTimeMs, slot->endTimeMs);
+        }
+        emit slotsChanged();
+        saveToSettings();
+
+        // Trigger waveform loading/generation
+        loadWaveformData(id, newPath);
     }
 }
 
@@ -227,6 +257,7 @@ void SoundboardManager::setMicOutputDevice(const QString &description)
     for (auto *player : m_players) {
         player->setDevices(m_micDevice, m_localDevice);
     }
+    updatePassthroughEngine();
 }
 
 void SoundboardManager::setLocalMonitorDevice(const QString &description)
@@ -331,4 +362,57 @@ QAudioDevice SoundboardManager::findAudioDevice(const QString &description)
         }
     }
     return QMediaDevices::defaultAudioOutput();
+}
+
+bool SoundboardManager::isMicPassthroughEnabled() const
+{
+    return m_settings->enableMicPassthrough();
+}
+
+void SoundboardManager::setMicPassthroughEnabled(bool enabled)
+{
+    m_settings->setEnableMicPassthrough(enabled);
+    m_settings->save();
+    updatePassthroughEngine();
+}
+
+void SoundboardManager::setVoiceInputDevice(const QString &description)
+{
+    m_settings->setVoiceInputDevice(description);
+    m_settings->save();
+    updatePassthroughEngine();
+}
+
+QAudioDevice SoundboardManager::findAudioInputDevice(const QString &description)
+{
+    if (description.isEmpty()) {
+        return QMediaDevices::defaultAudioInput();
+    }
+    const auto devices = QMediaDevices::audioInputs();
+    for (const auto &device : devices) {
+        if (device.description() == description) {
+            return device;
+        }
+    }
+    return QMediaDevices::defaultAudioInput();
+}
+
+void SoundboardManager::updatePassthroughEngine()
+{
+    bool enabled = m_settings->enableMicPassthrough();
+    QString voiceDevName = m_settings->voiceInputDevice();
+
+    if (enabled) {
+        QAudioDevice inputDev = findAudioInputDevice(voiceDevName);
+        QAudioDevice outputDev = m_micDevice;
+
+        m_passthroughInput->setDevice(inputDev);
+        m_passthroughOutput->setDevice(outputDev);
+
+        m_passthroughInput->setMuted(false);
+        m_passthroughOutput->setVolume(1.0);
+    } else {
+        m_passthroughInput->setMuted(true);
+        m_passthroughOutput->setVolume(0.0);
+    }
 }

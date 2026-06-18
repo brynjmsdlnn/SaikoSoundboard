@@ -1,5 +1,6 @@
 #include "soundboarddock.h"
 #include "hotkeydialog.h"
+#include "routingdialog.h"
 #include "managers/actionmanager.h"
 #include "ui/waveformwidget.h"
 #include <QVBoxLayout>
@@ -21,6 +22,7 @@
 #include <QAudioDevice>
 #include <QDoubleSpinBox>
 #include <QFormLayout>
+#include <QMessageBox>
 
 SoundboardDock::SoundboardDock(SoundboardManager *manager, ActionManager *actionManager, QWidget *parent)
     : QDockWidget("Soundboard", parent)
@@ -30,57 +32,27 @@ SoundboardDock::SoundboardDock(SoundboardManager *manager, ActionManager *action
     auto *mainWidget = new QWidget(this);
     auto *mainLayout = new QVBoxLayout(mainWidget);
 
-    // Top Bar containing Add button and Routing controls
+    // Top Bar containing Add button and Settings button
     auto *topBarLayout = new QHBoxLayout();
 
-    auto *addBtn = new QPushButton("Add New Player", this);
-    addBtn->setFixedHeight(36);
-    topBarLayout->addWidget(addBtn);
-
-    // Global Routing Control Group
-    auto *routingGroup = new QGroupBox("Soundboard Routing", this);
-    auto *routingLayout = new QHBoxLayout(routingGroup);
-    routingLayout->setContentsMargins(8, 4, 8, 4);
-    routingLayout->setSpacing(10);
-
-    auto *micCb = new QCheckBox("Mic Output", this);
-    micCb->setChecked(m_manager->isMicOutputEnabled());
+    auto *addBtn = new QPushButton("➕", this);
+    addBtn->setFixedSize(36, 36);
+    addBtn->setToolTip("Add New Player");
     
-    auto *localCb = new QCheckBox("Local Monitoring", this);
-    localCb->setChecked(m_manager->isLocalMonitoringEnabled());
+    auto *routingBtn = new QPushButton("⚙️", this);
+    routingBtn->setFixedSize(36, 36);
+    routingBtn->setToolTip("Audio Routing & Settings");
 
-    routingLayout->addWidget(micCb);
-    routingLayout->addWidget(localCb);
+    // Make icon fonts clean and clear
+    QFont iconFont = addBtn->font();
+    iconFont.setPointSize(12);
+    addBtn->setFont(iconFont);
+    routingBtn->setFont(iconFont);
 
-    // Device selection
-    auto *micCombo = new QComboBox(this);
-    auto *localCombo = new QComboBox(this);
-    micCombo->setToolTip("Device for Mic Output Path");
-    localCombo->setToolTip("Device for Local Monitoring Path");
-
-    const auto outputs = QMediaDevices::audioOutputs();
-    micCombo->addItem("Default Mic Device", "");
-    localCombo->addItem("Default Local Device", "");
-    for (const auto &device : outputs) {
-        micCombo->addItem(device.description(), device.description());
-        localCombo->addItem(device.description(), device.description());
-    }
-
-    // Set selected devices
-    QString savedMic = m_manager->settings()->micOutputDevice();
-    QString savedLocal = m_manager->settings()->localMonitorDevice();
-    int micIdx = micCombo->findData(savedMic);
-    if (micIdx >= 0) micCombo->setCurrentIndex(micIdx);
-    int localIdx = localCombo->findData(savedLocal);
-    if (localIdx >= 0) localCombo->setCurrentIndex(localIdx);
-
-    routingLayout->addWidget(new QLabel("Mic Dev:", this));
-    routingLayout->addWidget(micCombo);
-    routingLayout->addWidget(new QLabel("Local Dev:", this));
-    routingLayout->addWidget(localCombo);
-
-    topBarLayout->addWidget(routingGroup);
     topBarLayout->addStretch();
+    topBarLayout->addWidget(addBtn);
+    topBarLayout->addWidget(routingBtn);
+
     mainLayout->addLayout(topBarLayout);
 
     m_scrollArea = new QScrollArea(this);
@@ -92,26 +64,17 @@ SoundboardDock::SoundboardDock(SoundboardManager *manager, ActionManager *action
     mainLayout->addWidget(m_scrollArea);
 
     setWidget(mainWidget);
-    setMinimumHeight(390); // Adjusted height for embedded waveforms & controls
+    setMinimumHeight(500); // Slightly adjusted height
     setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
 
     connect(addBtn, &QPushButton::clicked, this, &SoundboardDock::onAddPlayer);
+    connect(routingBtn, &QPushButton::clicked, this, [this]() {
+        RoutingDialog dlg(m_manager, this);
+        dlg.exec();
+    });
     connect(m_manager, &SoundboardManager::slotsChanged, this, &SoundboardDock::refresh);
     connect(m_manager, &SoundboardManager::waveformGenerated, this, &SoundboardDock::onWaveformGenerated);
     connect(m_manager, &SoundboardManager::playerPositionChanged, this, &SoundboardDock::onPlayerPositionChanged);
-
-    connect(micCb, &QCheckBox::toggled, this, [this](bool checked) {
-        m_manager->setMicOutputEnabled(checked);
-    });
-    connect(localCb, &QCheckBox::toggled, this, [this](bool checked) {
-        m_manager->setLocalMonitoringEnabled(checked);
-    });
-    connect(micCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this, micCombo](int index) {
-        m_manager->setMicOutputDevice(micCombo->itemData(index).toString());
-    });
-    connect(localCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this, localCombo](int index) {
-        m_manager->setLocalMonitorDevice(localCombo->itemData(index).toString());
-    });
 
     refresh();
 }
@@ -132,8 +95,13 @@ void SoundboardDock::refresh()
         auto *topLayout = new QHBoxLayout();
         auto *nameLabel = new QLabel(QString("<b>%1</b>").arg(slot.name), card);
         nameLabel->setWordWrap(true);
-        auto *renameBtn = new QPushButton("...", card);
-        renameBtn->setFixedWidth(25);
+        auto *renameBtn = new QPushButton("⚙️", card);
+        renameBtn->setFixedSize(25, 25);
+        renameBtn->setToolTip("Options");
+        renameBtn->setStyleSheet("QPushButton { padding: 0px; text-align: center; }");
+        QFont menuFont = renameBtn->font();
+        menuFont.setPointSize(10);
+        renameBtn->setFont(menuFont);
         topLayout->addWidget(nameLabel, 1);
         topLayout->addWidget(renameBtn);
         cardLayout->addLayout(topLayout);
@@ -144,24 +112,29 @@ void SoundboardDock::refresh()
         auto *hotkeyAction = menu->addAction("Hotkey Bindings");
         
         bool isTemp = !slot.filePath.isEmpty() && slot.filePath.startsWith(QDir::tempPath());
-        QAction *makePermanentAction = nullptr;
-        if (isTemp) {
-            makePermanentAction = menu->addAction("Make Permanent");
-            connect(makePermanentAction, &QAction::triggered, this, [this, id = slot.id]() { onMakePermanent(id); });
-        }
 
         connect(renameAction, &QAction::triggered, this, [this, id = slot.id]() { onRenamePlayer(id); });
         connect(hotkeyAction, &QAction::triggered, this, [this, id = slot.id]() { onHotkeySetup(id); });
-        renameBtn->setMenu(menu);
-        renameBtn->setStyleSheet("QPushButton::menu-indicator { image: none; }");
+        connect(renameBtn, &QPushButton::clicked, this, [renameBtn, menu]() {
+            menu->exec(renameBtn->mapToGlobal(QPoint(0, renameBtn->height())));
+        });
 
         // File Path & Temp Badge
         QString fileName = slot.filePath.isEmpty() ? "No file" : QFileInfo(slot.filePath).fileName();
         if (isTemp) {
             fileName = "[TEMP] " + fileName;
         }
-        auto *fileLabel = new QLabel(fileName, card);
-        fileLabel->setStyleSheet(isTemp ? "color: #ff9800; font-size: 10px; font-weight: bold;" : "color: gray; font-size: 10px;");
+        auto *fileLabel = new ClickableLabel(fileName, card);
+        if (isTemp) {
+            fileLabel->setStyleSheet("color: #ff9800; font-size: 10px; font-weight: bold; text-decoration: underline;");
+            fileLabel->setCursor(Qt::PointingHandCursor);
+            fileLabel->setToolTip("Temporary recording. Click to save permanently.");
+            connect(fileLabel, &ClickableLabel::clicked, this, [this, id = slot.id]() { onMakePermanent(id); });
+        } else {
+            fileLabel->setStyleSheet("color: gray; font-size: 10px;");
+            fileLabel->setCursor(Qt::ArrowCursor);
+            fileLabel->setToolTip("");
+        }
         fileLabel->setWordWrap(true);
         cardLayout->addWidget(fileLabel);
 
@@ -248,9 +221,9 @@ void SoundboardDock::refresh()
         routingLabel->setStyleSheet("font-size: 10px;");
         auto *routingCombo = new QComboBox(card);
         routingCombo->setStyleSheet("font-size: 10px; height: 18px;");
-        routingCombo->addItem("Both", static_cast<int>(OutputRouting::Both));
-        routingCombo->addItem("Mic Only", static_cast<int>(OutputRouting::MicOnly));
-        routingCombo->addItem("Local Only", static_cast<int>(OutputRouting::LocalOnly));
+        routingCombo->addItem("Broadcast & Monitor", static_cast<int>(OutputRouting::Both));
+        routingCombo->addItem("Broadcast Only", static_cast<int>(OutputRouting::MicOnly));
+        routingCombo->addItem("Monitor Only", static_cast<int>(OutputRouting::LocalOnly));
 
         int rIndex = routingCombo->findData(static_cast<int>(slot.outputRouting));
         if (rIndex >= 0) {
@@ -263,8 +236,13 @@ void SoundboardDock::refresh()
         // Config buttons at bottom
         auto *cfgLayout = new QHBoxLayout();
         auto *assignBtn = new QPushButton("Set", card);
-        auto *removeBtn = new QPushButton("X", card);
-        removeBtn->setFixedWidth(25);
+        auto *removeBtn = new QPushButton("🗑️", card);
+        removeBtn->setFixedSize(25, 25);
+        removeBtn->setToolTip("Delete Player");
+        removeBtn->setStyleSheet("QPushButton { color: #FF4D4D; border: 1px solid #FF4D4D; border-radius: 4px; background-color: rgba(255, 77, 77, 0.1); } QPushButton:hover { background-color: rgba(255, 77, 77, 0.2); }");
+        QFont rmFont = removeBtn->font();
+        rmFont.setPointSize(10);
+        removeBtn->setFont(rmFont);
         cfgLayout->addWidget(assignBtn, 1);
         cfgLayout->addWidget(removeBtn);
         cardLayout->addLayout(cfgLayout);
@@ -375,6 +353,34 @@ void SoundboardDock::onAddPlayer()
 
 void SoundboardDock::onRemovePlayer(const QString &id)
 {
+    SoundPlayerSlot *slot = m_manager->getSlot(id);
+    if (!slot) return;
+
+    bool hasFile = !slot->filePath.isEmpty();
+    bool hasHotkey = !slot->playHotkey.isEmpty() || !slot->assignHotkey.isEmpty();
+
+    if (hasFile || hasHotkey) {
+        QString message = "Are you sure you want to delete this player?";
+        if (hasFile && hasHotkey) {
+            message += "\n\nIt has an assigned audio file and hotkey bindings.";
+        } else if (hasFile) {
+            message += "\n\nIt has an assigned audio file.";
+        } else if (hasHotkey) {
+            message += "\n\nIt has hotkey bindings.";
+        }
+
+        QMessageBox::StandardButton reply = QMessageBox::question(
+            this,
+            "Confirm Delete",
+            message,
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::No
+        );
+        if (reply != QMessageBox::Yes) {
+            return;
+        }
+    }
+
     m_manager->removePlayer(id);
 }
 
@@ -420,8 +426,33 @@ void SoundboardDock::onRenamePlayer(const QString &id)
 
 void SoundboardDock::onMakePermanent(const QString &id)
 {
+    SoundPlayerSlot *slot = m_manager->getSlot(id);
+    if (!slot || slot->filePath.isEmpty()) return;
+
+    QFileInfo fileInfo(slot->filePath);
+    QString originalName = fileInfo.fileName();
+
+    bool ok;
+    QString newName = QInputDialog::getText(
+        this,
+        "Make File Permanent",
+        "Enter permanent file name:",
+        QLineEdit::Normal,
+        originalName,
+        &ok
+    );
+    if (!ok || newName.trimmed().isEmpty()) {
+        return;
+    }
+
+    // Ensure it ends with the original extension
+    QString suffix = fileInfo.suffix();
+    if (!newName.endsWith("." + suffix, Qt::CaseInsensitive)) {
+        newName += "." + suffix;
+    }
+
     if (m_actionManager) {
-        m_actionManager->dispatch(Action::createMakePermanent(id));
+        m_actionManager->dispatch(Action::createMakePermanent(id, newName));
     }
 }
 

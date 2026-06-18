@@ -33,8 +33,8 @@ struct Action {
     static Action createSaveReplay() {
         return { ActionType::SaveReplay, {} };
     }
-    static Action createMakePermanent(const QString &playerId) {
-        return { ActionType::MakePermanent, {{"playerId", playerId}} };
+    static Action createMakePermanent(const QString &playerId, const QString &customFileName = "") {
+        return { ActionType::MakePermanent, {{"playerId", playerId}, {"customFileName", customFileName}} };
     }
 };
 
@@ -60,7 +60,7 @@ private:
     void handleStopPlayer(const QString &playerId);
     void handleAssignReplayToPlayer(const QString &playerId, bool preserveExisting);
     void handleSaveReplay();
-    void handleMakePermanent(const QString &playerId);
+    void handleMakePermanent(const QString &playerId, const QString &customFileName);
 };
 
 #endif // ACTIONMANAGER_H

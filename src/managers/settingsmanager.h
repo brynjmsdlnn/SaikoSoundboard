@@ -32,6 +32,8 @@ public:
     bool enableLocalMonitoring() const { return m_enableLocalMonitoring; }
     QString micOutputDevice() const { return m_micOutputDevice; }
     QString localMonitorDevice() const { return m_localMonitorDevice; }
+    bool enableMicPassthrough() const { return m_enableMicPassthrough; }
+    QString voiceInputDevice() const { return m_voiceInputDevice; }
 
     // Setters
     void setSources(const QList<AudioSource> &sources) { m_sources = sources; }
@@ -43,6 +45,8 @@ public:
     void setEnableLocalMonitoring(bool enabled) { m_enableLocalMonitoring = enabled; }
     void setMicOutputDevice(const QString &device) { m_micOutputDevice = device; }
     void setLocalMonitorDevice(const QString &device) { m_localMonitorDevice = device; }
+    void setEnableMicPassthrough(bool enabled) { m_enableMicPassthrough = enabled; }
+    void setVoiceInputDevice(const QString &device) { m_voiceInputDevice = device; }
 
 private:
     QString getSettingsFilePath() const;
@@ -56,6 +60,8 @@ private:
     bool m_enableLocalMonitoring = true;
     QString m_micOutputDevice;
     QString m_localMonitorDevice;
+    bool m_enableMicPassthrough = false;
+    QString m_voiceInputDevice;
 };
 
 #endif // SETTINGSMANAGER_H
