@@ -23,3 +23,4 @@ macro(add_saiko_integration_test NAME SOURCE)
 endmacro()
 
 add_saiko_integration_test(ActionManagerIntegrationTest integration/actionmanager_test.cpp)
+add_saiko_integration_test(AudioRoutingTest integration/audiorouting_test.cpp)

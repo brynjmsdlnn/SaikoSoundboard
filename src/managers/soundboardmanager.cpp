@@ -1,10 +1,14 @@
 #include "soundboardmanager.h"
 #include <QDebug>
+#include <QMediaDevices>
 
 SoundboardManager::SoundboardManager(SettingsManager *settings, QObject *parent)
     : QObject(parent)
     , m_settings(settings)
 {
+    // Initialize device caches
+    m_micDevice = findAudioDevice(m_settings->micOutputDevice());
+    m_localDevice = findAudioDevice(m_settings->localMonitorDevice());
 }
 
 SoundboardManager::~SoundboardManager()
@@ -53,6 +57,9 @@ void SoundboardManager::assignAudioFile(const QString &id, const QString &filePa
         slot->filePath = filePath;
         if (SoundPlayer *player = getPlayer(id)) {
             player->load(filePath);
+            player->setRouting(slot->outputRouting);
+            player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
+            player->setDevices(m_micDevice, m_localDevice);
         }
         emit slotsChanged();
     }
@@ -90,6 +97,9 @@ void SoundboardManager::playPlayer(const QString &id)
     if (SoundPlayerSlot *slot = getSlot(id)) {
         if (!slot->enabled) return;
         if (SoundPlayer *player = getPlayer(id)) {
+            player->setRouting(slot->outputRouting);
+            player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
+            player->setDevices(m_micDevice, m_localDevice);
             player->play();
         }
     }
@@ -118,6 +128,10 @@ void SoundboardManager::loadFromSettings()
 {
     m_slots = m_settings->soundBoardSlots();
     
+    // Refresh device caches
+    m_micDevice = findAudioDevice(m_settings->micOutputDevice());
+    m_localDevice = findAudioDevice(m_settings->localMonitorDevice());
+
     // Clean up old engines
     qDeleteAll(m_players);
     m_players.clear();
@@ -149,11 +163,74 @@ SoundPlayer* SoundboardManager::getPlayer(const QString &id)
     return m_players.value(id, nullptr);
 }
 
+bool SoundboardManager::isMicOutputEnabled() const
+{
+    return m_settings->enableMicOutput();
+}
+
+bool SoundboardManager::isLocalMonitoringEnabled() const
+{
+    return m_settings->enableLocalMonitoring();
+}
+
+void SoundboardManager::setMicOutputEnabled(bool enabled)
+{
+    m_settings->setEnableMicOutput(enabled);
+    m_settings->save();
+    for (auto *player : m_players) {
+        player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
+    }
+}
+
+void SoundboardManager::setLocalMonitoringEnabled(bool enabled)
+{
+    m_settings->setEnableLocalMonitoring(enabled);
+    m_settings->save();
+    for (auto *player : m_players) {
+        player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
+    }
+}
+
+void SoundboardManager::setMicOutputDevice(const QString &description)
+{
+    m_settings->setMicOutputDevice(description);
+    m_settings->save();
+    m_micDevice = findAudioDevice(description);
+    for (auto *player : m_players) {
+        player->setDevices(m_micDevice, m_localDevice);
+    }
+}
+
+void SoundboardManager::setLocalMonitorDevice(const QString &description)
+{
+    m_settings->setLocalMonitorDevice(description);
+    m_settings->save();
+    m_localDevice = findAudioDevice(description);
+    for (auto *player : m_players) {
+        player->setDevices(m_micDevice, m_localDevice);
+    }
+}
+
+void SoundboardManager::setPlayerRouting(const QString &id, OutputRouting routing)
+{
+    if (SoundPlayerSlot *slot = getSlot(id)) {
+        slot->outputRouting = routing;
+        if (SoundPlayer *player = getPlayer(id)) {
+            player->setRouting(routing);
+        }
+        saveToSettings();
+    }
+}
+
 void SoundboardManager::updatePlayerEngine(const SoundPlayerSlot &slot)
 {
     if (!m_players.contains(slot.id)) {
         SoundPlayer *player = new SoundPlayer(this);
         player->setVolume(slot.volume);
+        player->setRouting(slot.outputRouting);
+        player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
+        player->setDevices(m_micDevice, m_localDevice);
+
         if (!slot.filePath.isEmpty()) {
             player->load(slot.filePath);
         }
@@ -164,4 +241,18 @@ void SoundboardManager::updatePlayerEngine(const SoundPlayerSlot &slot)
         
         m_players.insert(slot.id, player);
     }
+}
+
+QAudioDevice SoundboardManager::findAudioDevice(const QString &description)
+{
+    if (description.isEmpty()) {
+        return QMediaDevices::defaultAudioOutput();
+    }
+    const auto devices = QMediaDevices::audioOutputs();
+    for (const auto &device : devices) {
+        if (device.description() == description) {
+            return device;
+        }
+    }
+    return QMediaDevices::defaultAudioOutput();
 }

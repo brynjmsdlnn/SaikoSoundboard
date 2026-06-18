@@ -35,6 +35,10 @@ void SettingsManager::load()
         m_replayEnabled = obj["replayEnabled"].toBool(false);
         m_replayDuration = obj["replayDuration"].toInt(30);
         m_saveDirectory = obj["saveDirectory"].toString(m_saveDirectory);
+        m_enableMicOutput = obj["enableMicOutput"].toBool(true);
+        m_enableLocalMonitoring = obj["enableLocalMonitoring"].toBool(true);
+        m_micOutputDevice = obj["micOutputDevice"].toString("");
+        m_localMonitorDevice = obj["localMonitorDevice"].toString("");
 
         m_soundBoardSlots.clear();
         QJsonArray slotsArr = obj["soundBoardSlots"].toArray();
@@ -63,6 +67,10 @@ void SettingsManager::save()
     root["replayEnabled"] = m_replayEnabled;
     root["replayDuration"] = m_replayDuration;
     root["saveDirectory"] = m_saveDirectory;
+    root["enableMicOutput"] = m_enableMicOutput;
+    root["enableLocalMonitoring"] = m_enableLocalMonitoring;
+    root["micOutputDevice"] = m_micOutputDevice;
+    root["localMonitorDevice"] = m_localMonitorDevice;
 
     QJsonDocument doc(root);
     QFile file(getSettingsFilePath());

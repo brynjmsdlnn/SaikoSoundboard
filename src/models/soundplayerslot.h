@@ -5,6 +5,27 @@
 #include <QJsonObject>
 #include <QUuid>
 
+enum class OutputRouting {
+    Both = 0,
+    MicOnly = 1,
+    LocalOnly = 2
+};
+
+inline QString outputRoutingToString(OutputRouting routing) {
+    switch (routing) {
+        case OutputRouting::MicOnly: return "MicOnly";
+        case OutputRouting::LocalOnly: return "LocalOnly";
+        case OutputRouting::Both:
+        default: return "Both";
+    }
+}
+
+inline OutputRouting stringToOutputRouting(const QString& str) {
+    if (str == "MicOnly") return OutputRouting::MicOnly;
+    if (str == "LocalOnly") return OutputRouting::LocalOnly;
+    return OutputRouting::Both;
+}
+
 struct SoundPlayerSlot {
     QString id;
     QString name;
@@ -13,6 +34,7 @@ struct SoundPlayerSlot {
     QString assignHotkey;
     float volume = 1.0f;
     bool enabled = true;
+    OutputRouting outputRouting = OutputRouting::Both;
 
     SoundPlayerSlot() {
         id = QUuid::createUuid().toString();
@@ -27,6 +49,7 @@ struct SoundPlayerSlot {
         obj["assignHotkey"] = assignHotkey;
         obj["volume"] = static_cast<double>(volume);
         obj["enabled"] = enabled;
+        obj["outputRouting"] = outputRoutingToString(outputRouting);
         return obj;
     }
 
@@ -39,6 +62,7 @@ struct SoundPlayerSlot {
         slot.assignHotkey = obj["assignHotkey"].toString();
         slot.volume = static_cast<float>(obj["volume"].toDouble(1.0));
         slot.enabled = obj["enabled"].toBool(true);
+        slot.outputRouting = stringToOutputRouting(obj["outputRouting"].toString("Both"));
         return slot;
     }
 };

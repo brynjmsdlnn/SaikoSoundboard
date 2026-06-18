@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QList>
 #include <QMap>
+#include <QAudioDevice>
 #include "models/soundplayerslot.h"
 #include "audio/soundplayer.h"
 #include "domain/PlayerAllocator.h"
@@ -41,6 +42,17 @@ public:
     QList<SoundPlayerSlot> getSlots() const { return m_slots; }
     SoundPlayerSlot* getSlot(const QString &id);
     SoundPlayer* getPlayer(const QString &id);
+    SettingsManager* settings() const { return m_settings; }
+
+    bool isMicOutputEnabled() const;
+    bool isLocalMonitoringEnabled() const;
+
+    // Mutators for Routing
+    void setMicOutputEnabled(bool enabled);
+    void setLocalMonitoringEnabled(bool enabled);
+    void setMicOutputDevice(const QString &description);
+    void setLocalMonitorDevice(const QString &description);
+    void setPlayerRouting(const QString &id, OutputRouting routing);
 
 signals:
     void slotsChanged();
@@ -52,7 +64,11 @@ private:
     QList<SoundPlayerSlot> m_slots;
     QMap<QString, SoundPlayer*> m_players;
 
+    QAudioDevice m_micDevice;
+    QAudioDevice m_localDevice;
+
     void updatePlayerEngine(const SoundPlayerSlot &slot);
+    QAudioDevice findAudioDevice(const QString &description);
 };
 
 #endif // SOUNDBOARDMANAGER_H
