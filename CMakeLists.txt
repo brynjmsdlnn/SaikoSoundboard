@@ -37,6 +37,8 @@ set(AUDIO_SOURCES
 )
 
 set(MANAGER_SOURCES
+    src/managers/actionmanager.cpp
+    src/managers/actionmanager.h
     src/managers/recordingmanager.cpp
     src/managers/recordingmanager.h
     src/managers/settingsmanager.cpp
@@ -93,6 +95,16 @@ target_link_libraries(SaikoSoundboard PRIVATE
 if(WIN32)
     target_link_libraries(SaikoSoundboard PRIVATE ole32 mmdevapi)
 endif()
+
+# --- Test Definitions ---
+
+add_executable(ActionManagerTest src/managers/actionmanager_test.cpp src/managers/actionmanager.cpp src/managers/settingsmanager.cpp src/managers/soundboardmanager.cpp src/managers/recordingmanager.cpp src/audio/soundplayer.cpp src/audio/wasapirecorder.cpp src/audio/audiomixer.cpp src/audio/replaybuffer.cpp src/audio/wavwriter.cpp)
+target_include_directories(ActionManagerTest PRIVATE src)
+target_link_libraries(ActionManagerTest PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Multimedia Qt${QT_VERSION_MAJOR}::Concurrent)
+if(WIN32)
+    target_link_libraries(ActionManagerTest PRIVATE ole32 mmdevapi)
+endif()
+
 
 set_target_properties(SaikoSoundboard PROPERTIES
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
