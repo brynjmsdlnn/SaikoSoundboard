@@ -6,6 +6,7 @@
 #include <QMap>
 #include "models/soundplayerslot.h"
 #include "audio/soundplayer.h"
+#include "domain/PlayerAllocator.h"
 #include "managers/settingsmanager.h"
 
 class SoundboardManager : public QObject
@@ -47,6 +48,7 @@ signals:
 
 private:
     SettingsManager *m_settings;
+    Saiko::Domain::PlayerAllocator m_allocator;
     QList<SoundPlayerSlot> m_slots;
     QMap<QString, SoundPlayer*> m_players;
 

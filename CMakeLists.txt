@@ -16,6 +16,21 @@ enable_testing()
 
 # --- Source Groups ---
 
+set(CORE_DOMAIN_SOURCES
+    src/core/domain/RingBuffer.h
+    src/core/domain/KeyBindingStore.h
+    src/core/domain/PlayerAllocator.h
+    src/core/domain/IHotkeyBackend.h
+    src/core/domain/IAudioOutput.h
+)
+
+set(CORE_ADAPTERS_SOURCES
+    src/core/adapters/WindowsHotkeyBackend.h
+    src/core/adapters/WindowsHotkeyBackend.cpp
+    src/core/adapters/QtAudioOutput.h
+    src/core/adapters/QtAudioOutput.cpp
+)
+
 set(UI_SOURCES
     src/ui/mainwindow.cpp
     src/ui/mainwindow.h
@@ -62,12 +77,16 @@ set(MODEL_SOURCES
 # --- Core Library ---
 
 add_library(SaikoSoundboardCore STATIC
+    ${CORE_DOMAIN_SOURCES}
+    ${CORE_ADAPTERS_SOURCES}
+    ${UI_SOURCES}
     ${AUDIO_SOURCES}
     ${MANAGER_SOURCES}
     ${MODEL_SOURCES}
 )
 
 target_include_directories(SaikoSoundboardCore PUBLIC src)
+target_include_directories(SaikoSoundboardCore PUBLIC src/core)
 target_link_libraries(SaikoSoundboardCore PUBLIC 
     Qt${QT_VERSION_MAJOR}::Widgets 
     Qt${QT_VERSION_MAJOR}::Multimedia 
@@ -82,7 +101,6 @@ endif()
 
 set(APP_SOURCES
     src/main.cpp
-    ${UI_SOURCES}
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

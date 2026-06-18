@@ -15,6 +15,7 @@ SoundboardManager::~SoundboardManager()
 QString SoundboardManager::addPlayer(const QString &name)
 {
     SoundPlayerSlot slot;
+    slot.id = QString::fromStdString(m_allocator.allocateId()) + "_" + slot.id;
     slot.name = name;
     m_slots.append(slot);
     

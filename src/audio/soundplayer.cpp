@@ -1,4 +1,5 @@
-#include "soundplayer.h"
+#include "audio/soundplayer.h"
+#include <QUrl>
 
 SoundPlayer::SoundPlayer(QObject *parent)
     : QObject(parent)
@@ -16,6 +17,10 @@ SoundPlayer::SoundPlayer(QObject *parent)
 SoundPlayer::~SoundPlayer()
 {
     m_player->stop();
+}
+
+void SoundPlayer::load(const std::string& filePath) {
+    load(QString::fromStdString(filePath));
 }
 
 void SoundPlayer::load(const QString &filePath)
@@ -39,11 +44,19 @@ void SoundPlayer::stop()
 
 void SoundPlayer::setVolume(float volume)
 {
-    // QAudioOutput::setVolume takes 0.0 to 1.0
     m_audioOutput->setVolume(volume);
 }
 
-QMediaPlayer::PlaybackState SoundPlayer::state() const
+std::string SoundPlayer::state() const {
+    switch (m_player->playbackState()) {
+        case QMediaPlayer::PlayingState: return "Playing";
+        case QMediaPlayer::PausedState:  return "Paused";
+        case QMediaPlayer::StoppedState: return "Stopped";
+        default: return "Unknown";
+    }
+}
+
+QMediaPlayer::PlaybackState SoundPlayer::playbackState() const
 {
     return m_player->playbackState();
 }

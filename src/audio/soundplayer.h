@@ -1,24 +1,27 @@
 #ifndef SOUNDPLAYER_H
 #define SOUNDPLAYER_H
 
-#include <QObject>
+#include "domain/IAudioOutput.h"
 #include <QMediaPlayer>
 #include <QAudioOutput>
-#include <QUrl>
 
-class SoundPlayer : public QObject
+class SoundPlayer : public QObject, public Saiko::Domain::IAudioOutput
 {
     Q_OBJECT
 public:
     explicit SoundPlayer(QObject *parent = nullptr);
     ~SoundPlayer();
 
-    void load(const QString &filePath);
-    void play();
-    void stop();
-    void setVolume(float volume); // 0.0 to 1.0
+    // IAudioOutput Implementation
+    void load(const std::string& filePath) override;
+    void play() override;
+    void stop() override;
+    void setVolume(float volume) override;
+    std::string state() const override;
 
-    QMediaPlayer::PlaybackState state() const;
+    // Original Qt-friendly methods (optional but good for compatibility)
+    void load(const QString &filePath);
+    QMediaPlayer::PlaybackState playbackState() const;
     QString filePath() const { return m_filePath; }
 
 signals:

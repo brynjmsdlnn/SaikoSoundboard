@@ -2,9 +2,7 @@
 #define REPLAYBUFFER_H
 
 #include <QObject>
-#include <QByteArray>
-#include <QMutex>
-#include <QMutexLocker>
+#include "domain/RingBuffer.h"
 #include "wasapirecorder.h" // For WAVEFORMATEXTENSIBLE
 
 class ReplayBuffer : public QObject
@@ -22,10 +20,9 @@ public:
 private:
     void updateMaxBytes();
 
-    QByteArray m_buffer;
+    Saiko::Domain::RingBuffer m_ringBuffer;
     mutable QMutex m_mutex;
     int m_durationSeconds;
-    qint64 m_maxBytes;
     WAVEFORMATEXTENSIBLE m_format;
 };
 

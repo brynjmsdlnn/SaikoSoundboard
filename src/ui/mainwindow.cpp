@@ -1,6 +1,7 @@
 #include "ui/mainwindow.h"
 #include "ui/sourcesdock.h"
 #include "ui/soundboarddock.h"
+#include "core/adapters/WindowsHotkeyBackend.h"
 #include <QLabel>
 #include <QPushButton>
 #include <QComboBox>
@@ -114,7 +115,9 @@ MainWindow::MainWindow(QWidget *parent)
     m_soundboardManager->loadFromSettings();
 
     m_actionManager = new ActionManager(m_soundboardManager, m_recordingManager, m_settings, this);
-    m_hotkeyManager = new HotkeyManager(m_actionManager, this);
+    auto *backend = new Saiko::Adapters::WindowsHotkeyBackend();
+    m_hotkeyBackend = backend;
+    m_hotkeyManager = new HotkeyManager(m_actionManager, backend, this);
 
     connect(m_soundboardManager, &SoundboardManager::slotsChanged, this, &MainWindow::refreshHotkeyMappings);
     
@@ -202,6 +205,7 @@ MainWindow::~MainWindow()
         m_soundboardManager->saveToSettings();
     }
     m_settings->save();
+    delete static_cast<Saiko::Adapters::WindowsHotkeyBackend*>(m_hotkeyBackend);
 }
 
 void MainWindow::onCaptureModeChanged(int index)

@@ -3,6 +3,7 @@
 #include "managers/soundboardmanager.h"
 #include "managers/recordingmanager.h"
 #include "managers/settingsmanager.h"
+#include "core/adapters/WindowsHotkeyBackend.h"
 #include <QCoreApplication>
 #include <QDebug>
 #include <QTimer>
@@ -14,7 +15,8 @@ void verifyHotkeyManager() {
     SoundboardManager sb(&settings);
     RecordingManager rec(&settings);
     ActionManager actionManager(&sb, &rec, &settings);
-    HotkeyManager hotkeyManager(&actionManager);
+    Saiko::Adapters::WindowsHotkeyBackend backend;
+    HotkeyManager hotkeyManager(&actionManager, &backend);
 
     bool activated = false;
     QString activatedKey;
