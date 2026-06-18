@@ -1,8 +1,8 @@
 #include "soundboarddock.h"
-#include "hotkeydialog.h"
 #include "routingdialog.h"
 #include "managers/actionmanager.h"
 #include "ui/waveformwidget.h"
+#include "ui/qmlbackend.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -24,10 +24,11 @@
 #include <QFormLayout>
 #include <QMessageBox>
 
-SoundboardDock::SoundboardDock(SoundboardManager *manager, ActionManager *actionManager, QWidget *parent)
+SoundboardDock::SoundboardDock(SoundboardManager *manager, ActionManager *actionManager, QmlBackend *qmlBackend, QWidget *parent)
     : QDockWidget("Soundboard", parent)
     , m_manager(manager)
     , m_actionManager(actionManager)
+    , m_qmlBackend(qmlBackend)
 {
     auto *mainWidget = new QWidget(this);
     auto *mainLayout = new QVBoxLayout(mainWidget);
@@ -337,13 +338,59 @@ void SoundboardDock::onAssignReplay(const QString &id, bool preserveExisting)
 
 void SoundboardDock::onHotkeySetup(const QString &id)
 {
+    if (m_hotkeyDialogWindow) return;
+
     SoundPlayerSlot *slot = m_manager->getSlot(id);
     if (!slot) return;
 
-    HotkeyDialog dlg(slot->playHotkey, slot->assignHotkey, this);
-    if (dlg.exec() == QDialog::Accepted) {
-        m_manager->setHotkeys(id, dlg.playHotkey(), dlg.assignHotkey());
+    QQmlEngine *engine = m_qmlBackend->engine();
+    QQmlComponent *component = m_qmlBackend->loadComponent("qrc:/qml/HotkeyDialog.qml", this);
+    if (component->isError()) {
+        qWarning() << "HotkeyDialog.qml errors:" << component->errors();
+        return;
     }
+
+    QObject *dialogObj = component->beginCreate(engine->rootContext());
+    if (component->isError()) {
+        qWarning() << "HotkeyDialog.qml creation errors:" << component->errors();
+        return;
+    }
+
+    dialogObj->setProperty("playerId", id);
+    dialogObj->setProperty("playKey", slot->playHotkey);
+    dialogObj->setProperty("assignKey", slot->assignHotkey);
+    component->completeCreate();
+
+    QQuickWindow *window = qobject_cast<QQuickWindow*>(dialogObj);
+    if (!window) {
+        delete dialogObj;
+        return;
+    }
+
+    connect(window, SIGNAL(accepted()), this, SLOT(onHotkeyDialogFinished()));
+    connect(window, SIGNAL(rejected()), window, SLOT(close()));
+    connect(window, &QWindow::visibleChanged, this, [this](bool visible) {
+        if (!visible && m_hotkeyDialogWindow) {
+            m_hotkeyDialogWindow->deleteLater();
+            m_hotkeyDialogWindow = nullptr;
+        }
+    });
+
+    m_hotkeyDialogWindow = window;
+    window->show();
+}
+
+void SoundboardDock::onHotkeyDialogFinished()
+{
+    QQuickWindow *window = m_hotkeyDialogWindow;
+    if (!window) return;
+
+    QString id = window->property("playerId").toString();
+    QString playKey = window->property("playKey").toString();
+    QString assignKey = window->property("assignKey").toString();
+
+    m_manager->setHotkeys(id, playKey, assignKey);
+    window->close();
 }
 
 void SoundboardDock::onAddPlayer()

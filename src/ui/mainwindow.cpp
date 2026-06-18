@@ -3,7 +3,7 @@
 #include "ui/soundboarddock.h"
 #include "ui/waveformwidget.h"
 #include "audio/waveformgenerator.h"
-#include "core/adapters/WindowsHotkeyBackend.h"
+#include "ui/qmlbackend.h"
 #include <QLabel>
 #include <QPushButton>
 #include <QComboBox>
@@ -30,8 +30,12 @@ MainWindow::MainWindow(QWidget *parent)
 {
     resize(850, 600);
 
-    m_settings = new SettingsManager(this);
-    m_settings->load();
+    m_qmlBackend = new QmlBackend(this);
+    m_settings = m_qmlBackend->settings();
+    m_recordingManager = m_qmlBackend->recordingManager();
+    m_soundboardManager = m_qmlBackend->soundboardManager();
+    m_actionManager = m_qmlBackend->actionManager();
+    m_hotkeyManager = m_qmlBackend->hotkeyManager();
     m_sources = m_settings->sources();
 
     statusLabel = new QLabel("Ready", this);
@@ -118,15 +122,6 @@ MainWindow::MainWindow(QWidget *parent)
     centralWidget->setLayout(layout);
     setCentralWidget(centralWidget);
 
-    m_recordingManager = new RecordingManager(m_settings, this);
-    m_soundboardManager = new SoundboardManager(m_settings, this);
-    m_soundboardManager->loadFromSettings();
-
-    m_actionManager = new ActionManager(m_soundboardManager, m_recordingManager, m_settings, this);
-    auto *backend = new Saiko::Adapters::WindowsHotkeyBackend();
-    m_hotkeyBackend = backend;
-    m_hotkeyManager = new HotkeyManager(m_actionManager, backend, this);
-
     connect(m_soundboardManager, &SoundboardManager::slotsChanged, this, &MainWindow::refreshHotkeyMappings);
     
     // Initial hotkey load
@@ -197,7 +192,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_sourcesDock->updateSourceList(m_sources);
 
-    m_soundboardDock = new SoundboardDock(m_soundboardManager, m_actionManager, this);
+    m_soundboardDock = new SoundboardDock(m_soundboardManager, m_actionManager, m_qmlBackend, this);
     addDockWidget(Qt::BottomDockWidgetArea, m_soundboardDock);
 
     replayEnableCb->setChecked(m_settings->replayEnabled());
@@ -223,11 +218,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    if (m_soundboardManager) {
-        m_soundboardManager->saveToSettings();
-    }
-    m_settings->save();
-    delete static_cast<Saiko::Adapters::WindowsHotkeyBackend*>(m_hotkeyBackend);
 }
 
 void MainWindow::onCaptureModeChanged(int index)

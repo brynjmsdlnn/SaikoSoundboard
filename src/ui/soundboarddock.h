@@ -4,6 +4,10 @@
 #include <QDockWidget>
 #include <QList>
 #include <QMap>
+#include <QPointer>
+#include <QQmlComponent>
+#include <QQmlEngine>
+#include <QQuickWindow>
 #include "managers/soundboardmanager.h"
 
 #include <QLabel>
@@ -31,12 +35,13 @@ class QHBoxLayout;
 class QScrollArea;
 class ActionManager;
 class WaveformWidget;
+class QmlBackend;
 
 class SoundboardDock : public QDockWidget
 {
     Q_OBJECT
 public:
-    explicit SoundboardDock(SoundboardManager *manager, ActionManager *actionManager, QWidget *parent = nullptr);
+    explicit SoundboardDock(SoundboardManager *manager, ActionManager *actionManager, QmlBackend *qmlBackend, QWidget *parent = nullptr);
 
 public slots:
     void refresh();
@@ -55,14 +60,17 @@ private slots:
     void onMakePermanent(const QString &id);
     void onWaveformGenerated(const QString &playerId, const WaveformData &data);
     void onPlayerPositionChanged(const QString &playerId, qint64 position);
+    void onHotkeyDialogFinished();
 
 private:
     SoundboardManager *m_manager;
     ActionManager *m_actionManager;
+    QmlBackend *m_qmlBackend;
     QWidget *m_scrollContent;
     QHBoxLayout *m_scrollLayout;
     QScrollArea *m_scrollArea;
     QMap<QString, WaveformWidget*> m_waveformWidgets;
+    QPointer<QQuickWindow> m_hotkeyDialogWindow;
 
     void clearLayout();
 };

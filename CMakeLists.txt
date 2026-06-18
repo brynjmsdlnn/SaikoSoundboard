@@ -6,11 +6,15 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+# Workaround: MinGW 13.1 g++ -dM -E produces no output,
+# causing AUTOMOC moc_predefs.h generation to fail.
+set(CMAKE_AUTOMOC_COMPILER_PREDEFINES OFF)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Multimedia Concurrent Test)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia Concurrent Test)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Multimedia Concurrent Quick Qml Test)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia Concurrent Quick Qml Test)
 
 enable_testing()
 
@@ -42,6 +46,12 @@ set(UI_SOURCES
     src/ui/waveformwidget.h
     src/ui/routingdialog.cpp
     src/ui/routingdialog.h
+    src/ui/qmlbackend.cpp
+    src/ui/qmlbackend.h
+)
+
+set(QML_SOURCES
+    src/qml/qml.qrc
 )
 
 set(AUDIO_SOURCES
@@ -87,6 +97,7 @@ add_library(SaikoSoundboardCore STATIC
     ${AUDIO_SOURCES}
     ${MANAGER_SOURCES}
     ${MODEL_SOURCES}
+    ${QML_SOURCES}
 )
 
 target_include_directories(SaikoSoundboardCore PUBLIC src)
@@ -97,6 +108,8 @@ target_link_libraries(SaikoSoundboardCore PUBLIC
     Qt${QT_VERSION_MAJOR}::Widgets 
     Qt${QT_VERSION_MAJOR}::Multimedia 
     Qt${QT_VERSION_MAJOR}::Concurrent
+    Qt${QT_VERSION_MAJOR}::Quick
+    Qt${QT_VERSION_MAJOR}::Qml
 )
 
 if(WIN32)

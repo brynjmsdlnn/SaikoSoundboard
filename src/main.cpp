@@ -6,6 +6,7 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    Q_INIT_RESOURCE(qml);
     
     // Suppress internal FFmpeg media capture warning logs about partial audio writes
     QLoggingCategory::setFilterRules("qt.multimedia.ffmpeg.mediacapturesession.warning=false");

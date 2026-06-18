@@ -20,6 +20,7 @@
 #include "managers/actionmanager.h"
 #include "managers/hotkeymanager.h"
 #include "models/audiosource.h"
+#include "ui/qmlbackend.h"
 
 class QLabel;
 class QPushButton;
@@ -89,11 +90,11 @@ private:
     QList<AudioSource> m_sources;
     SourcesDock *m_sourcesDock;
     SoundboardDock *m_soundboardDock;
+    QmlBackend *m_qmlBackend;
     SettingsManager *m_settings;
     RecordingManager *m_recordingManager;
     SoundboardManager *m_soundboardManager;
     ActionManager *m_actionManager;
     HotkeyManager *m_hotkeyManager;
-    void *m_hotkeyBackend; // generic pointer or forward-declared pointer to bypass heavy header including if needed, but let's use a forward decl or include.
 };
 #endif // MAINWINDOW_H
