@@ -153,6 +153,15 @@ void WasapiRecorder::start(const QString &fileName, DWORD pid)
     m_future = QtConcurrent::run([this]() { runCapture(); });
 }
 
+void WasapiRecorder::start(DWORD pid)
+{
+    if (m_running) return;
+    m_fileName.clear();
+    m_processId = pid;
+    m_running = true;
+    m_future = QtConcurrent::run([this]() { runCapture(); });
+}
+
 void WasapiRecorder::stop()
 {
     m_running = false;
@@ -258,6 +267,12 @@ void WasapiRecorder::runCapture()
         return;
     }
 
+    if (pwfx->wFormatTag == WAVE_FORMAT_EXTENSIBLE) {
+        memcpy(&m_format, pwfx, sizeof(WAVEFORMATEXTENSIBLE));
+    } else {
+        memset(&m_format, 0, sizeof(WAVEFORMATEXTENSIBLE));
+        memcpy(&m_format, pwfx, sizeof(WAVEFORMATEX) + pwfx->cbSize);
+    }
     WAVEFORMATEX *pInitFormat = pwfx;
     REFERENCE_TIME bufDuration = 0; // Set to 0 to use engine default buffer duration and avoid alignment issues
 
@@ -285,32 +300,53 @@ void WasapiRecorder::runCapture()
     }
 
     pAudioClient->Start();
-    QFile file(m_fileName);
-    if (file.open(QIODevice::WriteOnly)) {
-        writeWavHeader(file, pInitFormat);
-        QElapsedTimer timer;
-        timer.start();
-        qint64 totalBytes = 0;
-
-        while (m_running) {
-            UINT32 packetLength = 0;
-            pCaptureClient->GetNextPacketSize(&packetLength);
-            while (packetLength != 0) {
-                BYTE *pData;
-                UINT32 numFramesRead;
-                DWORD bufFlags;
-                if (SUCCEEDED(pCaptureClient->GetBuffer(&pData, &numFramesRead, &bufFlags, NULL, NULL))) {
-                    if (!(bufFlags & 0x2)) {
-                        totalBytes += file.write((const char*)pData, numFramesRead * pInitFormat->nBlockAlign);
-                    }
-                    pCaptureClient->ReleaseBuffer(numFramesRead);
-                }
-                pCaptureClient->GetNextPacketSize(&packetLength);
-            }
-            emit statsUpdated(totalBytes, timer.elapsed() / 1000.0);
-            QThread::msleep(10);
+    
+    QFile file;
+    bool writingToFile = !m_fileName.isEmpty();
+    if (writingToFile) {
+        if (file.open(QIODevice::WriteOnly)) {
+            writeWavHeader(file, pInitFormat);
+        } else {
+            writingToFile = false;
         }
-        pAudioClient->Stop();
+    }
+
+    QElapsedTimer timer;
+    timer.start();
+    qint64 totalBytes = 0;
+
+    while (m_running) {
+        UINT32 packetLength = 0;
+        pCaptureClient->GetNextPacketSize(&packetLength);
+        while (packetLength != 0) {
+            BYTE *pData;
+            UINT32 numFramesRead;
+            DWORD bufFlags;
+            if (SUCCEEDED(pCaptureClient->GetBuffer(&pData, &numFramesRead, &bufFlags, NULL, NULL))) {
+                qint64 bytesCaptured = numFramesRead * pInitFormat->nBlockAlign;
+                
+                if (!(bufFlags & 0x2)) {
+                    if (writingToFile) {
+                        totalBytes += file.write((const char*)pData, bytesCaptured);
+                    }
+                    
+                    // Emit raw PCM data for real-time mixing
+                    QByteArray pcmChunk((const char*)pData, bytesCaptured);
+                    emit pcmDataReady(pcmChunk);
+                } else {
+                    // Silent frame, but still emit empty data if needed for timing? 
+                    // For now just skip, as mixer will handle gaps via timing/buffering.
+                }
+                pCaptureClient->ReleaseBuffer(numFramesRead);
+            }
+            pCaptureClient->GetNextPacketSize(&packetLength);
+        }
+        emit statsUpdated(totalBytes, timer.elapsed() / 1000.0);
+        QThread::msleep(10);
+    }
+    
+    pAudioClient->Stop();
+    if (writingToFile) {
         updateWavHeader(file);
         file.close();
     }
@@ -329,7 +365,12 @@ bool WasapiRecorder::writeWavHeader(QFile &file, const void* pwfx)
     file.write((const char*)&fileSize, 4);
     file.write("WAVE", 4);
     file.write("fmt ", 4);
-    quint32 fmtSize = (w->wFormatTag == 65534) ? 40 : 16;
+    
+    // fmt chunk size: 16 for PCM, 40 for EX, or 18 + cbSize for others
+    quint32 fmtSize = 16;
+    if (w->wFormatTag == WAVE_FORMAT_EXTENSIBLE) fmtSize = 40;
+    else if (w->wFormatTag != WAVE_FORMAT_PCM) fmtSize = 18 + w->cbSize;
+    
     file.write((const char*)&fmtSize, 4);
     file.write((const char*)w, fmtSize);
     file.write("data", 4);

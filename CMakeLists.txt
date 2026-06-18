@@ -20,6 +20,8 @@ set(PROJECT_SOURCES
         wasapirecorder.h
         sourcesdock.cpp
         sourcesdock.h
+        audiomixer.cpp
+        audiomixer.h
         audiosource.h
         )
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

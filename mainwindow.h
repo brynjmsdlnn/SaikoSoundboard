@@ -10,6 +10,7 @@
 #include <QAudioOutput>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QElapsedTimer>
 #include "wasapirecorder.h"
 #include "audiosource.h"
 
@@ -31,15 +32,18 @@ private slots:
     void onUpdateTimer();
     void onPlayLastRecording();
     void onPlaybackStateChanged(QMediaPlayer::PlaybackState state);
-    void refreshAppList();
     void onStatsUpdated(qint64 bytes, double seconds);
     void onOpenFolder();
     void onChangeFolder();
+    void onCaptureModeChanged(int index);
 
 private:
     void loadSources();
     void saveSources();
     QString getSettingsFilePath() const;
+    void setupMultiTrackRecording();
+    void cleanupMultiTrackRecording();
+    void startRecorderForPid(DWORD pid, const QString& sourceId, float volume);
 
     QLabel *statusLabel;
     QLabel *timerLabel;
@@ -61,6 +65,7 @@ private:
     QTimer *stopTimer;
     QTimer *updateTimer;
     int remainingSeconds;
+    QElapsedTimer m_recordingTimer;
 
     QMediaPlayer *player;
     QAudioOutput *audioOutput;
@@ -71,5 +76,8 @@ private:
 
     QList<AudioSource> m_sources;
     class SourcesDock *m_sourcesDock;
+    class AudioMixer *m_mixer;
+    QList<WasapiRecorder*> m_activeRecorders;
+    QFile *m_mixedFile;
 };
 #endif // MAINWINDOW_H
