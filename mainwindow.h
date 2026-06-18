@@ -18,6 +18,7 @@
 #include "audiosource.h"
 #include "replaybuffer.h"
 #include "wavwriter.h"
+#include "settingsmanager.h"
 
 class QLabel;
 class QPushButton;
@@ -45,9 +46,6 @@ private slots:
     void onSaveReplay();
 
 private:
-    void loadSources();
-    void saveSources();
-    QString getSettingsFilePath() const;
     void startCaptureEngine();
     void stopCaptureEngine();
     void startRecorderForPid(DWORD pid, const QString& sourceId, float volume);
@@ -86,7 +84,6 @@ private:
     WasapiRecorder *wasapiRecorder;
     ReplayBuffer *m_replayBuffer;
     QString lastRecordingPath;
-    QString saveDirectory;
     bool m_isRecording;
 
     QList<AudioSource> m_sources;
@@ -94,5 +91,6 @@ private:
     class AudioMixer *m_mixer;
     QList<WasapiRecorder*> m_activeRecorders;
     WavWriter *m_wavWriter;
+    SettingsManager *m_settings;
 };
 #endif // MAINWINDOW_H

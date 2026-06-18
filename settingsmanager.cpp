@@ -1,0 +1,66 @@
+#include "settingsmanager.h"
+
+SettingsManager::SettingsManager(QObject *parent)
+    : QObject(parent)
+    , m_replayEnabled(false)
+    , m_replayDuration(30)
+{
+    m_saveDirectory = QDir::homePath() + "/Recordings/Saiko Soundboard";
+}
+
+void SettingsManager::load()
+{
+    QFile file(getSettingsFilePath());
+    if (!file.open(QIODevice::ReadOnly)) return;
+
+    QByteArray data = file.readAll();
+    QJsonDocument doc = QJsonDocument::fromJson(data);
+    
+    if (doc.isArray()) {
+        m_sources.clear();
+        QJsonArray arr = doc.array();
+        for (const QJsonValue& val : std::as_const(arr)) {
+            m_sources.append(AudioSource::fromJson(val.toObject()));
+        }
+    } else if (doc.isObject()) {
+        QJsonObject obj = doc.object();
+        
+        m_sources.clear();
+        QJsonArray arr = obj["sources"].toArray();
+        for (const QJsonValue& val : std::as_const(arr)) {
+            m_sources.append(AudioSource::fromJson(val.toObject()));
+        }
+        
+        m_replayEnabled = obj["replayEnabled"].toBool(false);
+        m_replayDuration = obj["replayDuration"].toInt(30);
+        m_saveDirectory = obj["saveDirectory"].toString(m_saveDirectory);
+    }
+}
+
+void SettingsManager::save()
+{
+    QJsonObject root;
+    
+    QJsonArray sourcesArr;
+    for (const AudioSource& src : std::as_const(m_sources)) {
+        sourcesArr.append(src.toJson());
+    }
+    root["sources"] = sourcesArr;
+    
+    root["replayEnabled"] = m_replayEnabled;
+    root["replayDuration"] = m_replayDuration;
+    root["saveDirectory"] = m_saveDirectory;
+
+    QJsonDocument doc(root);
+    QFile file(getSettingsFilePath());
+    if (file.open(QIODevice::WriteOnly)) {
+        file.write(doc.toJson());
+    }
+}
+
+QString SettingsManager::getSettingsFilePath() const
+{
+    QString appData = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(appData);
+    return appData + "/settings.json";
+}

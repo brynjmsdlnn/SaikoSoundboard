@@ -36,10 +36,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     resize(600, 200);
 
-    QSettings settings("Saiko", "SaikoSoundboard");
-    QString defaultDir = QDir::homePath() + "/Recordings/Saiko Soundboard";
-    saveDirectory = settings.value("saveDirectory", defaultDir).toString();
-    QDir().mkpath(saveDirectory);
+    m_settings = new SettingsManager(this);
+    m_settings->load();
+    m_sources = m_settings->sources();
 
     statusLabel = new QLabel("Ready", this);
     timerLabel = new QLabel("", this);
@@ -59,7 +58,7 @@ MainWindow::MainWindow(QWidget *parent)
     playBtn = new QPushButton("Play Last Recording", this);
     playBtn->setEnabled(false);
 
-    saveDirEdit = new QLineEdit(saveDirectory, this);
+    saveDirEdit = new QLineEdit(m_settings->saveDirectory(), this);
     saveDirEdit->setReadOnly(true);
     openFolderBtn = new QPushButton("Open", this);
     changeFolderBtn = new QPushButton("Change...", this);
@@ -91,7 +90,7 @@ MainWindow::MainWindow(QWidget *parent)
     replayDurationSpin = new QSpinBox(this);
     replayDurationSpin->setRange(1, 120);
     replayDurationSpin->setSuffix("s");
-    replayDurationSpin->setValue(30); // Default 30s
+    replayDurationSpin->setValue(m_settings->replayDuration());
     
     replayTopLayout->addWidget(replayEnableCb);
     replayTopLayout->addStretch();
@@ -122,6 +121,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     wasapiRecorder = new WasapiRecorder(this);
     m_replayBuffer = new ReplayBuffer(this);
+    m_replayBuffer->setDuration(m_settings->replayDuration());
 
     player = new QMediaPlayer(this);
     audioOutput = new QAudioOutput(this);
@@ -147,7 +147,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(saveReplayBtn, &QPushButton::clicked, this, &MainWindow::onSaveReplay);
     connect(replayDurationSpin, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int val){ 
         m_replayBuffer->setDuration(val);
-        saveSources(); 
+        m_settings->setReplayDuration(val);
+        m_settings->save(); 
     });
     
     connect(player, &QMediaPlayer::errorOccurred, this, [this](QMediaPlayer::Error error, const QString &errorString){
@@ -186,7 +187,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_sourcesDock, &SourcesDock::sourceAdded, this, [this](const AudioSource& src) {
         m_sources.append(src);
         m_sourcesDock->updateSourceList(m_sources);
-        saveSources();
+        m_settings->setSources(m_sources);
+        m_settings->save();
     });
 
     connect(m_sourcesDock, &SourcesDock::sourceRemoved, this, [this](const QString& id) {
@@ -197,11 +199,12 @@ MainWindow::MainWindow(QWidget *parent)
             }
         }
         m_sourcesDock->updateSourceList(m_sources);
-        saveSources();
+        m_settings->setSources(m_sources);
+        m_settings->save();
     });
 
-    loadSources();
     m_sourcesDock->updateSourceList(m_sources);
+    replayEnableCb->setChecked(m_settings->replayEnabled());
     
     // Initial visibility
     onCaptureModeChanged(appSelector->currentIndex());
@@ -209,20 +212,13 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    saveSources();
+    m_settings->save();
 }
 
 void MainWindow::onCaptureModeChanged(int index)
 {
     QString mode = appSelector->itemData(index).toString();
     m_sourcesDock->setVisible(mode == "multi");
-}
-
-QString MainWindow::getSettingsFilePath() const
-{
-    QString appData = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    QDir().mkpath(appData);
-    return appData + "/settings.json";
 }
 
 void MainWindow::onReplayEnableToggled(bool checked)
@@ -239,7 +235,8 @@ void MainWindow::onReplayEnableToggled(bool checked)
         }
     }
     
-    saveSources();
+    m_settings->setReplayEnabled(checked);
+    m_settings->save();
 }
 
 void MainWindow::onSaveReplay()
@@ -257,7 +254,7 @@ void MainWindow::onSaveReplay()
     }
 
     QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
-    QString path = saveDirectory + QString("/Replay_%1.wav").arg(timestamp);
+    QString path = m_settings->saveDirectory() + QString("/Replay_%1.wav").arg(timestamp);
     
     WavWriter replayWriter;
     if (!replayWriter.open(path, fmt)) {
@@ -273,67 +270,10 @@ void MainWindow::onSaveReplay()
     playBtn->setEnabled(true);
 }
 
-void MainWindow::loadSources()
-{
-    QFile file(getSettingsFilePath());
-    if (!file.open(QIODevice::ReadOnly)) return;
-
-    QByteArray data = file.readAll();
-    QJsonDocument doc = QJsonDocument::fromJson(data);
-    
-    m_sources.clear();
-
-    if (doc.isArray()) {
-        // Backward compatibility: Old format was just an array of sources
-        QJsonArray arr = doc.array();
-        for (const QJsonValue& val : std::as_const(arr)) {
-            m_sources.append(AudioSource::fromJson(val.toObject()));
-        }
-    } else if (doc.isObject()) {
-        // New format: Object containing sources and replay settings
-        QJsonObject obj = doc.object();
-        
-        QJsonArray arr = obj["sources"].toArray();
-        for (const QJsonValue& val : std::as_const(arr)) {
-            m_sources.append(AudioSource::fromJson(val.toObject()));
-        }
-        
-        bool replayEnabled = obj["replayEnabled"].toBool(false);
-        int replayDuration = obj["replayDuration"].toInt(30);
-        
-        replayEnableCb->setChecked(replayEnabled);
-        m_replayBuffer->setDuration(replayDuration);
-        replayDurationSpin->setValue(replayDuration);
-
-        // This will trigger engine start if replayEnabled is true
-        onReplayEnableToggled(replayEnabled);
-    }
-}
-
-void MainWindow::saveSources()
-{
-    QJsonObject root;
-    
-    QJsonArray sourcesArr;
-    for (const AudioSource& src : std::as_const(m_sources)) {
-        sourcesArr.append(src.toJson());
-    }
-    root["sources"] = sourcesArr;
-    
-    root["replayEnabled"] = replayEnableCb->isChecked();
-    root["replayDuration"] = replayDurationSpin->value();
-
-    QJsonDocument doc(root);
-    QFile file(getSettingsFilePath());
-    if (file.open(QIODevice::WriteOnly)) {
-        file.write(doc.toJson());
-    }
-}
-
 void MainWindow::onStartRecording()
 {
     QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
-    lastRecordingPath = saveDirectory + QString("/Recording_%1.wav").arg(timestamp);
+    lastRecordingPath = m_settings->saveDirectory() + QString("/Recording_%1.wav").arg(timestamp);
 
     WAVEFORMATEXTENSIBLE fmt = m_mixer->getOutputFormat();
     if (!m_wavWriter->open(lastRecordingPath, fmt)) {
@@ -564,18 +504,17 @@ void MainWindow::onPlaybackStateChanged(QMediaPlayer::PlaybackState state)
 
 void MainWindow::onOpenFolder()
 {
-    QDir().mkpath(saveDirectory);
-    QDesktopServices::openUrl(QUrl::fromLocalFile(saveDirectory));
+    QDir().mkpath(m_settings->saveDirectory());
+    QDesktopServices::openUrl(QUrl::fromLocalFile(m_settings->saveDirectory()));
 }
 
 void MainWindow::onChangeFolder()
 {
-    QString dir = QFileDialog::getExistingDirectory(this, "Select Save Directory", saveDirectory, 
+    QString dir = QFileDialog::getExistingDirectory(this, "Select Save Directory", m_settings->saveDirectory(), 
                                                     QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     if (!dir.isEmpty()) {
-        saveDirectory = dir;
-        saveDirEdit->setText(saveDirectory);
-        QSettings settings("Saiko", "SaikoSoundboard");
-        settings.setValue("saveDirectory", saveDirectory);
+        m_settings->setSaveDirectory(dir);
+        m_settings->save();
+        saveDirEdit->setText(dir);
     }
 }

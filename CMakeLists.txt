@@ -27,6 +27,8 @@ set(PROJECT_SOURCES
         replaybuffer.h
         wavwriter.cpp
         wavwriter.h
+        settingsmanager.cpp
+        settingsmanager.h
         )
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(SaikoSoundboard
