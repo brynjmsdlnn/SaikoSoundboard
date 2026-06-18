@@ -9,8 +9,10 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Multimedia Concurrent)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia Concurrent)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Multimedia Concurrent Test)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia Concurrent Test)
+
+enable_testing()
 
 # --- Source Groups ---
 
@@ -57,58 +59,50 @@ set(MODEL_SOURCES
     src/models/soundplayerslot.h
 )
 
-set(PROJECT_SOURCES
-    src/main.cpp
-    ${UI_SOURCES}
+# --- Core Library ---
+
+add_library(SaikoSoundboardCore STATIC
     ${AUDIO_SOURCES}
     ${MANAGER_SOURCES}
     ${MODEL_SOURCES}
 )
 
-# --- Target Definition ---
-
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(SaikoSoundboard
-        MANUAL_FINALIZATION
-        ${PROJECT_SOURCES}
-    )
-else()
-    if(ANDROID)
-        add_library(SaikoSoundboard SHARED
-            ${PROJECT_SOURCES}
-        )
-    else()
-        add_executable(SaikoSoundboard
-            ${PROJECT_SOURCES}
-        )
-    endif()
-endif()
-
-# --- Includes and Libraries ---
-
-target_include_directories(SaikoSoundboard PRIVATE 
-    src
-)
-
-target_link_libraries(SaikoSoundboard PRIVATE 
+target_include_directories(SaikoSoundboardCore PUBLIC src)
+target_link_libraries(SaikoSoundboardCore PUBLIC 
     Qt${QT_VERSION_MAJOR}::Widgets 
     Qt${QT_VERSION_MAJOR}::Multimedia 
     Qt${QT_VERSION_MAJOR}::Concurrent
 )
 
 if(WIN32)
-    target_link_libraries(SaikoSoundboard PRIVATE ole32 mmdevapi)
+    target_link_libraries(SaikoSoundboardCore PUBLIC ole32 mmdevapi)
 endif()
 
-# --- Test Definitions ---
+# --- Application Target ---
 
-add_executable(HotkeyManagerTest src/managers/hotkeymanager_test.cpp src/managers/hotkeymanager.cpp src/managers/actionmanager.cpp src/managers/settingsmanager.cpp src/managers/soundboardmanager.cpp src/managers/recordingmanager.cpp src/audio/soundplayer.cpp src/audio/wasapirecorder.cpp src/audio/audiomixer.cpp src/audio/replaybuffer.cpp src/audio/wavwriter.cpp)
-target_include_directories(HotkeyManagerTest PRIVATE src)
-target_link_libraries(HotkeyManagerTest PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Multimedia Qt${QT_VERSION_MAJOR}::Concurrent)
-if(WIN32)
-    target_link_libraries(HotkeyManagerTest PRIVATE ole32 mmdevapi)
+set(APP_SOURCES
+    src/main.cpp
+    ${UI_SOURCES}
+)
+
+if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+    qt_add_executable(SaikoSoundboard
+        MANUAL_FINALIZATION
+        ${APP_SOURCES}
+    )
+else()
+    if(ANDROID)
+        add_library(SaikoSoundboard SHARED
+            ${APP_SOURCES}
+        )
+    else()
+        add_executable(SaikoSoundboard
+            ${APP_SOURCES}
+        )
+    endif()
 endif()
 
+target_link_libraries(SaikoSoundboard PRIVATE SaikoSoundboardCore)
 
 set_target_properties(SaikoSoundboard PROPERTIES
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
@@ -116,6 +110,12 @@ set_target_properties(SaikoSoundboard PROPERTIES
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )
+
+# --- Tests ---
+
+add_subdirectory(tests)
+
+# --- Installation ---
 
 include(GNUInstallDirs)
 install(TARGETS SaikoSoundboard

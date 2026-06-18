@@ -34,6 +34,8 @@ struct Action {
     }
 };
 
+Q_DECLARE_METATYPE(Action)
+
 class ActionManager : public QObject
 {
     Q_OBJECT
