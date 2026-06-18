@@ -20,15 +20,13 @@ set(CORE_DOMAIN_SOURCES
     src/core/domain/RingBuffer.h
     src/core/domain/KeyBindingStore.h
     src/core/domain/PlayerAllocator.h
-    src/core/domain/IHotkeyBackend.h
-    src/core/domain/IAudioOutput.h
 )
 
 set(CORE_ADAPTERS_SOURCES
     src/core/adapters/WindowsHotkeyBackend.h
     src/core/adapters/WindowsHotkeyBackend.cpp
-    src/core/adapters/QtAudioOutput.h
-    src/core/adapters/QtAudioOutput.cpp
+    src/core/adapters/WindowsProcessFinder.h
+    src/core/adapters/WindowsProcessFinder.cpp
 )
 
 set(UI_SOURCES
@@ -87,6 +85,8 @@ add_library(SaikoSoundboardCore STATIC
 
 target_include_directories(SaikoSoundboardCore PUBLIC src)
 target_include_directories(SaikoSoundboardCore PUBLIC src/core)
+target_include_directories(SaikoSoundboardCore PUBLIC src/core/domain)
+target_include_directories(SaikoSoundboardCore PRIVATE src/core/adapters)
 target_link_libraries(SaikoSoundboardCore PUBLIC 
     Qt${QT_VERSION_MAJOR}::Widgets 
     Qt${QT_VERSION_MAJOR}::Multimedia 
@@ -132,6 +132,10 @@ set_target_properties(SaikoSoundboard PROPERTIES
 # --- Tests ---
 
 add_subdirectory(tests)
+
+# --- Tools ---
+
+add_subdirectory(tools)
 
 # --- Installation ---
 

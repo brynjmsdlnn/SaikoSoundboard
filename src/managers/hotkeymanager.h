@@ -4,14 +4,15 @@
 #include <QObject>
 #include <QAbstractNativeEventFilter>
 #include <QMap>
-#include "domain/IHotkeyBackend.h"
+#include "core/adapters/WindowsHotkeyBackend.h"
+#include "core/domain/KeyBindingStore.h"
 #include "managers/actionmanager.h"
 
 class HotkeyManager : public QObject, public QAbstractNativeEventFilter
 {
     Q_OBJECT
 public:
-    explicit HotkeyManager(ActionManager *actionManager, Saiko::Domain::IHotkeyBackend *backend, QObject *parent = nullptr);
+    explicit HotkeyManager(ActionManager *actionManager, Saiko::Adapters::WindowsHotkeyBackend *backend, QObject *parent = nullptr);
     ~HotkeyManager();
 
     // Register a hotkey for a specific action
@@ -36,11 +37,9 @@ signals:
 
 private:
     ActionManager *m_actionManager;
-    Saiko::Domain::IHotkeyBackend *m_backend;
-    QMap<int, QString> m_idToSequence;
-    QMap<QString, int> m_sequenceToId;
+    Saiko::Adapters::WindowsHotkeyBackend *m_backend;
+    Saiko::Domain::KeyBindingStore m_store;
     QMap<int, Action> m_idToAction;
-    int m_nextId;
 };
 
 #endif // HOTKEYMANAGER_H

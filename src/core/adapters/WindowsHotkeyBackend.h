@@ -1,19 +1,19 @@
 #ifndef WINDOWSHOTKEYBACKEND_H
 #define WINDOWSHOTKEYBACKEND_H
 
-#include "core/domain/IHotkeyBackend.h"
 #include <QKeySequence>
 #include <windows.h>
 #include <map>
+#include <string>
 
 namespace Saiko {
 namespace Adapters {
 
-class WindowsHotkeyBackend : public Saiko::Domain::IHotkeyBackend {
+class WindowsHotkeyBackend {
 public:
-    bool registerHotkey(int id, const std::string& keySequence) override;
-    void unregisterHotkey(int id) override;
-    void unregisterAll() override;
+    bool registerHotkey(int id, const std::string& keySequence);
+    void unregisterHotkey(int id);
+    void unregisterAll();
 
 private:
     static UINT getWinModifiers(const QKeySequence &ks);

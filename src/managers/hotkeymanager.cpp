@@ -6,8 +6,8 @@
 #include <windows.h>
 #endif
 
-HotkeyManager::HotkeyManager(ActionManager *actionManager, Saiko::Domain::IHotkeyBackend *backend, QObject *parent)
-    : QObject(parent), m_actionManager(actionManager), m_backend(backend), m_nextId(1)
+HotkeyManager::HotkeyManager(ActionManager *actionManager, Saiko::Adapters::WindowsHotkeyBackend *backend, QObject *parent)
+    : QObject(parent), m_actionManager(actionManager), m_backend(backend)
 {
     qApp->installNativeEventFilter(this);
 }
@@ -23,17 +23,19 @@ bool HotkeyManager::registerHotkey(const QString &keySequence, const Action &act
     if (keySequence.isEmpty()) return false;
     if (!m_backend) return false;
 
-    if (m_sequenceToId.contains(keySequence)) {
+    if (m_store.hasBinding(keySequence.toStdString())) {
         emit duplicateDetected(keySequence);
         return false;
     }
 
-    int id = m_nextId++;
+    int id = m_store.addBinding(keySequence.toStdString());
+    if (id == -1) return false;
+
     if (m_backend->registerHotkey(id, keySequence.toStdString())) {
-        m_idToSequence[id] = keySequence;
-        m_sequenceToId[keySequence] = id;
         m_idToAction[id] = action;
         return true;
+    } else {
+        m_store.removeBindingById(id);
     }
 
     return false;
@@ -44,16 +46,15 @@ void HotkeyManager::unregisterAll()
     if (m_backend) {
         m_backend->unregisterAll();
     }
-    m_idToSequence.clear();
-    m_sequenceToId.clear();
+    m_store.clear();
     m_idToAction.clear();
 }
 
 bool HotkeyManager::unregisterHotkey(const QString &keySequence)
 {
-    if (m_sequenceToId.contains(keySequence)) {
-        int id = m_sequenceToId.take(keySequence);
-        m_idToSequence.remove(id);
+    int id = m_store.getId(keySequence.toStdString());
+    if (id != -1) {
+        m_store.removeBindingById(id);
         m_idToAction.remove(id);
         if (m_backend) {
             m_backend->unregisterHotkey(id);
@@ -65,7 +66,7 @@ bool HotkeyManager::unregisterHotkey(const QString &keySequence)
 
 bool HotkeyManager::isRegistered(const QString &keySequence) const
 {
-    return m_sequenceToId.contains(keySequence);
+    return m_store.hasBinding(keySequence.toStdString());
 }
 
 void HotkeyManager::updateHotkeys(const QMap<QString, Action> &hotkeyMap)
@@ -88,7 +89,8 @@ bool HotkeyManager::nativeEventFilter(const QByteArray &eventType, void *message
                 if (m_actionManager) {
                     m_actionManager->dispatch(m_idToAction[id]);
                 }
-                emit hotkeyActivated(m_idToSequence[id]);
+                QString seq = QString::fromStdString(m_store.getSequence(id));
+                emit hotkeyActivated(seq);
                 return true;
             }
         }

@@ -33,7 +33,7 @@ void verifyHotkeyManager() {
     // Test Registration
     QString testKey = "Ctrl+Shift+T";
     Action testAction = Action::createPlay("test_id");
-    
+
     if (hotkeyManager.registerHotkey(testKey, testAction)) {
         qDebug() << "Registration SUCCESS for" << testKey;
     } else {
@@ -68,7 +68,5 @@ void verifyHotkeyManager() {
 int main(int argc, char *argv[]) {
     QCoreApplication a(argc, argv);
     verifyHotkeyManager();
-    // In a real test we'd run the loop to wait for events, 
-    // but here we just verify the registration logic.
     return 0;
 }

@@ -6,11 +6,7 @@
 #include <QMessageBox>
 #include <QFileIconProvider>
 #include <QFileInfo>
-
-#ifdef Q_OS_WIN
-#include <windows.h>
-#include <psapi.h>
-#endif
+#include "core/adapters/WindowsProcessFinder.h"
 
 SourcesDock::SourcesDock(QWidget *parent) : QDockWidget("Audio Sources", parent)
 {
@@ -61,35 +57,16 @@ void SourcesDock::onAddSourceClicked()
     dialog.setWindowTitle("Select Process");
     QVBoxLayout *layout = new QVBoxLayout(&dialog);
     QListWidget *processList = new QListWidget(&dialog);
-    
-#ifdef Q_OS_WIN
-    DWORD processes[1024], cbNeeded, cProcesses;
     QFileIconProvider iconProvider;
-    if (EnumProcesses(processes, sizeof(processes), &cbNeeded)) {
-        cProcesses = cbNeeded / sizeof(DWORD);
-        for (unsigned int i = 0; i < cProcesses; i++) {
-            if (processes[i] != 0) {
-                HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, processes[i]);
-                if (hProcess) {
-                    WCHAR szPath[MAX_PATH];
-                    if (GetModuleFileNameExW(hProcess, NULL, szPath, MAX_PATH)) {
-                        QString fullPath = QString::fromWCharArray(szPath);
-                        QFileInfo fileInfo(fullPath);
-                        QString name = fileInfo.fileName();
-                        
-                        if (!name.isEmpty()) {
-                            QListWidgetItem *item = new QListWidgetItem(name, processList);
-                            item->setData(Qt::UserRole, name);
-                            item->setData(Qt::UserRole + 1, fullPath); // Store full path
-                            item->setIcon(iconProvider.icon(fileInfo));
-                        }
-                    }
-                    CloseHandle(hProcess);
-                }
-            }
-        }
+    
+    auto processes = Saiko::Adapters::WindowsProcessFinder::getRunningProcesses();
+    for (const auto &proc : processes) {
+        QListWidgetItem *item = new QListWidgetItem(proc.first, processList);
+        item->setData(Qt::UserRole, proc.first);
+        item->setData(Qt::UserRole + 1, proc.second); // Store full path
+        item->setIcon(iconProvider.icon(QFileInfo(proc.second)));
     }
-#endif
+    
     processList->sortItems();
     
     // De-duplicate names

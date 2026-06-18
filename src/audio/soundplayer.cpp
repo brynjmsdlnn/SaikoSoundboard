@@ -19,10 +19,6 @@ SoundPlayer::~SoundPlayer()
     m_player->stop();
 }
 
-void SoundPlayer::load(const std::string& filePath) {
-    load(QString::fromStdString(filePath));
-}
-
 void SoundPlayer::load(const QString &filePath)
 {
     m_filePath = filePath;
@@ -45,15 +41,6 @@ void SoundPlayer::stop()
 void SoundPlayer::setVolume(float volume)
 {
     m_audioOutput->setVolume(volume);
-}
-
-std::string SoundPlayer::state() const {
-    switch (m_player->playbackState()) {
-        case QMediaPlayer::PlayingState: return "Playing";
-        case QMediaPlayer::PausedState:  return "Paused";
-        case QMediaPlayer::StoppedState: return "Stopped";
-        default: return "Unknown";
-    }
 }
 
 QMediaPlayer::PlaybackState SoundPlayer::playbackState() const

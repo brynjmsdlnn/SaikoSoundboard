@@ -3,36 +3,61 @@
 
 #include <string>
 #include <unordered_map>
+#include <map>
 
 namespace Saiko {
 namespace Domain {
 
-struct Binding {
-    std::string keySequence;
-    int actionId;
-    std::string actionType;
-};
-
 class KeyBindingStore {
 public:
-    void addBinding(const std::string& seq, int actionId, const std::string& type) {
-        m_bindings[seq] = {seq, actionId, type};
+    int addBinding(const std::string& seq) {
+        if (hasBinding(seq)) return -1;
+        int id = m_nextId++;
+        m_seqToId[seq] = id;
+        m_idToSeq[id] = seq;
+        return id;
     }
     
-    bool removeBinding(const std::string& seq) {
-        return m_bindings.erase(seq) > 0;
+    bool removeBindingBySequence(const std::string& seq) {
+        if (!hasBinding(seq)) return false;
+        int id = m_seqToId[seq];
+        m_seqToId.erase(seq);
+        m_idToSeq.erase(id);
+        return true;
+    }
+
+    bool removeBindingById(int id) {
+        if (m_idToSeq.find(id) == m_idToSeq.end()) return false;
+        std::string seq = m_idToSeq[id];
+        m_seqToId.erase(seq);
+        m_idToSeq.erase(id);
+        return true;
     }
     
     bool hasBinding(const std::string& seq) const {
-        return m_bindings.find(seq) != m_bindings.end();
+        return m_seqToId.find(seq) != m_seqToId.end();
+    }
+
+    int getId(const std::string& seq) const {
+        auto it = m_seqToId.find(seq);
+        return it != m_seqToId.end() ? it->second : -1;
+    }
+
+    std::string getSequence(int id) const {
+        auto it = m_idToSeq.find(id);
+        return it != m_idToSeq.end() ? it->second : "";
     }
     
     void clear() {
-        m_bindings.clear();
+        m_seqToId.clear();
+        m_idToSeq.clear();
+        m_nextId = 1;
     }
 
 private:
-    std::unordered_map<std::string, Binding> m_bindings;
+    std::unordered_map<std::string, int> m_seqToId;
+    std::unordered_map<int, std::string> m_idToSeq;
+    int m_nextId = 1;
 };
 
 } // namespace Domain
