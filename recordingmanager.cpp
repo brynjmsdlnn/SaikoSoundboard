@@ -12,9 +12,11 @@ RecordingManager::RecordingManager(SettingsManager *settings, QObject *parent)
     : QObject(parent)
     , m_settings(settings)
     , m_replayEnabled(false)
+    , m_state(CaptureState::Idle)
 {
     m_mixer = new AudioMixer(this);
     m_replayBuffer = new ReplayBuffer(this);
+    m_replayBuffer->setDuration(m_settings->replayDuration());
     m_wavWriter = new WavWriter(this);
 
     connect(m_mixer, &AudioMixer::mixedPcmReady, this, [this](const QByteArray &data){
@@ -32,6 +34,28 @@ RecordingManager::~RecordingManager()
     stopEngine();
 }
 
+void RecordingManager::updateState()
+{
+    CaptureState newState;
+    bool recording = isRecording();
+    
+    if (m_replayEnabled && recording) {
+        newState = CaptureState::RecordingAndReplay;
+    } else if (m_replayEnabled) {
+        newState = CaptureState::ReplayOnly;
+    } else if (recording) {
+        newState = CaptureState::Recording;
+    } else {
+        newState = CaptureState::Idle;
+    }
+
+    if (newState != m_state) {
+        m_state = newState;
+        emit stateChanged(m_state);
+        qDebug() << "RecordingManager: State changed to" << (int)m_state;
+    }
+}
+
 void RecordingManager::stopEngine()
 {
     m_mixer->stop();
@@ -45,6 +69,7 @@ void RecordingManager::stopEngine()
     m_mixer->setOutputFormat(format);
     m_replayBuffer->setFormat(format);
 
+    updateState();
     emit engineStopped();
 }
 
@@ -93,6 +118,7 @@ void RecordingManager::startEngine(const QString &mode)
             }
         }
     }
+    updateState();
     emit engineStarted();
 }
 
@@ -103,11 +129,7 @@ bool RecordingManager::startRecording(const QString &path)
         return false;
     }
     
-    // Engine should already be started by UI or Replay, but if not, 
-    // we need to know the mode. This implies MainWindow should ensure 
-    // engine is running or start it. 
-    // For safety, we expect engine to be started by the UI layer which knows the mode.
-    
+    updateState();
     emit recordingStarted(path);
     return true;
 }
@@ -121,6 +143,7 @@ void RecordingManager::stopRecording()
         stopEngine();
     }
     
+    updateState();
     emit recordingStopped(path);
 }
 
@@ -137,6 +160,7 @@ void RecordingManager::setReplayEnabled(bool enabled, const QString &mode)
             stopEngine();
         }
     }
+    updateState();
 }
 
 void RecordingManager::setReplayDuration(int seconds)

@@ -23,7 +23,6 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , remainingSeconds(0)
-    , m_isRecording(false)
 {
     resize(600, 200);
 
@@ -115,6 +114,7 @@ MainWindow::MainWindow(QWidget *parent)
         QMessageBox::critical(this, "Recording Error", msg);
         onStopRecording();
     });
+    connect(m_recordingManager, &RecordingManager::stateChanged, this, &MainWindow::onCaptureStateChanged);
 
     player = new QMediaPlayer(this);
     audioOutput = new QAudioOutput(this);
@@ -178,6 +178,7 @@ MainWindow::MainWindow(QWidget *parent)
     
     // Initial visibility
     onCaptureModeChanged(appSelector->currentIndex());
+    onCaptureStateChanged(m_recordingManager->state());
 }
 
 MainWindow::~MainWindow()
@@ -193,22 +194,44 @@ void MainWindow::onCaptureModeChanged(int index)
 
 void MainWindow::onReplayEnableToggled(bool checked)
 {
-    replayStatusLabel->setText(checked ? "Status: Active" : "Status: Inactive");
-    saveReplayBtn->setEnabled(checked);
-    
     QString mode = appSelector->currentData().toString();
     m_recordingManager->setReplayEnabled(checked, mode);
     
-    if (m_recordingManager->isEngineRunning()) {
-        appSelector->setEnabled(false);
-        m_sourcesDock->setLocked(true);
-    } else if (!m_isRecording) {
-        appSelector->setEnabled(true);
-        m_sourcesDock->setLocked(false);
-    }
-    
     m_settings->setReplayEnabled(checked);
     m_settings->save();
+}
+
+void MainWindow::onCaptureStateChanged(CaptureState state)
+{
+    bool isIdle = (state == CaptureState::Idle);
+    bool isRecording = (state == CaptureState::Recording || state == CaptureState::RecordingAndReplay);
+    bool isReplayActive = (state == CaptureState::ReplayOnly || state == CaptureState::RecordingAndReplay);
+
+    // Update Controls
+    appSelector->setEnabled(isIdle);
+    m_sourcesDock->setLocked(!isIdle);
+    
+    startBtn->setEnabled(!isRecording);
+    stopBtn->setEnabled(isRecording);
+    
+    replayStatusLabel->setText(isReplayActive ? "Status: Active" : "Status: Inactive");
+    saveReplayBtn->setEnabled(isReplayActive);
+    
+    // Avoid recursion if checked state is already correct
+    if (replayEnableCb->isChecked() != isReplayActive) {
+        replayEnableCb->setChecked(isReplayActive);
+    }
+
+    // Status Text
+    if (state == CaptureState::Idle) {
+        statusLabel->setText("Ready");
+    } else if (state == CaptureState::ReplayOnly) {
+        statusLabel->setText("Background Replay Active...");
+    } else if (state == CaptureState::Recording) {
+        statusLabel->setText("Manual Recording Active...");
+    } else if (state == CaptureState::RecordingAndReplay) {
+        statusLabel->setText("Recording + Replay Active...");
+    }
 }
 
 void MainWindow::onSaveReplay()
@@ -240,24 +263,13 @@ void MainWindow::onStartRecording()
         return;
     }
 
-    m_isRecording = true;
-    if (mode == "global") {
-        statusLabel->setText("Recording System Output...");
-    } else {
-        statusLabel->setText("Recording Multi-Source...");
-    }
-    
     remainingSeconds = 10;
     m_recordingTimer.start();
     timerLabel->setText(QString("Time remaining: %1s").arg(remainingSeconds));
     statsLabel->setText("Size: 0 KB | Time: 0.0s");
     
-    startBtn->setEnabled(false);
-    stopBtn->setEnabled(true);
     playBtn->setEnabled(false);
     refreshBtn->setEnabled(false);
-    appSelector->setEnabled(false);
-    m_sourcesDock->setLocked(true);
     sessionRefreshTimer->stop();
     
     stopTimer->start(10000); 
@@ -266,15 +278,8 @@ void MainWindow::onStartRecording()
 
 void MainWindow::onStopRecording()
 {
-    m_isRecording = false;
     updateTimer->stop(); 
-
     m_recordingManager->stopRecording();
-
-    if (!m_recordingManager->isEngineRunning()) {
-        appSelector->setEnabled(true);
-        m_sourcesDock->setLocked(false);
-    }
 
     QFileInfo fileInfo(lastRecordingPath);
     if (fileInfo.exists() && fileInfo.size() > 100) {
@@ -315,8 +320,6 @@ void MainWindow::onStopRecording()
     timerLabel->setText("");
     stopTimer->stop();
 
-    startBtn->setEnabled(true);
-    stopBtn->setEnabled(false);
     refreshBtn->setEnabled(true);
     sessionRefreshTimer->start();
 }

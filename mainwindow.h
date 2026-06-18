@@ -41,6 +41,7 @@ private slots:
     void onCaptureModeChanged(int index);
     void onReplayEnableToggled(bool checked);
     void onSaveReplay();
+    void onCaptureStateChanged(CaptureState state);
 
 private:
     QLabel *statusLabel;
@@ -75,7 +76,6 @@ private:
     QAudioOutput *audioOutput;
     
     QString lastRecordingPath;
-    bool m_isRecording;
 
     QList<AudioSource> m_sources;
     class SourcesDock *m_sourcesDock;
