@@ -39,6 +39,8 @@ set(AUDIO_SOURCES
 set(MANAGER_SOURCES
     src/managers/actionmanager.cpp
     src/managers/actionmanager.h
+    src/managers/hotkeymanager.cpp
+    src/managers/hotkeymanager.h
     src/managers/recordingmanager.cpp
     src/managers/recordingmanager.h
     src/managers/settingsmanager.cpp
@@ -98,11 +100,11 @@ endif()
 
 # --- Test Definitions ---
 
-add_executable(ActionManagerTest src/managers/actionmanager_test.cpp src/managers/actionmanager.cpp src/managers/settingsmanager.cpp src/managers/soundboardmanager.cpp src/managers/recordingmanager.cpp src/audio/soundplayer.cpp src/audio/wasapirecorder.cpp src/audio/audiomixer.cpp src/audio/replaybuffer.cpp src/audio/wavwriter.cpp)
-target_include_directories(ActionManagerTest PRIVATE src)
-target_link_libraries(ActionManagerTest PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Multimedia Qt${QT_VERSION_MAJOR}::Concurrent)
+add_executable(HotkeyManagerTest src/managers/hotkeymanager_test.cpp src/managers/hotkeymanager.cpp src/managers/actionmanager.cpp src/managers/settingsmanager.cpp src/managers/soundboardmanager.cpp src/managers/recordingmanager.cpp src/audio/soundplayer.cpp src/audio/wasapirecorder.cpp src/audio/audiomixer.cpp src/audio/replaybuffer.cpp src/audio/wavwriter.cpp)
+target_include_directories(HotkeyManagerTest PRIVATE src)
+target_link_libraries(HotkeyManagerTest PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Multimedia Qt${QT_VERSION_MAJOR}::Concurrent)
 if(WIN32)
-    target_link_libraries(ActionManagerTest PRIVATE ole32 mmdevapi)
+    target_link_libraries(HotkeyManagerTest PRIVATE ole32 mmdevapi)
 endif()
 
 

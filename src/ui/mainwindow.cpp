@@ -113,6 +113,14 @@ MainWindow::MainWindow(QWidget *parent)
     m_soundboardManager = new SoundboardManager(m_settings, this);
     m_soundboardManager->loadFromSettings();
 
+    m_actionManager = new ActionManager(m_soundboardManager, m_recordingManager, m_settings, this);
+    m_hotkeyManager = new HotkeyManager(m_actionManager, this);
+
+    connect(m_soundboardManager, &SoundboardManager::slotsChanged, this, &MainWindow::refreshHotkeyMappings);
+    
+    // Initial hotkey load
+    refreshHotkeyMappings();
+
     connect(m_recordingManager, &RecordingManager::errorOccurred, this, [this](const QString &msg){
         QMessageBox::critical(this, "Recording Error", msg);
         onStopRecording();
@@ -391,4 +399,24 @@ void MainWindow::onChangeFolder()
         m_settings->save();
         saveDirEdit->setText(dir);
     }
+}
+
+void MainWindow::refreshHotkeyMappings()
+{
+    if (!m_hotkeyManager || !m_soundboardManager) return;
+
+    QMap<QString, Action> hotkeyMap;
+    for (const auto &slot : m_soundboardManager->getSlots()) {
+        if (!slot.playHotkey.isEmpty()) {
+            hotkeyMap[slot.playHotkey] = Action::createPlay(slot.id);
+        }
+        if (!slot.assignHotkey.isEmpty()) {
+            hotkeyMap[slot.assignHotkey] = Action::createAssignReplay(slot.id);
+        }
+    }
+    
+    // Global actions (if any)
+    // hotkeyMap["Ctrl+Shift+S"] = Action::createSaveReplay();
+
+    m_hotkeyManager->updateHotkeys(hotkeyMap);
 }

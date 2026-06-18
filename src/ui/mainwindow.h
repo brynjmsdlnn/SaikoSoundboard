@@ -17,6 +17,8 @@
 #include "managers/settingsmanager.h"
 #include "managers/recordingmanager.h"
 #include "managers/soundboardmanager.h"
+#include "managers/actionmanager.h"
+#include "managers/hotkeymanager.h"
 #include "models/audiosource.h"
 
 class QLabel;
@@ -47,6 +49,7 @@ private slots:
     void onReplayEnableToggled(bool checked);
     void onSaveReplay();
     void onCaptureStateChanged(CaptureState state);
+    void refreshHotkeyMappings();
 
 private:
     QLabel *statusLabel;
@@ -88,5 +91,7 @@ private:
     SettingsManager *m_settings;
     RecordingManager *m_recordingManager;
     SoundboardManager *m_soundboardManager;
+    ActionManager *m_actionManager;
+    HotkeyManager *m_hotkeyManager;
 };
 #endif // MAINWINDOW_H
