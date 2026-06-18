@@ -1,4 +1,4 @@
-#include "wavwriter.h"
+#include "audio/wavwriter.h"
 #include <QDataStream>
 #include <QDebug>
 

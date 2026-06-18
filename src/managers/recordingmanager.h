@@ -4,13 +4,13 @@
 #include <QObject>
 #include <QList>
 #include <QFile>
-#include "wasapirecorder.h"
-#include "audiomixer.h"
-#include "replaybuffer.h"
-#include "wavwriter.h"
-#include "audiosource.h"
-#include "settingsmanager.h"
-#include "capturestate.h"
+#include "audio/wasapirecorder.h"
+#include "audio/audiomixer.h"
+#include "audio/replaybuffer.h"
+#include "audio/wavwriter.h"
+#include "models/audiosource.h"
+#include "managers/settingsmanager.h"
+#include "models/capturestate.h"
 
 class RecordingManager : public QObject
 {

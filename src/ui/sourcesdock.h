@@ -5,7 +5,7 @@
 #include <QListWidget>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include "audiosource.h"
+#include "models/audiosource.h"
 
 class SourcesDock : public QDockWidget
 {

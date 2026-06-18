@@ -9,8 +9,8 @@
 #include <QJsonDocument>
 #include <QFile>
 #include <QStandardPaths>
-#include <QDir>
-#include "audiosource.h"
+#include <QList>
+#include "models/audiosource.h"
 
 class SettingsManager : public QObject
 {

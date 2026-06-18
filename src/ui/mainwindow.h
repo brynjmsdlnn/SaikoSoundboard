@@ -14,8 +14,9 @@
 #include <QGroupBox>
 #include <QCheckBox>
 #include <QSpinBox>
-#include "settingsmanager.h"
-#include "recordingmanager.h"
+#include "managers/settingsmanager.h"
+#include "managers/recordingmanager.h"
+#include "models/audiosource.h"
 
 class QLabel;
 class QPushButton;

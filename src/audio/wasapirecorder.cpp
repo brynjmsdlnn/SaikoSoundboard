@@ -1,4 +1,4 @@
-#include "wasapirecorder.h"
+#include "audio/wasapirecorder.h"
 #include <initguid.h> // Must remain at the top before GUID usage to force local instantiation
 
 #include <QDebug>

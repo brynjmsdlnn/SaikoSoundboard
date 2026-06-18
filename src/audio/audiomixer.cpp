@@ -1,4 +1,4 @@
-#include "audiomixer.h"
+#include "audio/audiomixer.h"
 #include <QDebug>
 #include <algorithm>
 

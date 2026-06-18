@@ -1,4 +1,4 @@
-#include "sourcesdock.h"
+#include "ui/sourcesdock.h"
 #include <QDialog>
 #include <QListWidget>
 #include <QVBoxLayout>

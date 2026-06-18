@@ -1,5 +1,5 @@
-#include "mainwindow.h"
-#include "sourcesdock.h"
+#include "ui/mainwindow.h"
+#include "ui/sourcesdock.h"
 #include <QLabel>
 #include <QPushButton>
 #include <QComboBox>

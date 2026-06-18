@@ -12,27 +12,48 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Multimedia Concurrent)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia Concurrent)
 
+# --- Source Groups ---
+
+set(UI_SOURCES
+    src/ui/mainwindow.cpp
+    src/ui/mainwindow.h
+    src/ui/sourcesdock.cpp
+    src/ui/sourcesdock.h
+)
+
+set(AUDIO_SOURCES
+    src/audio/wasapirecorder.cpp
+    src/audio/wasapirecorder.h
+    src/audio/audiomixer.cpp
+    src/audio/audiomixer.h
+    src/audio/replaybuffer.cpp
+    src/audio/replaybuffer.h
+    src/audio/wavwriter.cpp
+    src/audio/wavwriter.h
+)
+
+set(MANAGER_SOURCES
+    src/managers/recordingmanager.cpp
+    src/managers/recordingmanager.h
+    src/managers/settingsmanager.cpp
+    src/managers/settingsmanager.h
+)
+
+set(MODEL_SOURCES
+    src/models/audiosource.h
+    src/models/capturestate.h
+)
+
 set(PROJECT_SOURCES
-        main.cpp
-        mainwindow.cpp
-        mainwindow.h
-        wasapirecorder.cpp
-        wasapirecorder.h
-        sourcesdock.cpp
-        sourcesdock.h
-        audiomixer.cpp
-        audiomixer.h
-        audiosource.h
-        replaybuffer.cpp
-        replaybuffer.h
-        wavwriter.cpp
-        wavwriter.h
-        settingsmanager.cpp
-        settingsmanager.h
-        recordingmanager.cpp
-        recordingmanager.h
-        capturestate.h
-        )
+    src/main.cpp
+    ${UI_SOURCES}
+    ${AUDIO_SOURCES}
+    ${MANAGER_SOURCES}
+    ${MODEL_SOURCES}
+)
+
+# --- Target Definition ---
+
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(SaikoSoundboard
         MANUAL_FINALIZATION
@@ -49,6 +70,12 @@ else()
         )
     endif()
 endif()
+
+# --- Includes and Libraries ---
+
+target_include_directories(SaikoSoundboard PRIVATE 
+    src
+)
 
 target_link_libraries(SaikoSoundboard PRIVATE 
     Qt${QT_VERSION_MAJOR}::Widgets 

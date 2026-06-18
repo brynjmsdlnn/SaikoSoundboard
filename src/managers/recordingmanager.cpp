@@ -1,4 +1,4 @@
-#include "recordingmanager.h"
+#include "managers/recordingmanager.h"
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
