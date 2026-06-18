@@ -21,10 +21,13 @@ void ActionManager::dispatch(const Action &action)
         handleStopPlayer(action.parameters.value("playerId").toString());
         break;
     case ActionType::AssignReplayToPlayer:
-        handleAssignReplayToPlayer(action.parameters.value("playerId").toString());
+        handleAssignReplayToPlayer(action.parameters.value("playerId").toString(), action.parameters.value("preserveExisting").toBool());
         break;
     case ActionType::SaveReplay:
         handleSaveReplay();
+        break;
+    case ActionType::MakePermanent:
+        handleMakePermanent(action.parameters.value("playerId").toString());
         break;
     }
     emit actionDispatched(action);
@@ -44,14 +47,20 @@ void ActionManager::handleStopPlayer(const QString &playerId)
     }
 }
 
-void ActionManager::handleAssignReplayToPlayer(const QString &playerId)
+void ActionManager::handleAssignReplayToPlayer(const QString &playerId, bool preserveExisting)
 {
     if (!m_rec || !m_sb || !m_settings) return;
 
-    QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
-    QString dirPath = m_settings->saveDirectory() + "/replays";
-    QDir().mkpath(dirPath);
-    QString path = dirPath + QString("/Replay_%1.wav").arg(timestamp);
+    SoundPlayerSlot* slot = m_sb->getSlot(playerId);
+    if (!slot) return;
+
+    if (preserveExisting && !slot->filePath.isEmpty()) {
+        qDebug() << "ActionManager: Slot already has an assigned sound, preserving it.";
+        return;
+    }
+
+    QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss_zzz");
+    QString path = QDir::tempPath() + QString("/SaikoReplay_%1.wav").arg(timestamp);
 
     if (m_rec->saveReplay(path)) {
         m_sb->loadReplayToPlayer(playerId, path);
@@ -69,5 +78,33 @@ void ActionManager::handleSaveReplay()
     
     if (!m_rec->saveReplay(path)) {
         qWarning() << "ActionManager: Failed to save replay";
+    }
+}
+
+void ActionManager::handleMakePermanent(const QString &playerId)
+{
+    if (!m_sb || !m_settings) return;
+
+    SoundPlayerSlot* slot = m_sb->getSlot(playerId);
+    if (!slot || slot->filePath.isEmpty()) return;
+
+    // Check if it's currently in the temp path
+    if (!slot->filePath.startsWith(QDir::tempPath())) return;
+
+    QFileInfo fileInfo(slot->filePath);
+    if (!fileInfo.exists()) return;
+
+    QString dirPath = m_settings->saveDirectory() + "/replays";
+    QDir().mkpath(dirPath);
+
+    QString permanentPath = dirPath + "/" + fileInfo.fileName();
+    
+    // Copy file to permanent directory
+    if (QFile::copy(slot->filePath, permanentPath)) {
+        m_sb->assignAudioFile(playerId, permanentPath);
+        m_sb->saveToSettings();
+        qDebug() << "ActionManager: Replay made permanent at" << permanentPath;
+    } else {
+        qWarning() << "ActionManager: Failed to copy temporary replay to permanent path";
     }
 }

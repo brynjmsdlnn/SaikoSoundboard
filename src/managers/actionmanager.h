@@ -13,7 +13,8 @@ enum class ActionType {
     PlayPlayer,
     StopPlayer,
     AssignReplayToPlayer,
-    SaveReplay
+    SaveReplay,
+    MakePermanent
 };
 
 struct Action {
@@ -26,11 +27,14 @@ struct Action {
     static Action createStop(const QString &playerId) {
         return { ActionType::StopPlayer, {{"playerId", playerId}} };
     }
-    static Action createAssignReplay(const QString &playerId) {
-        return { ActionType::AssignReplayToPlayer, {{"playerId", playerId}} };
+    static Action createAssignReplay(const QString &playerId, bool preserveExisting = false) {
+        return { ActionType::AssignReplayToPlayer, {{"playerId", playerId}, {"preserveExisting", preserveExisting}} };
     }
     static Action createSaveReplay() {
         return { ActionType::SaveReplay, {} };
+    }
+    static Action createMakePermanent(const QString &playerId) {
+        return { ActionType::MakePermanent, {{"playerId", playerId}} };
     }
 };
 
@@ -54,8 +58,9 @@ private:
 
     void handlePlayPlayer(const QString &playerId);
     void handleStopPlayer(const QString &playerId);
-    void handleAssignReplayToPlayer(const QString &playerId);
+    void handleAssignReplayToPlayer(const QString &playerId, bool preserveExisting);
     void handleSaveReplay();
+    void handleMakePermanent(const QString &playerId);
 };
 
 #endif // ACTIONMANAGER_H

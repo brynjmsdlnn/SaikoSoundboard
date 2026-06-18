@@ -1,5 +1,6 @@
 #include "soundboarddock.h"
 #include "hotkeydialog.h"
+#include "managers/actionmanager.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -12,10 +13,12 @@
 #include <QFrame>
 #include <QMenu>
 #include <QAction>
+#include <QCheckBox>
 
-SoundboardDock::SoundboardDock(SoundboardManager *manager, QWidget *parent)
+SoundboardDock::SoundboardDock(SoundboardManager *manager, ActionManager *actionManager, QWidget *parent)
     : QDockWidget("Soundboard", parent)
     , m_manager(manager)
+    , m_actionManager(actionManager)
 {
     auto *mainWidget = new QWidget(this);
     auto *mainLayout = new QVBoxLayout(mainWidget);
@@ -32,7 +35,7 @@ SoundboardDock::SoundboardDock(SoundboardManager *manager, QWidget *parent)
     mainLayout->addWidget(m_scrollArea);
 
     setWidget(mainWidget);
-    setMinimumHeight(300); // Ensure DJ decks have enough room
+    setMinimumHeight(330); // Ensure DJ decks have enough room
     setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
 
     connect(addBtn, &QPushButton::clicked, this, &SoundboardDock::onAddPlayer);
@@ -66,15 +69,26 @@ void SoundboardDock::refresh()
         auto *menu = new QMenu(renameBtn);
         auto *renameAction = menu->addAction("Rename");
         auto *hotkeyAction = menu->addAction("Hotkey Bindings");
+        
+        bool isTemp = !slot.filePath.isEmpty() && slot.filePath.startsWith(QDir::tempPath());
+        QAction *makePermanentAction = nullptr;
+        if (isTemp) {
+            makePermanentAction = menu->addAction("Make Permanent");
+            connect(makePermanentAction, &QAction::triggered, this, [this, id = slot.id]() { onMakePermanent(id); });
+        }
+
         connect(renameAction, &QAction::triggered, this, [this, id = slot.id]() { onRenamePlayer(id); });
         connect(hotkeyAction, &QAction::triggered, this, [this, id = slot.id]() { onHotkeySetup(id); });
         renameBtn->setMenu(menu);
         renameBtn->setStyleSheet("QPushButton::menu-indicator { image: none; }"); // Hide arrow
 
-        // File Path
+        // File Path & Temp Badge
         QString fileName = slot.filePath.isEmpty() ? "No file" : QFileInfo(slot.filePath).fileName();
+        if (isTemp) {
+            fileName = "[TEMP] " + fileName;
+        }
         auto *fileLabel = new QLabel(fileName, card);
-        fileLabel->setStyleSheet("color: gray; font-size: 10px;");
+        fileLabel->setStyleSheet(isTemp ? "color: #ff9800; font-size: 10px; font-weight: bold;" : "color: gray; font-size: 10px;");
         fileLabel->setWordWrap(true);
         cardLayout->addWidget(fileLabel);
 
@@ -107,14 +121,34 @@ void SoundboardDock::refresh()
         cfgLayout->addWidget(removeBtn);
         cardLayout->addLayout(cfgLayout);
 
+        // Preserve checkbox toggle under configuration buttons
+        auto *preserveCb = new QCheckBox("Preserve Sound", card);
+        preserveCb->setStyleSheet("font-size: 10px;");
+        preserveCb->setToolTip("Prevent over-writing if a sound is already loaded into this deck");
+        cardLayout->addWidget(preserveCb);
+
+        // Menu for assigning file or replay
+        auto *assignMenu = new QMenu(assignBtn);
+        auto *fromFileAct = assignMenu->addAction("From File...");
+        auto *fromReplayAct = assignMenu->addAction("From Replay Buffer");
+        connect(fromFileAct, &QAction::triggered, this, [this, id = slot.id]() { onAssignFile(id); });
+        connect(fromReplayAct, &QAction::triggered, this, [this, id = slot.id, preserveCb]() { onAssignReplay(id, preserveCb->isChecked()); });
+        assignBtn->setMenu(assignMenu);
+
         m_scrollLayout->addWidget(card);
 
         // Connections
         connect(playBtn, &QPushButton::clicked, this, [this, id = slot.id]() { onPlayPlayer(id); });
         connect(stopBtn, &QPushButton::clicked, this, [this, id = slot.id]() { onStopPlayer(id); });
-        connect(assignBtn, &QPushButton::clicked, this, [this, id = slot.id]() { onAssignFile(id); });
         connect(removeBtn, &QPushButton::clicked, this, [this, id = slot.id]() { onRemovePlayer(id); });
         connect(volumeSlider, &QSlider::valueChanged, this, [this, id = slot.id](int val) { onVolumeChanged(id, val); });
+    }
+}
+
+void SoundboardDock::onAssignReplay(const QString &id, bool preserveExisting)
+{
+    if (m_actionManager) {
+        m_actionManager->dispatch(Action::createAssignReplay(id, preserveExisting));
     }
 }
 
@@ -171,6 +205,13 @@ void SoundboardDock::onRenamePlayer(const QString &id)
     QString newName = QInputDialog::getText(this, "Rename Player", "Name:", QLineEdit::Normal, slot->name, &ok);
     if (ok && !newName.isEmpty()) {
         m_manager->renamePlayer(id, newName);
+    }
+}
+
+void SoundboardDock::onMakePermanent(const QString &id)
+{
+    if (m_actionManager) {
+        m_actionManager->dispatch(Action::createMakePermanent(id));
     }
 }
 

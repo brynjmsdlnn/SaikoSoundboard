@@ -189,7 +189,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_sourcesDock->updateSourceList(m_sources);
 
-    m_soundboardDock = new SoundboardDock(m_soundboardManager, this);
+    m_soundboardDock = new SoundboardDock(m_soundboardManager, m_actionManager, this);
     addDockWidget(Qt::BottomDockWidgetArea, m_soundboardDock);
 
     replayEnableCb->setChecked(m_settings->replayEnabled());
