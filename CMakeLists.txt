@@ -36,10 +36,7 @@ set(CORE_ADAPTERS_SOURCES
 set(UI_SOURCES
     src/ui/mainwindow.cpp
     src/ui/mainwindow.h
-    src/ui/soundboarddock.cpp
-    src/ui/soundboarddock.h
-    src/ui/hotkeydialog.cpp
-    src/ui/hotkeydialog.h
+
     src/ui/waveformwidget.cpp
     src/ui/waveformwidget.h
     src/ui/realtimewaveformitem.cpp
@@ -86,6 +83,8 @@ set(MODEL_SOURCES
     src/models/audiosource.h
     src/models/capturestate.h
     src/models/soundplayerslot.h
+    src/models/soundplayerslotmodel.cpp
+    src/models/soundplayerslotmodel.h
 )
 
 # --- Core Library ---

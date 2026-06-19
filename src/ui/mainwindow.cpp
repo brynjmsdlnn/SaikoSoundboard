@@ -3,7 +3,6 @@
 #include <QQuickWidget>
 #include <QQuickItem>
 #include <QQmlContext>
-#include "ui/soundboarddock.h"
 #include "ui/waveformwidget.h"
 #include "audio/waveformgenerator.h"
 #include "ui/qmlbackend.h"
@@ -187,7 +186,14 @@ MainWindow::MainWindow(QWidget *parent)
     addDockWidget(Qt::RightDockWidgetArea, m_sourcesDock);
     updateSourcesView();
 
-    m_soundboardDock = new SoundboardDock(m_soundboardManager, m_actionManager, m_qmlBackend, this);
+    m_soundboardWidget = new QQuickWidget;
+    m_soundboardWidget->setResizeMode(QQuickWidget::SizeRootObjectToView);
+    m_soundboardWidget->engine()->rootContext()->setContextProperty("qmlBackend", m_qmlBackend);
+    m_soundboardWidget->engine()->rootContext()->setContextProperty("soundboardSlotModel", m_qmlBackend->slotModel());
+    m_soundboardWidget->setSource(QUrl("qrc:/qml/SoundboardPanel.qml"));
+
+    m_soundboardDock = new QDockWidget("Soundboard", this);
+    m_soundboardDock->setWidget(m_soundboardWidget);
     addDockWidget(Qt::BottomDockWidgetArea, m_soundboardDock);
 
     replayEnableCb->setChecked(m_settings->replayEnabled());

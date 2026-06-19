@@ -1,9 +1,14 @@
 import QtQuick 2.15
 import Saiko 1.0
 
-Item {
+Rectangle {
     id: root
     implicitHeight: 55
+    color: "#0a0a0a"
+    radius: 6
+    border.color: "#1c1c1c"
+    border.width: 1
+    clip: true
 
     property var waveformData: null
 
@@ -12,8 +17,8 @@ Item {
     property alias playPositionMs: dataSource.playPositionMs
     property alias readOnly: dataSource.readOnly
 
-    signal trimRangeChanged(qint64 startMs, qint64 endMs)
-    signal trimRangeCommit(qint64 startMs, qint64 endMs)
+    signal trimRangeChanged(double startMs, double endMs)
+    signal trimRangeCommit(double startMs, double endMs)
 
     onWaveformDataChanged: {
         if (waveformData !== null)
@@ -53,11 +58,11 @@ Item {
 
             ctx.clearRect(0, 0, w, h)
 
-            ctx.fillStyle = "#10141c"
+            ctx.fillStyle = "#0a0a0a"
             ctx.fillRect(0, 0, w, h)
 
             if (!dataSource.valid || !peaks || peaks.length === 0) {
-                ctx.fillStyle = "#646a82"
+                ctx.fillStyle = "#444"
                 ctx.font = "11px sans-serif"
                 ctx.textAlign = "center"
                 ctx.fillText("[No Waveform]", w / 2, centerY + 4)
@@ -69,7 +74,7 @@ Item {
 
             // Center reference line
             ctx.save()
-            ctx.strokeStyle = "#202834"
+            ctx.strokeStyle = "#222"
             ctx.lineWidth = 1
             ctx.setLineDash([4, 4])
             ctx.beginPath()
@@ -79,7 +84,7 @@ Item {
             ctx.restore()
 
             // Active region highlight
-            ctx.fillStyle = "rgba(0, 180, 255, 0.06)"
+            ctx.fillStyle = "rgba(187, 134, 252, 0.08)"
             ctx.fillRect(Math.max(0, startX), 0, Math.max(1, endX - startX), graphH)
 
             // Waveform peaks
@@ -93,7 +98,7 @@ Item {
                 var peakH = peak * (graphH - 10) / 2
 
                 var inActive = dataSource.readOnly || (x >= startX && x <= endX)
-                ctx.strokeStyle = inActive ? "#00b4ff" : "#404858"
+                ctx.strokeStyle = inActive ? "#BB86FC" : "#2a2a2a"
 
                 ctx.beginPath()
                 ctx.moveTo(x, centerY - peakH)
@@ -102,15 +107,15 @@ Item {
             }
 
             if (!dataSource.readOnly) {
-                // Start trim marker (green)
-                ctx.strokeStyle = "#00e676"
+                // Start trim marker (teal)
+                ctx.strokeStyle = "#03DAC6"
                 ctx.lineWidth = 2
                 ctx.beginPath()
                 ctx.moveTo(startX, 0)
                 ctx.lineTo(startX, graphH)
                 ctx.stroke()
 
-                ctx.fillStyle = "#00e676"
+                ctx.fillStyle = "#03DAC6"
                 ctx.beginPath()
                 ctx.moveTo(startX, 0)
                 ctx.lineTo(startX + 6, 0)
@@ -119,14 +124,14 @@ Item {
                 ctx.fill()
 
                 // End trim marker (red)
-                ctx.strokeStyle = "#ff3d00"
+                ctx.strokeStyle = "#ff5555"
                 ctx.lineWidth = 2
                 ctx.beginPath()
                 ctx.moveTo(endX, 0)
                 ctx.lineTo(endX, graphH)
                 ctx.stroke()
 
-                ctx.fillStyle = "#ff3d00"
+                ctx.fillStyle = "#ff5555"
                 ctx.beginPath()
                 ctx.moveTo(endX, 0)
                 ctx.lineTo(endX - 6, 0)
@@ -135,10 +140,10 @@ Item {
                 ctx.fill()
             }
 
-            // Playback cursor (yellow)
+            // Playback cursor (white)
             if (dataSource.playPositionMs >= 0) {
                 var cursorX = (dataSource.playPositionMs / duration) * w
-                ctx.strokeStyle = "#ffeb3b"
+                ctx.strokeStyle = "#ffffff"
                 ctx.lineWidth = 2
                 ctx.beginPath()
                 ctx.moveTo(cursorX, 0)
@@ -147,7 +152,7 @@ Item {
             }
 
             // Timeline labels
-            ctx.fillStyle = "#8c96aa"
+            ctx.fillStyle = "#666"
             ctx.font = "9px sans-serif"
             ctx.textBaseline = "middle"
 

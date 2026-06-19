@@ -5,6 +5,7 @@
 
 int main(int argc, char *argv[])
 {
+    qputenv("QT_QUICK_CONTROLS_STYLE", "Basic");
     QApplication a(argc, argv);
     Q_INIT_RESOURCE(qml);
     

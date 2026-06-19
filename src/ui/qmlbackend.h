@@ -18,6 +18,7 @@
 #include "managers/actionmanager.h"
 #include "managers/hotkeymanager.h"
 #include "models/capturestate.h"
+#include "models/soundplayerslotmodel.h"
 
 class FileIconProvider : public QQuickImageProvider
 {
@@ -45,6 +46,7 @@ class QmlBackend : public QObject
     Q_PROPERTY(SoundboardManager* soundboard READ soundboardManager CONSTANT)
     Q_PROPERTY(ActionManager* actions READ actionManager CONSTANT)
     Q_PROPERTY(HotkeyManager* hotkeys READ hotkeyManager CONSTANT)
+    Q_PROPERTY(SoundPlayerSlotModel* slotModel READ slotModel CONSTANT)
 public:
     explicit QmlBackend(QObject *parent = nullptr);
     ~QmlBackend();
@@ -54,6 +56,7 @@ public:
     SoundboardManager *soundboardManager() const { return m_soundboardManager; }
     ActionManager *actionManager() const { return m_actionManager; }
     HotkeyManager *hotkeyManager() const { return m_hotkeyManager; }
+    SoundPlayerSlotModel *slotModel() const { return m_slotModel; }
 
     CaptureState captureState() const;
     QQmlEngine *engine() const { return m_engine; }
@@ -77,6 +80,7 @@ private:
     SoundboardManager *m_soundboardManager;
     ActionManager *m_actionManager;
     HotkeyManager *m_hotkeyManager;
+    SoundPlayerSlotModel *m_slotModel = nullptr;
     void *m_hotkeyBackend;
 };
 

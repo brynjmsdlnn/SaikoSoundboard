@@ -29,6 +29,8 @@ QmlBackend::QmlBackend(QObject *parent)
     m_hotkeyBackend = backend;
     m_hotkeyManager = new HotkeyManager(m_actionManager, backend, this);
 
+    m_slotModel = new SoundPlayerSlotModel(m_soundboardManager, this);
+
     connect(m_recordingManager, &RecordingManager::stateChanged, this, &QmlBackend::captureStateChanged);
 
     m_engine->rootContext()->setContextProperty("qmlBackend", this);

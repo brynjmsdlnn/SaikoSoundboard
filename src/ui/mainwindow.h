@@ -28,7 +28,6 @@ class QComboBox;
 class QLineEdit;
 class QDockWidget;
 class QQuickWidget;
-class SoundboardDock;
 
 class MainWindow : public QMainWindow
 {
@@ -93,8 +92,9 @@ private:
     QString lastRecordingPath;
 
     QQuickWidget *m_sourcesWidget;
+    QQuickWidget *m_soundboardWidget;
     QDockWidget *m_sourcesDock;
-    SoundboardDock *m_soundboardDock;
+    QDockWidget *m_soundboardDock;
     QmlBackend *m_qmlBackend;
     SettingsManager *m_settings;
     RecordingManager *m_recordingManager;
