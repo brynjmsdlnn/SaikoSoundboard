@@ -6,12 +6,34 @@
 #include <QObject>
 #include <QQmlComponent>
 #include <QQmlEngine>
+#include <QQuickImageProvider>
+#include <QFileIconProvider>
+#include <QIcon>
+#include <QPixmap>
+#include <QFileInfo>
+#include <QUrl>
 #include "managers/settingsmanager.h"
 #include "managers/recordingmanager.h"
 #include "managers/soundboardmanager.h"
 #include "managers/actionmanager.h"
 #include "managers/hotkeymanager.h"
 #include "models/capturestate.h"
+
+class FileIconProvider : public QQuickImageProvider
+{
+public:
+    FileIconProvider() : QQuickImageProvider(QQuickImageProvider::Pixmap) {}
+
+    QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize) override
+    {
+        QString filePath = QUrl::fromPercentEncoding(id.toUtf8());
+        QFileIconProvider provider;
+        QIcon icon = provider.icon(QFileInfo(filePath));
+        QSize actualSize = requestedSize.isValid() ? requestedSize : QSize(32, 32);
+        if (size) *size = actualSize;
+        return icon.pixmap(actualSize);
+    }
+};
 
 class QmlBackend : public QObject
 {
@@ -35,6 +57,7 @@ public:
 
     CaptureState captureState() const;
     QQmlEngine *engine() const { return m_engine; }
+    Q_INVOKABLE QVariantList getRunningProcesses() const;
     QQmlComponent *loadComponent(const QString &qrcPath, QObject *parent = nullptr);
 
 signals:

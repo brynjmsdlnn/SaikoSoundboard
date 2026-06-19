@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/qml">
         <file>HotkeyDialog.qml</file>
+        <file>SourcesPanel.qml</file>
     </qresource>
 </RCC>

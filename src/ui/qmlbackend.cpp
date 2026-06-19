@@ -3,6 +3,7 @@
 #include <QQmlContext>
 #include <QUrl>
 #include "core/adapters/WindowsHotkeyBackend.h"
+#include "core/adapters/WindowsProcessFinder.h"
 
 QmlBackend::QmlBackend(QObject *parent)
     : QObject(parent)
@@ -27,6 +28,7 @@ QmlBackend::QmlBackend(QObject *parent)
     connect(m_recordingManager, &RecordingManager::stateChanged, this, &QmlBackend::captureStateChanged);
 
     m_engine->rootContext()->setContextProperty("qmlBackend", this);
+    m_engine->addImageProvider(QLatin1String("fileicon"), new FileIconProvider());
 }
 
 QmlBackend::~QmlBackend()
@@ -34,6 +36,19 @@ QmlBackend::~QmlBackend()
     m_soundboardManager->saveToSettings();
     m_settings->save();
     delete static_cast<Saiko::Adapters::WindowsHotkeyBackend*>(m_hotkeyBackend);
+}
+
+QVariantList QmlBackend::getRunningProcesses() const
+{
+    QVariantList result;
+    auto processes = Saiko::Adapters::WindowsProcessFinder::getRunningProcesses();
+    for (const auto &proc : std::as_const(processes)) {
+        QVariantMap map;
+        map["name"] = proc.first;
+        map["fullPath"] = proc.second;
+        result.append(map);
+    }
+    return result;
 }
 
 QQmlComponent *QmlBackend::loadComponent(const QString &qrcPath, QObject *parent)

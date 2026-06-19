@@ -13,8 +13,8 @@ set(CMAKE_AUTOMOC_COMPILER_PREDEFINES OFF)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Multimedia Concurrent Quick Qml Test)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia Concurrent Quick Qml Test)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Multimedia Concurrent Quick QuickWidgets Qml Test)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia Concurrent Quick QuickWidgets Qml Test)
 
 enable_testing()
 
@@ -36,8 +36,6 @@ set(CORE_ADAPTERS_SOURCES
 set(UI_SOURCES
     src/ui/mainwindow.cpp
     src/ui/mainwindow.h
-    src/ui/sourcesdock.cpp
-    src/ui/sourcesdock.h
     src/ui/soundboarddock.cpp
     src/ui/soundboarddock.h
     src/ui/hotkeydialog.cpp
@@ -109,6 +107,7 @@ target_link_libraries(SaikoSoundboardCore PUBLIC
     Qt${QT_VERSION_MAJOR}::Multimedia 
     Qt${QT_VERSION_MAJOR}::Concurrent
     Qt${QT_VERSION_MAJOR}::Quick
+    Qt${QT_VERSION_MAJOR}::QuickWidgets
     Qt${QT_VERSION_MAJOR}::Qml
 )
 

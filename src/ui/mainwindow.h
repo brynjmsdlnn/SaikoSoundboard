@@ -26,7 +26,8 @@ class QLabel;
 class QPushButton;
 class QComboBox;
 class QLineEdit;
-class SourcesDock;
+class QDockWidget;
+class QQuickWidget;
 class SoundboardDock;
 
 class MainWindow : public QMainWindow
@@ -50,6 +51,10 @@ private slots:
     void onReplayEnableToggled(bool checked);
     void onSaveReplay();
     void onCaptureStateChanged(CaptureState state);
+    void onQmlSourceAdded(const QString &name, const QString &executableName, const QString &executablePath);
+    void onQmlSourceRemoved(const QString &sourceId);
+    void updateSourcesView();
+    static QVariantList sourcesToVariantList(const QList<AudioSource> &sources);
     void refreshHotkeyMappings();
 
 private:
@@ -87,8 +92,8 @@ private:
     
     QString lastRecordingPath;
 
-    QList<AudioSource> m_sources;
-    SourcesDock *m_sourcesDock;
+    QQuickWidget *m_sourcesWidget;
+    QDockWidget *m_sourcesDock;
     SoundboardDock *m_soundboardDock;
     QmlBackend *m_qmlBackend;
     SettingsManager *m_settings;

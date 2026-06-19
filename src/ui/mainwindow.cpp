@@ -1,5 +1,8 @@
 #include "ui/mainwindow.h"
-#include "ui/sourcesdock.h"
+#include <QDockWidget>
+#include <QQuickWidget>
+#include <QQuickItem>
+#include <QQmlContext>
 #include "ui/soundboarddock.h"
 #include "ui/waveformwidget.h"
 #include "audio/waveformgenerator.h"
@@ -36,7 +39,6 @@ MainWindow::MainWindow(QWidget *parent)
     m_soundboardManager = m_qmlBackend->soundboardManager();
     m_actionManager = m_qmlBackend->actionManager();
     m_hotkeyManager = m_qmlBackend->hotkeyManager();
-    m_sources = m_settings->sources();
 
     statusLabel = new QLabel("Ready", this);
     timerLabel = new QLabel("", this);
@@ -168,29 +170,22 @@ MainWindow::MainWindow(QWidget *parent)
         playBtn->setEnabled(true);
     });
 
-    m_sourcesDock = new SourcesDock(this);
+    m_sourcesWidget = new QQuickWidget;
+    m_sourcesWidget->setResizeMode(QQuickWidget::SizeRootObjectToView);
+    m_sourcesWidget->engine()->rootContext()->setContextProperty("qmlBackend", m_qmlBackend);
+    m_sourcesWidget->engine()->addImageProvider(QLatin1String("fileicon"), new FileIconProvider());
+    m_sourcesWidget->setSource(QUrl("qrc:/qml/SourcesPanel.qml"));
+
+    QObject *sourcesRoot = m_sourcesWidget->rootObject();
+    connect(sourcesRoot, SIGNAL(sourceAdded(QString,QString,QString)),
+            this, SLOT(onQmlSourceAdded(QString,QString,QString)));
+    connect(sourcesRoot, SIGNAL(sourceRemoved(QString)),
+            this, SLOT(onQmlSourceRemoved(QString)));
+
+    m_sourcesDock = new QDockWidget("Audio Sources", this);
+    m_sourcesDock->setWidget(m_sourcesWidget);
     addDockWidget(Qt::RightDockWidgetArea, m_sourcesDock);
-
-    connect(m_sourcesDock, &SourcesDock::sourceAdded, this, [this](const AudioSource& src) {
-        m_sources.append(src);
-        m_sourcesDock->updateSourceList(m_sources);
-        m_settings->setSources(m_sources);
-        m_settings->save();
-    });
-
-    connect(m_sourcesDock, &SourcesDock::sourceRemoved, this, [this](const QString& id) {
-        for (int i = 0; i < m_sources.size(); ++i) {
-            if (m_sources[i].id == id) {
-                m_sources.removeAt(i);
-                break;
-            }
-        }
-        m_sourcesDock->updateSourceList(m_sources);
-        m_settings->setSources(m_sources);
-        m_settings->save();
-    });
-
-    m_sourcesDock->updateSourceList(m_sources);
+    updateSourcesView();
 
     m_soundboardDock = new SoundboardDock(m_soundboardManager, m_actionManager, m_qmlBackend, this);
     addDockWidget(Qt::BottomDockWidgetArea, m_soundboardDock);
@@ -224,6 +219,7 @@ void MainWindow::onCaptureModeChanged(int index)
 {
     QString mode = appSelector->itemData(index).toString();
     m_sourcesDock->setVisible(mode == "multi");
+    updateSourcesView();
 }
 
 void MainWindow::onReplayEnableToggled(bool checked)
@@ -243,7 +239,7 @@ void MainWindow::onCaptureStateChanged(CaptureState state)
 
     // Update Controls
     appSelector->setEnabled(isIdle);
-    m_sourcesDock->setLocked(!isIdle);
+    m_sourcesWidget->rootObject()->setProperty("locked", !isIdle);
     
     startBtn->setEnabled(!isRecording);
     stopBtn->setEnabled(isRecording);
@@ -415,6 +411,55 @@ void MainWindow::onChangeFolder()
         m_settings->save();
         saveDirEdit->setText(dir);
     }
+}
+
+void MainWindow::onQmlSourceAdded(const QString &name, const QString &executableName, const QString &executablePath)
+{
+    AudioSource src;
+    src.name = name;
+    src.executableName = executableName;
+    src.executablePath = executablePath;
+
+    QList<AudioSource> sources = m_settings->sources();
+    sources.append(src);
+    m_settings->setSources(sources);
+    m_settings->save();
+    updateSourcesView();
+}
+
+void MainWindow::onQmlSourceRemoved(const QString &sourceId)
+{
+    QList<AudioSource> sources = m_settings->sources();
+    for (int i = 0; i < sources.size(); ++i) {
+        if (sources[i].id == sourceId) {
+            sources.removeAt(i);
+            break;
+        }
+    }
+    m_settings->setSources(sources);
+    m_settings->save();
+    updateSourcesView();
+}
+
+QVariantList MainWindow::sourcesToVariantList(const QList<AudioSource> &sources)
+{
+    QVariantList list;
+    for (const auto &src : sources) {
+        QVariantMap map;
+        map["id"] = src.id;
+        map["name"] = src.name;
+        map["executableName"] = src.executableName;
+        map["executablePath"] = src.executablePath;
+        map["enabled"] = src.enabled;
+        map["volume"] = src.volume;
+        list.append(map);
+    }
+    return list;
+}
+
+void MainWindow::updateSourcesView()
+{
+    m_sourcesWidget->rootObject()->setProperty("sourceModel", sourcesToVariantList(m_settings->sources()));
 }
 
 void MainWindow::refreshHotkeyMappings()
