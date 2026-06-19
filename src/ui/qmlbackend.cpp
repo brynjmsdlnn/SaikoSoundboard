@@ -1,7 +1,10 @@
 #include "ui/qmlbackend.h"
+#include "ui/realtimewaveformitem.h"
 #include <QFileInfo>
 #include <QQmlContext>
 #include <QUrl>
+#include <QMediaDevices>
+#include <QAudioDevice>
 #include "core/adapters/WindowsHotkeyBackend.h"
 #include "core/adapters/WindowsProcessFinder.h"
 
@@ -29,6 +32,7 @@ QmlBackend::QmlBackend(QObject *parent)
 
     m_engine->rootContext()->setContextProperty("qmlBackend", this);
     m_engine->addImageProvider(QLatin1String("fileicon"), new FileIconProvider());
+    qmlRegisterType<RealtimeWaveformItem>("Saiko", 1, 0, "RealtimeWaveform");
 }
 
 QmlBackend::~QmlBackend()
@@ -46,6 +50,43 @@ QVariantList QmlBackend::getRunningProcesses() const
         QVariantMap map;
         map["name"] = proc.first;
         map["fullPath"] = proc.second;
+        result.append(map);
+    }
+    return result;
+}
+
+static bool isVirtualDevice(const QString &description)
+{
+    QString d = description.toLower();
+    return d.contains("cable") || d.contains("virtual") || d.contains("voicemeeter")
+        || d.contains("vb-audio") || d.contains("sonar") || d.contains("loopback")
+        || d.contains("vac") || d.contains("wave link") || d.contains("soundpad");
+}
+
+QVariantList QmlBackend::getAudioOutputDevices() const
+{
+    QVariantList result;
+    const auto devices = QMediaDevices::audioOutputs();
+    QString defaultDesc = QMediaDevices::defaultAudioOutput().description();
+    for (const auto &dev : devices) {
+        QVariantMap map;
+        map["description"] = dev.description();
+        map["isDefault"] = (dev.description() == defaultDesc);
+        map["isVirtual"] = isVirtualDevice(dev.description());
+        result.append(map);
+    }
+    return result;
+}
+
+QVariantList QmlBackend::getAudioInputDevices() const
+{
+    QVariantList result;
+    const auto devices = QMediaDevices::audioInputs();
+    QString defaultDesc = QMediaDevices::defaultAudioInput().description();
+    for (const auto &dev : devices) {
+        QVariantMap map;
+        map["description"] = dev.description();
+        map["isDefault"] = (dev.description() == defaultDesc);
         result.append(map);
     }
     return result;

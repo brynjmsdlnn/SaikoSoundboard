@@ -58,6 +58,8 @@ public:
     CaptureState captureState() const;
     QQmlEngine *engine() const { return m_engine; }
     Q_INVOKABLE QVariantList getRunningProcesses() const;
+    Q_INVOKABLE QVariantList getAudioOutputDevices() const;
+    Q_INVOKABLE QVariantList getAudioInputDevices() const;
     QQmlComponent *loadComponent(const QString &qrcPath, QObject *parent = nullptr);
 
 signals:

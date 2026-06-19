@@ -61,6 +61,7 @@ private slots:
     void onWaveformGenerated(const QString &playerId, const WaveformData &data);
     void onPlayerPositionChanged(const QString &playerId, qint64 position);
     void onHotkeyDialogFinished();
+    void onRoutingDialogFinished();
 
 private:
     SoundboardManager *m_manager;
@@ -71,6 +72,7 @@ private:
     QScrollArea *m_scrollArea;
     QMap<QString, WaveformWidget*> m_waveformWidgets;
     QPointer<QQuickWindow> m_hotkeyDialogWindow;
+    QPointer<QQuickWindow> m_routingDialogWindow;
 
     void clearLayout();
 };

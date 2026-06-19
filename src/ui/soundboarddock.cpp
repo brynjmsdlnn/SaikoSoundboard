@@ -1,5 +1,4 @@
 #include "soundboarddock.h"
-#include "routingdialog.h"
 #include "managers/actionmanager.h"
 #include "ui/waveformwidget.h"
 #include "ui/qmlbackend.h"
@@ -70,8 +69,41 @@ SoundboardDock::SoundboardDock(SoundboardManager *manager, ActionManager *action
 
     connect(addBtn, &QPushButton::clicked, this, &SoundboardDock::onAddPlayer);
     connect(routingBtn, &QPushButton::clicked, this, [this]() {
-        RoutingDialog dlg(m_manager, this);
-        dlg.exec();
+        if (m_routingDialogWindow) {
+            m_routingDialogWindow->requestActivate();
+            return;
+        }
+
+        QQmlComponent *component = m_qmlBackend->loadComponent("qrc:/qml/RoutingDialog.qml", this);
+        if (component->isError()) {
+            qWarning() << "RoutingDialog.qml errors:" << component->errors();
+            return;
+        }
+
+        QObject *dialogObj = component->beginCreate(m_qmlBackend->engine()->rootContext());
+        if (component->isError()) {
+            qWarning() << "RoutingDialog.qml creation errors:" << component->errors();
+            return;
+        }
+        component->completeCreate();
+
+        QQuickWindow *window = qobject_cast<QQuickWindow*>(dialogObj);
+        if (!window) {
+            delete dialogObj;
+            return;
+        }
+
+        connect(window, SIGNAL(accepted()), this, SLOT(onRoutingDialogFinished()));
+        connect(window, SIGNAL(rejected()), window, SLOT(close()));
+        connect(window, &QWindow::visibleChanged, this, [this](bool visible) {
+            if (!visible && m_routingDialogWindow) {
+                m_routingDialogWindow->deleteLater();
+                m_routingDialogWindow = nullptr;
+            }
+        });
+
+        m_routingDialogWindow = window;
+        window->show();
     });
     connect(m_manager, &SoundboardManager::slotsChanged, this, &SoundboardDock::refresh);
     connect(m_manager, &SoundboardManager::waveformGenerated, this, &SoundboardDock::onWaveformGenerated);
@@ -391,6 +423,13 @@ void SoundboardDock::onHotkeyDialogFinished()
 
     m_manager->setHotkeys(id, playKey, assignKey);
     window->close();
+}
+
+void SoundboardDock::onRoutingDialogFinished()
+{
+    if (m_routingDialogWindow) {
+        m_routingDialogWindow->close();
+    }
 }
 
 void SoundboardDock::onAddPlayer()

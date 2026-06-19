@@ -2,5 +2,6 @@
     <qresource prefix="/qml">
         <file>HotkeyDialog.qml</file>
         <file>SourcesPanel.qml</file>
+        <file>RoutingDialog.qml</file>
     </qresource>
 </RCC>
