@@ -9,6 +9,10 @@ class SoundboardManager;
 class RecordingManager;
 class SettingsManager;
 
+namespace SaikoActions {
+
+Q_NAMESPACE
+
 enum class ActionType {
     PlayPlayer,
     StopPlayer,
@@ -16,6 +20,11 @@ enum class ActionType {
     SaveReplay,
     MakePermanent
 };
+Q_ENUM_NS(ActionType)
+
+} // namespace SaikoActions
+
+using SaikoActions::ActionType;
 
 struct Action {
     ActionType type;
@@ -46,7 +55,14 @@ class ActionManager : public QObject
 public:
     explicit ActionManager(SoundboardManager *sb, RecordingManager *rec, SettingsManager *settings, QObject *parent = nullptr);
 
-    void dispatch(const Action &action);
+    Q_INVOKABLE void dispatch(const Action &action);
+
+    // Q_INVOKABLE convenience methods — QML can't easily construct Action structs
+    Q_INVOKABLE void dispatchPlay(const QString &playerId);
+    Q_INVOKABLE void dispatchStop(const QString &playerId);
+    Q_INVOKABLE void dispatchAssignReplay(const QString &playerId, bool preserveExisting = false);
+    Q_INVOKABLE void dispatchSaveReplay();
+    Q_INVOKABLE void dispatchMakePermanent(const QString &playerId, const QString &customFileName = "");
 
 signals:
     void actionDispatched(const Action &action);

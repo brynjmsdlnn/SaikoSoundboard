@@ -18,6 +18,11 @@ class QmlBackend : public QObject
     Q_OBJECT
     Q_PROPERTY(CaptureState captureState READ captureState NOTIFY captureStateChanged)
     Q_PROPERTY(QQmlEngine* engine READ engine CONSTANT)
+    Q_PROPERTY(SettingsManager* settings READ settings CONSTANT)
+    Q_PROPERTY(RecordingManager* recording READ recordingManager CONSTANT)
+    Q_PROPERTY(SoundboardManager* soundboard READ soundboardManager CONSTANT)
+    Q_PROPERTY(ActionManager* actions READ actionManager CONSTANT)
+    Q_PROPERTY(HotkeyManager* hotkeys READ hotkeyManager CONSTANT)
 public:
     explicit QmlBackend(QObject *parent = nullptr);
     ~QmlBackend();

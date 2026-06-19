@@ -21,6 +21,10 @@ SoundboardManager::SoundboardManager(SettingsManager *settings, QObject *parent)
     m_passthroughSession->setAudioInput(m_passthroughInput);
     m_passthroughSession->setAudioOutput(m_passthroughOutput);
 
+    connect(m_settings, &SettingsManager::enableMicOutputChanged, this, &SoundboardManager::micOutputEnabledChanged);
+    connect(m_settings, &SettingsManager::enableLocalMonitoringChanged, this, &SoundboardManager::localMonitoringEnabledChanged);
+    connect(m_settings, &SettingsManager::enableMicPassthroughChanged, this, &SoundboardManager::micPassthroughEnabledChanged);
+
     updatePassthroughEngine();
 }
 
@@ -238,6 +242,7 @@ void SoundboardManager::setMicOutputEnabled(bool enabled)
     for (auto *player : m_players) {
         player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
     }
+    emit micOutputEnabledChanged();
 }
 
 void SoundboardManager::setLocalMonitoringEnabled(bool enabled)
@@ -247,6 +252,7 @@ void SoundboardManager::setLocalMonitoringEnabled(bool enabled)
     for (auto *player : m_players) {
         player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
     }
+    emit localMonitoringEnabledChanged();
 }
 
 void SoundboardManager::setMicOutputDevice(const QString &description)
@@ -374,6 +380,7 @@ void SoundboardManager::setMicPassthroughEnabled(bool enabled)
     m_settings->setEnableMicPassthrough(enabled);
     m_settings->save();
     updatePassthroughEngine();
+    emit micPassthroughEnabledChanged();
 }
 
 void SoundboardManager::setVoiceInputDevice(const QString &description)

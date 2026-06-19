@@ -8,6 +8,8 @@
 #include <psapi.h>
 #endif
 
+#include "core/adapters/WindowsProcessFinder.h"
+
 RecordingManager::RecordingManager(SettingsManager *settings, QObject *parent)
     : QObject(parent)
     , m_settings(settings)
@@ -36,9 +38,12 @@ RecordingManager::~RecordingManager()
 
 void RecordingManager::updateState()
 {
+    bool prevEngine = !m_activeRecorders.isEmpty();
+    bool prevRecording = m_wavWriter->isOpen();
+
     CaptureState newState;
     bool recording = isRecording();
-    
+
     if (m_replayEnabled && recording) {
         newState = CaptureState::RecordingAndReplay;
     } else if (m_replayEnabled) {
@@ -54,6 +59,15 @@ void RecordingManager::updateState()
         emit stateChanged(m_state);
         qDebug() << "RecordingManager: State changed to" << (int)m_state;
     }
+
+    bool newEngine = !m_activeRecorders.isEmpty();
+    if (newEngine != prevEngine) {
+        emit engineRunningChanged();
+    }
+    bool newRecording = m_wavWriter->isOpen();
+    if (newRecording != prevRecording) {
+        emit recordingChanged();
+    }
 }
 
 void RecordingManager::stopEngine()
@@ -63,7 +77,7 @@ void RecordingManager::stopEngine()
         rec->stop();
     }
     m_activeRecorders.clear();
-    
+
     WAVEFORMATEXTENSIBLE format;
     memset(&format, 0, sizeof(format));
     m_mixer->setOutputFormat(format);
@@ -72,8 +86,6 @@ void RecordingManager::stopEngine()
     updateState();
     emit engineStopped();
 }
-
-#include "core/adapters/WindowsProcessFinder.h"
 
 void RecordingManager::startEngine(const QString &mode)
 {
@@ -107,7 +119,7 @@ bool RecordingManager::startRecording(const QString &path)
     if (!m_wavWriter->open(path, fmt)) {
         return false;
     }
-    
+
     updateState();
     emit recordingStarted(path);
     return true;
@@ -117,11 +129,11 @@ void RecordingManager::stopRecording()
 {
     QString path = m_wavWriter->fileName();
     m_wavWriter->close();
-    
+
     if (!m_replayEnabled) {
         stopEngine();
     }
-    
+
     updateState();
     emit recordingStopped(path);
 }
@@ -167,20 +179,20 @@ void RecordingManager::startRecorderForPid(DWORD pid, const QString& sourceId, f
 {
     WasapiRecorder *rec = new WasapiRecorder(this);
     m_mixer->addSource(sourceId, volume);
-    
+
     connect(rec, &WasapiRecorder::pcmDataReady, this, [this, sourceId](const QByteArray &data){
         m_mixer->pushPcmData(sourceId, data);
     });
 
     connect(rec, &WasapiRecorder::finished, rec, &QObject::deleteLater);
     connect(rec, &WasapiRecorder::error, this, &RecordingManager::errorOccurred);
-    
+
     connect(rec, &WasapiRecorder::statsUpdated, this, [this, rec](qint64, double){
         if (m_mixer->getOutputFormat().Format.nSamplesPerSec == 0) {
             WAVEFORMATEXTENSIBLE fmt = rec->getFormat();
             m_mixer->setOutputFormat(fmt);
             m_replayBuffer->setFormat(fmt);
-            
+
             if (m_wavWriter->isOpen() && m_wavWriter->size() == 0) {
                 m_wavWriter->open(m_wavWriter->fileName(), fmt);
             }

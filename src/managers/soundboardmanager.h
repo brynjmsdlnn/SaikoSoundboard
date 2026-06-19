@@ -17,32 +17,37 @@
 class SoundboardManager : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(QList<SoundPlayerSlot> slots READ getSlots NOTIFY slotsChanged)
+    Q_PROPERTY(bool micOutputEnabled READ isMicOutputEnabled NOTIFY micOutputEnabledChanged)
+    Q_PROPERTY(bool localMonitoringEnabled READ isLocalMonitoringEnabled NOTIFY localMonitoringEnabledChanged)
+    Q_PROPERTY(bool micPassthroughEnabled READ isMicPassthroughEnabled NOTIFY micPassthroughEnabledChanged)
+    Q_PROPERTY(SettingsManager* settings READ settings CONSTANT)
 public:
     explicit SoundboardManager(SettingsManager *settings, QObject *parent = nullptr);
     ~SoundboardManager();
 
     // Player Management
-    QString addPlayer(const QString &name = "New Player");
-    void removePlayer(const QString &id);
-    void renamePlayer(const QString &id, const QString &newName);
-    void assignAudioFile(const QString &id, const QString &filePath);
-    void promoteTempFile(const QString &id, const QString &newPath);
-    void setVolume(const QString &id, float volume);
-    void setEnabled(const QString &id, bool enabled);
-    void setHotkeys(const QString &id, const QString &playHotkey, const QString &assignHotkey);
+    Q_INVOKABLE QString addPlayer(const QString &name = "New Player");
+    Q_INVOKABLE void removePlayer(const QString &id);
+    Q_INVOKABLE void renamePlayer(const QString &id, const QString &newName);
+    Q_INVOKABLE void assignAudioFile(const QString &id, const QString &filePath);
+    Q_INVOKABLE void promoteTempFile(const QString &id, const QString &newPath);
+    Q_INVOKABLE void setVolume(const QString &id, float volume);
+    Q_INVOKABLE void setEnabled(const QString &id, bool enabled);
+    Q_INVOKABLE void setHotkeys(const QString &id, const QString &playHotkey, const QString &assignHotkey);
 
     // Playback Control
-    void playPlayer(const QString &id);
-    void playPlayerPreview(const QString &id);
-    void stopPlayer(const QString &id);
-    void stopAll();
+    Q_INVOKABLE void playPlayer(const QString &id);
+    Q_INVOKABLE void playPlayerPreview(const QString &id);
+    Q_INVOKABLE void stopPlayer(const QString &id);
+    Q_INVOKABLE void stopAll();
 
     // Replay Assignment (to be used with RecordingManager)
-    void loadReplayToPlayer(const QString &id, const QString &replayPath);
+    Q_INVOKABLE void loadReplayToPlayer(const QString &id, const QString &replayPath);
 
     // Persistence
-    void loadFromSettings();
-    void saveToSettings();
+    Q_INVOKABLE void loadFromSettings();
+    Q_INVOKABLE void saveToSettings();
 
     // Accessors
     QList<SoundPlayerSlot> getSlots() const { return m_slots; }
@@ -54,27 +59,30 @@ public:
     bool isLocalMonitoringEnabled() const;
 
     // Mutators for Routing
-    void setMicOutputEnabled(bool enabled);
-    void setLocalMonitoringEnabled(bool enabled);
-    void setMicOutputDevice(const QString &description);
-    void setLocalMonitorDevice(const QString &description);
-    void setPlayerRouting(const QString &id, OutputRouting routing);
+    Q_INVOKABLE void setMicOutputEnabled(bool enabled);
+    Q_INVOKABLE void setLocalMonitoringEnabled(bool enabled);
+    Q_INVOKABLE void setMicOutputDevice(const QString &description);
+    Q_INVOKABLE void setLocalMonitorDevice(const QString &description);
+    Q_INVOKABLE void setPlayerRouting(const QString &id, OutputRouting routing);
 
     // Clipping and Waveforms
-    void setPlayerClipRange(const QString &id, qint64 startMs, qint64 endMs);
-    void loadWaveformData(const QString &playerId, const QString &filePath);
-    WaveformData getWaveformData(const QString &playerId);
+    Q_INVOKABLE void setPlayerClipRange(const QString &id, qint64 startMs, qint64 endMs);
+    Q_INVOKABLE void loadWaveformData(const QString &playerId, const QString &filePath);
+    Q_INVOKABLE WaveformData getWaveformData(const QString &playerId);
 
     // Microphone Passthrough
     bool isMicPassthroughEnabled() const;
-    void setMicPassthroughEnabled(bool enabled);
-    void setVoiceInputDevice(const QString &description);
+    Q_INVOKABLE void setMicPassthroughEnabled(bool enabled);
+    Q_INVOKABLE void setVoiceInputDevice(const QString &description);
 
 signals:
     void slotsChanged();
     void playerStateChanged(const QString &id, QMediaPlayer::PlaybackState state);
     void playerPositionChanged(const QString &id, qint64 position);
     void waveformGenerated(const QString &playerId, const WaveformData &data);
+    void micOutputEnabledChanged();
+    void localMonitoringEnabledChanged();
+    void micPassthroughEnabledChanged();
 
 private:
     SettingsManager *m_settings;

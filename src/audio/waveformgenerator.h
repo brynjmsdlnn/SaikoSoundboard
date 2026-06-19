@@ -5,6 +5,7 @@
 #include <QList>
 #include <QString>
 #include <QFuture>
+#include <QMetaType>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -12,6 +13,15 @@
 #endif
 
 struct WaveformData {
+    Q_GADGET
+    Q_PROPERTY(QList<float> peaks MEMBER peaks CONSTANT)
+    Q_PROPERTY(qint64 durationMs MEMBER durationMs CONSTANT)
+    Q_PROPERTY(bool isValid MEMBER isValid CONSTANT)
+    Q_PROPERTY(int sampleRate MEMBER sampleRate CONSTANT)
+    Q_PROPERTY(int channels MEMBER channels CONSTANT)
+    Q_PROPERTY(int resolution MEMBER resolution CONSTANT)
+
+public:
     QList<float> peaks; // amplitude peaks normalized from 0.0 to 1.0
     qint64 durationMs = 0;
     int sampleRate = 0;
@@ -19,6 +29,8 @@ struct WaveformData {
     int resolution = 0;
     bool isValid = false;
 };
+
+Q_DECLARE_METATYPE(WaveformData)
 
 class WaveformGenerator : public QObject
 {

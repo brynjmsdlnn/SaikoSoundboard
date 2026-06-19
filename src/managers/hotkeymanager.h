@@ -16,17 +16,17 @@ public:
     ~HotkeyManager();
 
     // Register a hotkey for a specific action
-    bool registerHotkey(const QString &keySequence, const Action &action);
-    
+    Q_INVOKABLE bool registerHotkey(const QString &keySequence, const Action &action);
+
     // Unregister all hotkeys or a specific one
-    void unregisterAll();
-    bool unregisterHotkey(const QString &keySequence);
+    Q_INVOKABLE void unregisterAll();
+    Q_INVOKABLE bool unregisterHotkey(const QString &keySequence);
 
     // Check if a hotkey is already registered
-    bool isRegistered(const QString &keySequence) const;
+    Q_INVOKABLE bool isRegistered(const QString &keySequence) const;
 
     // Helper to clear and re-register everything (useful for runtime updates)
-    void updateHotkeys(const QMap<QString, Action> &hotkeyMap);
+    Q_INVOKABLE void updateHotkeys(const QMap<QString, Action> &hotkeyMap);
 
     // From QAbstractNativeEventFilter
     bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *result) override;

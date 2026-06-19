@@ -4,8 +4,18 @@
 #include <QString>
 #include <QJsonObject>
 #include <QUuid>
+#include <QMetaType>
 
 struct AudioSource {
+    Q_GADGET
+    Q_PROPERTY(QString id MEMBER id CONSTANT)
+    Q_PROPERTY(QString name MEMBER name CONSTANT)
+    Q_PROPERTY(QString executableName MEMBER executableName CONSTANT)
+    Q_PROPERTY(QString executablePath MEMBER executablePath CONSTANT)
+    Q_PROPERTY(bool enabled MEMBER enabled CONSTANT)
+    Q_PROPERTY(float volume MEMBER volume CONSTANT)
+
+public:
     QString id;
     QString name;
     QString executableName;
@@ -15,6 +25,12 @@ struct AudioSource {
 
     AudioSource() {
         id = QUuid::createUuid().toString();
+    }
+
+    bool operator==(const AudioSource &other) const {
+        return id == other.id && name == other.name && executableName == other.executableName
+            && executablePath == other.executablePath && enabled == other.enabled
+            && qFuzzyCompare(volume, other.volume);
     }
 
     QJsonObject toJson() const {
@@ -39,5 +55,7 @@ struct AudioSource {
         return src;
     }
 };
+
+Q_DECLARE_METATYPE(AudioSource)
 
 #endif // AUDIOSOURCE_H

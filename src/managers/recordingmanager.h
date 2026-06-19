@@ -15,24 +15,27 @@
 class RecordingManager : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(bool engineRunning READ isEngineRunning NOTIFY engineRunningChanged)
+    Q_PROPERTY(bool recording READ isRecording NOTIFY recordingChanged)
+    Q_PROPERTY(CaptureState state READ state NOTIFY stateChanged)
 public:
     explicit RecordingManager(SettingsManager *settings, QObject *parent = nullptr);
     ~RecordingManager();
 
     // Engine Control
-    void startEngine(const QString &mode);
-    void stopEngine();
+    Q_INVOKABLE void startEngine(const QString &mode);
+    Q_INVOKABLE void stopEngine();
     bool isEngineRunning() const { return !m_activeRecorders.isEmpty(); }
 
     // Recording Control
-    bool startRecording(const QString &path);
-    void stopRecording();
+    Q_INVOKABLE bool startRecording(const QString &path);
+    Q_INVOKABLE void stopRecording();
     bool isRecording() const { return m_wavWriter->isOpen(); }
 
     // Replay Control
-    void setReplayEnabled(bool enabled, const QString &mode);
-    bool saveReplay(const QString &path);
-    void setReplayDuration(int seconds);
+    Q_INVOKABLE void setReplayEnabled(bool enabled, const QString &mode);
+    Q_INVOKABLE bool saveReplay(const QString &path);
+    Q_INVOKABLE void setReplayDuration(int seconds);
 
     // Accessors
     WavWriter* wavWriter() const { return m_wavWriter; }
@@ -43,8 +46,10 @@ public:
 signals:
     void engineStarted();
     void engineStopped();
+    void engineRunningChanged();
     void recordingStarted(const QString &path);
     void recordingStopped(const QString &path);
+    void recordingChanged();
     void stateChanged(CaptureState newState);
     void errorOccurred(const QString &msg);
 

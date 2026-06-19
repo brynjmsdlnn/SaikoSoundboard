@@ -81,6 +81,33 @@ void ActionManager::handleSaveReplay()
     }
 }
 
+// --- Q_INVOKABLE convenience methods ---
+
+void ActionManager::dispatchPlay(const QString &playerId)
+{
+    dispatch(Action::createPlay(playerId));
+}
+
+void ActionManager::dispatchStop(const QString &playerId)
+{
+    dispatch(Action::createStop(playerId));
+}
+
+void ActionManager::dispatchAssignReplay(const QString &playerId, bool preserveExisting)
+{
+    dispatch(Action::createAssignReplay(playerId, preserveExisting));
+}
+
+void ActionManager::dispatchSaveReplay()
+{
+    dispatch(Action::createSaveReplay());
+}
+
+void ActionManager::dispatchMakePermanent(const QString &playerId, const QString &customFileName)
+{
+    dispatch(Action::createMakePermanent(playerId, customFileName));
+}
+
 void ActionManager::handleMakePermanent(const QString &playerId, const QString &customFileName)
 {
     if (!m_sb || !m_settings) return;

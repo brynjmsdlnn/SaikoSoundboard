@@ -16,11 +16,22 @@
 class SettingsManager : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(QList<AudioSource> sources READ sources NOTIFY sourcesChanged)
+    Q_PROPERTY(QList<SoundPlayerSlot> soundBoardSlots READ soundBoardSlots NOTIFY soundBoardSlotsChanged)
+    Q_PROPERTY(bool replayEnabled READ replayEnabled WRITE setReplayEnabled NOTIFY replayEnabledChanged)
+    Q_PROPERTY(int replayDuration READ replayDuration WRITE setReplayDuration NOTIFY replayDurationChanged)
+    Q_PROPERTY(QString saveDirectory READ saveDirectory WRITE setSaveDirectory NOTIFY saveDirectoryChanged)
+    Q_PROPERTY(bool enableMicOutput READ enableMicOutput WRITE setEnableMicOutput NOTIFY enableMicOutputChanged)
+    Q_PROPERTY(bool enableLocalMonitoring READ enableLocalMonitoring WRITE setEnableLocalMonitoring NOTIFY enableLocalMonitoringChanged)
+    Q_PROPERTY(QString micOutputDevice READ micOutputDevice WRITE setMicOutputDevice NOTIFY micOutputDeviceChanged)
+    Q_PROPERTY(QString localMonitorDevice READ localMonitorDevice WRITE setLocalMonitorDevice NOTIFY localMonitorDeviceChanged)
+    Q_PROPERTY(bool enableMicPassthrough READ enableMicPassthrough WRITE setEnableMicPassthrough NOTIFY enableMicPassthroughChanged)
+    Q_PROPERTY(QString voiceInputDevice READ voiceInputDevice WRITE setVoiceInputDevice NOTIFY voiceInputDeviceChanged)
 public:
     explicit SettingsManager(QObject *parent = nullptr);
 
-    void load();
-    void save();
+    Q_INVOKABLE void load();
+    Q_INVOKABLE void save();
 
     // Getters
     QList<AudioSource> sources() const { return m_sources; }
@@ -36,17 +47,30 @@ public:
     QString voiceInputDevice() const { return m_voiceInputDevice; }
 
     // Setters
-    void setSources(const QList<AudioSource> &sources) { m_sources = sources; }
-    void setSoundBoardSlots(const QList<SoundPlayerSlot> &soundBoardSlots) { m_soundBoardSlots = soundBoardSlots; }
-    void setReplayEnabled(bool enabled) { m_replayEnabled = enabled; }
-    void setReplayDuration(int duration) { m_replayDuration = duration; }
-    void setSaveDirectory(const QString &dir) { m_saveDirectory = dir; }
-    void setEnableMicOutput(bool enabled) { m_enableMicOutput = enabled; }
-    void setEnableLocalMonitoring(bool enabled) { m_enableLocalMonitoring = enabled; }
-    void setMicOutputDevice(const QString &device) { m_micOutputDevice = device; }
-    void setLocalMonitorDevice(const QString &device) { m_localMonitorDevice = device; }
-    void setEnableMicPassthrough(bool enabled) { m_enableMicPassthrough = enabled; }
-    void setVoiceInputDevice(const QString &device) { m_voiceInputDevice = device; }
+    void setSources(const QList<AudioSource> &sources);
+    void setSoundBoardSlots(const QList<SoundPlayerSlot> &soundBoardSlots);
+    void setReplayEnabled(bool enabled);
+    void setReplayDuration(int duration);
+    void setSaveDirectory(const QString &dir);
+    void setEnableMicOutput(bool enabled);
+    void setEnableLocalMonitoring(bool enabled);
+    void setMicOutputDevice(const QString &device);
+    void setLocalMonitorDevice(const QString &device);
+    void setEnableMicPassthrough(bool enabled);
+    void setVoiceInputDevice(const QString &device);
+
+signals:
+    void sourcesChanged();
+    void soundBoardSlotsChanged();
+    void replayEnabledChanged();
+    void replayDurationChanged();
+    void saveDirectoryChanged();
+    void enableMicOutputChanged();
+    void enableLocalMonitoringChanged();
+    void micOutputDeviceChanged();
+    void localMonitorDeviceChanged();
+    void enableMicPassthroughChanged();
+    void voiceInputDeviceChanged();
 
 private:
     QString getSettingsFilePath() const;
