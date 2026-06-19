@@ -1,17 +1,19 @@
 #ifndef QMLBACKEND_H
 #define QMLBACKEND_H
 
-#include <QFileSystemWatcher>
-#include <QHash>
 #include <QObject>
-#include <QQmlComponent>
-#include <QQmlEngine>
 #include <QQuickImageProvider>
 #include <QFileIconProvider>
 #include <QIcon>
 #include <QPixmap>
 #include <QFileInfo>
 #include <QUrl>
+#include <QTimer>
+#include <QElapsedTimer>
+#include <QVariant>
+#include <QMediaPlayer>
+#include <QAudioOutput>
+#include <QDir>
 #include "managers/settingsmanager.h"
 #include "managers/recordingmanager.h"
 #include "managers/soundboardmanager.h"
@@ -19,6 +21,7 @@
 #include "managers/hotkeymanager.h"
 #include "models/capturestate.h"
 #include "models/soundplayerslotmodel.h"
+#include "audio/waveformgenerator.h"
 
 class FileIconProvider : public QQuickImageProvider
 {
@@ -40,13 +43,14 @@ class QmlBackend : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(CaptureState captureState READ captureState NOTIFY captureStateChanged)
-    Q_PROPERTY(QQmlEngine* engine READ engine CONSTANT)
+    Q_PROPERTY(QVariant replayWaveform READ replayWaveform NOTIFY replayWaveformChanged)
     Q_PROPERTY(SettingsManager* settings READ settings CONSTANT)
     Q_PROPERTY(RecordingManager* recording READ recordingManager CONSTANT)
     Q_PROPERTY(SoundboardManager* soundboard READ soundboardManager CONSTANT)
     Q_PROPERTY(ActionManager* actions READ actionManager CONSTANT)
     Q_PROPERTY(HotkeyManager* hotkeys READ hotkeyManager CONSTANT)
     Q_PROPERTY(SoundPlayerSlotModel* slotModel READ slotModel CONSTANT)
+    Q_PROPERTY(bool isPlaying READ isPlaying NOTIFY playbackStateChanged)
 public:
     explicit QmlBackend(QObject *parent = nullptr);
     ~QmlBackend();
@@ -59,22 +63,31 @@ public:
     SoundPlayerSlotModel *slotModel() const { return m_slotModel; }
 
     CaptureState captureState() const;
-    QQmlEngine *engine() const { return m_engine; }
+    QVariant replayWaveform() const { return QVariant::fromValue(m_replayWaveform); }
+    bool isPlaying() const { return m_isPlaying; }
+
     Q_INVOKABLE QVariantList getRunningProcesses() const;
     Q_INVOKABLE QVariantList getAudioOutputDevices() const;
     Q_INVOKABLE QVariantList getAudioInputDevices() const;
-    QQmlComponent *loadComponent(const QString &qrcPath, QObject *parent = nullptr);
+    Q_INVOKABLE qint64 recordingFileSize() const;
+    Q_INVOKABLE void addSource(const QString &name, const QString &executableName, const QString &executablePath);
+    Q_INVOKABLE void removeSource(const QString &sourceId);
+    Q_INVOKABLE QVariantList getSources() const;
+    Q_INVOKABLE void playFile(const QString &path);
+    Q_INVOKABLE void stopPlayback();
+    Q_INVOKABLE QString renameRecordingFile(const QString &oldPath, const QString &dir, const QString &newName);
 
 signals:
     void captureStateChanged(CaptureState state);
+    void replayWaveformChanged();
+    void playbackStateChanged();
 
 private slots:
-    void reloadComponent(const QString &filePath);
+    void updateReplayWaveform();
 
 private:
-    QQmlEngine *m_engine;
-    QFileSystemWatcher *m_qmlWatcher;
-    QHash<QString, QString> m_watchedFiles;
+    QTimer *m_replayWaveformTimer;
+    WaveformData m_replayWaveform;
     SettingsManager *m_settings;
     RecordingManager *m_recordingManager;
     SoundboardManager *m_soundboardManager;
@@ -82,6 +95,9 @@ private:
     HotkeyManager *m_hotkeyManager;
     SoundPlayerSlotModel *m_slotModel = nullptr;
     void *m_hotkeyBackend;
+    QMediaPlayer *m_player = nullptr;
+    QAudioOutput *m_audioOutput = nullptr;
+    bool m_isPlaying = false;
 };
 
 #endif

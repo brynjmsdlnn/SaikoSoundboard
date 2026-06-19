@@ -1,0 +1,703 @@
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.15
+import QtQuick.Window 2.15
+import QtQuick.Dialogs
+import Saiko 1.0
+
+ApplicationWindow {
+    id: app
+    visible: true
+    width: 1100
+    height: 700
+    minimumWidth: 900
+    minimumHeight: 600
+    title: "Saiko Soundboard"
+    color: "#0f0f0f"
+
+    property var sourcesModel: []
+    property string captureMode: "global"
+    property bool isRecording: false
+    property bool isReplayActive: false
+    property int remainingSec: 0
+    property real elapsedSec: 0.0
+    property string lastRecordingPath: ""
+
+    Component.onCompleted: updateSources()
+
+    function updateSources() {
+        sourcesModel = qmlBackend.getSources()
+        sourcesPanel.sourceModel = sourcesModel
+    }
+
+    function startRecording() {
+        var ts = new Date()
+        var fmt = ts.getFullYear() +
+            ("0" + (ts.getMonth()+1)).slice(-2) +
+            ("0" + ts.getDate()).slice(-2) + "_" +
+            ("0" + ts.getHours()).slice(-2) +
+            ("0" + ts.getMinutes()).slice(-2) +
+            ("0" + ts.getSeconds()).slice(-2)
+        lastRecordingPath = qmlBackend.settings.saveDirectory + "/Recording_" + fmt + ".wav"
+
+        if (!qmlBackend.recording.isEngineRunning)
+            qmlBackend.recording.startEngine(captureMode)
+
+        if (!qmlBackend.recording.startRecording(lastRecordingPath))
+            return
+
+        remainingSec = 10
+        elapsedSec = 0.0
+        isRecording = true
+        playBtn.enabled = false
+        stopBtn.enabled = true
+        startBtn.enabled = false
+        timerLabel.text = "Time remaining: 10s"
+        statsLabel.text = "Size: 0 KB \u00b7 Time: 0.0s"
+        recordingTimer.start()
+        stopTimer.start()
+    }
+
+    function stopRecording() {
+        recordingTimer.stop()
+        stopTimer.stop()
+        qmlBackend.recording.stopRecording()
+
+        var fileSize = qmlBackend.recordingFileSize()
+        if (fileSize > 100) {
+            renameDialog.open()
+        } else {
+            statusLabel.text = "Recording failed or was empty"
+            resetAfterStop()
+        }
+    }
+
+    function finishRename(newName) {
+        var dir = lastRecordingPath.substring(0, lastRecordingPath.lastIndexOf("/"))
+        var finalPath = qmlBackend.renameRecordingFile(lastRecordingPath, dir, newName)
+        lastRecordingPath = finalPath
+        statusLabel.text = "Saved: " + lastRecordingPath.substring(lastRecordingPath.lastIndexOf("/") + 1)
+        playBtn.enabled = true
+        resetAfterStop()
+    }
+
+    function resetAfterStop() {
+        isRecording = false
+        timerLabel.text = ""
+        stopBtn.enabled = false
+        startBtn.enabled = true
+    }
+
+    Timer {
+        id: recordingTimer
+        interval: 100
+        repeat: true
+        onTriggered: {
+            elapsedSec += 0.1
+            remainingSec = Math.max(0, 10 - Math.floor(elapsedSec))
+            timerLabel.text = "Time remaining: " + remainingSec + "s"
+            var bytes = qmlBackend.recordingFileSize()
+            statsLabel.text = "Size: " + Math.round(bytes/1024) + " KB \u00b7 Time: " + elapsedSec.toFixed(1) + "s"
+        }
+    }
+
+    Timer {
+        id: stopTimer
+        interval: 10000
+        repeat: false
+        onTriggered: stopRecording()
+    }
+
+    // ============================================================
+    // Reusable section card wrapper
+    // ============================================================
+    component SectionCard: Rectangle {
+        id: section
+        default property alias content: sectionLayout.children
+        property string heading: ""
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: sectionLayout.implicitHeight + 28
+        color: "#131313"
+        radius: 10
+        border.color: "#1e1e1e"
+        border.width: 1
+
+        ColumnLayout {
+            id: sectionLayout
+            anchors.fill: parent
+            anchors.margins: 14
+            spacing: 10
+
+            Text {
+                visible: section.heading !== ""
+                text: section.heading
+                color: "#4a4a4a"
+                font.pixelSize: 10
+                font.letterSpacing: 1.2
+                font.weight: Font.Bold
+            }
+        }
+    }
+
+    component SmallButton: Rectangle {
+        id: smallBtn
+        implicitWidth: textItem.implicitWidth + 24
+        height: 30
+        radius: 6
+        color: btnMouse.containsMouse ? "#1c1c1c" : "#141414"
+        border.color: btnMouse.containsMouse ? "#333" : "#1f1f1f"
+        border.width: 1
+        opacity: enabled ? 1.0 : 0.4
+        Behavior on color { ColorAnimation { duration: 150 } }
+        Behavior on border.color { ColorAnimation { duration: 150 } }
+
+        property alias text: textItem.text
+        signal clicked()
+
+        Text {
+            id: textItem
+            anchors.centerIn: parent
+            color: smallBtn.enabled && btnMouse.containsMouse ? "white" : "#999"
+            font.pixelSize: 11
+            Behavior on color { ColorAnimation { duration: 150 } }
+        }
+
+        MouseArea {
+            id: btnMouse
+            anchors.fill: parent
+            enabled: smallBtn.enabled
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: smallBtn.clicked()
+        }
+    }
+
+    component TransportButton: Rectangle {
+        id: tBtn
+        property string label: ""
+        property color tint: "#888888"
+        signal clicked()
+
+        Layout.fillWidth: true
+        height: 38
+        radius: 8
+        color: enabled
+            ? (tMouse.containsMouse ? Qt.rgba(tint.r, tint.g, tint.b, 0.18) : "#141414")
+            : "#121212"
+        border.color: enabled
+            ? (tMouse.containsMouse ? Qt.rgba(tint.r, tint.g, tint.b, 0.6) : "#1f1f1f")
+            : "#1a1a1a"
+        border.width: 1
+        opacity: enabled ? 1.0 : 0.4
+        Behavior on color { ColorAnimation { duration: 150 } }
+        Behavior on border.color { ColorAnimation { duration: 150 } }
+
+        Text {
+            anchors.centerIn: parent
+            text: tBtn.label
+            color: tBtn.enabled && tMouse.containsMouse ? tBtn.tint : "#aaa"
+            font.pixelSize: 12
+            font.weight: Font.Medium
+            Behavior on color { ColorAnimation { duration: 150 } }
+        }
+
+        MouseArea {
+            id: tMouse
+            anchors.fill: parent
+            enabled: tBtn.enabled
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: tBtn.clicked()
+        }
+    }
+
+    Dialog {
+        id: renameDialog
+        title: "Save recording"
+        standardButtons: StandardButton.Ok | StandardButton.Cancel
+        modal: true
+        x: Math.round((app.width - width) / 2)
+        y: Math.round((app.height - height) / 2)
+        width: 360
+
+        background: Rectangle {
+            color: "#161616"
+            border.color: "#222"
+            border.width: 1
+            radius: 8
+        }
+
+        contentItem: ColumnLayout {
+            anchors.margins: 16
+            spacing: 12
+            Text {
+                text: "Enter a name for the recording:"
+                color: "white"
+                font.pixelSize: 13
+            }
+            Rectangle {
+                Layout.fillWidth: true
+                height: 36
+                color: "#101010"
+                radius: 6
+                border.color: renameInput.activeFocus ? "#BB86FC" : "#1c1c1c"
+                border.width: 1
+                Behavior on border.color { ColorAnimation { duration: 150 } }
+                TextInput {
+                    id: renameInput
+                    anchors.fill: parent
+                    anchors.leftMargin: 10
+                    anchors.rightMargin: 10
+                    verticalAlignment: TextInput.AlignVCenter
+                    color: "white"
+                    font.pixelSize: 12
+                    focus: true
+                    onAccepted: renameDialog.accept()
+                }
+            }
+        }
+
+        onAccepted: {
+            var name = renameInput.text.trim()
+            finishRename(name.length > 0 ? name : "Recording")
+        }
+        onRejected: {
+            resetAfterStop()
+        }
+        onVisibleChanged: {
+            if (visible) renameInput.text = ""
+        }
+    }
+
+    // ============================================================
+    // Main layout
+    // ============================================================
+    SplitView {
+        id: verticalSplit
+        anchors.fill: parent
+        orientation: Qt.Vertical
+
+        handle: Rectangle {
+            implicitHeight: 4
+            color: SplitHandle.pressed ? "#BB86FC" : (SplitHandle.hovered ? "#333" : "#1c1c1c")
+            Behavior on color { ColorAnimation { duration: 120 } }
+        }
+
+        SplitView {
+            id: horizontalSplit
+            SplitView.fillHeight: true
+            orientation: Qt.Horizontal
+
+            handle: Rectangle {
+                implicitWidth: 4
+                color: SplitHandle.pressed ? "#BB86FC" : (SplitHandle.hovered ? "#333" : "#1c1c1c")
+                Behavior on color { ColorAnimation { duration: 120 } }
+            }
+
+            // ---------------- LEFT PANEL ----------------
+            Flickable {
+                id: leftPanelFlickable
+                SplitView.preferredWidth: qmlBackend.settings.leftPanelWidth > 0 ? qmlBackend.settings.leftPanelWidth : 340
+                SplitView.minimumWidth: 300
+                contentWidth: width
+                contentHeight: leftColumn.implicitHeight + 32
+                clip: true
+
+                onWidthChanged: {
+                    if (width > 0) {
+                        qmlBackend.settings.leftPanelWidth = width
+                        qmlBackend.settings.save()
+                    }
+                }
+
+                ColumnLayout {
+                    id: leftColumn
+                    x: Math.max(16, (parent.width - width) / 2)
+                    y: 16
+                    width: Math.min(parent.width - 32, 420)
+                    spacing: 14
+
+                    Text {
+                        text: "Saiko Soundboard"
+                        color: "white"
+                        font.pixelSize: 18
+                        font.weight: Font.Bold
+                    }
+
+                    // --- Status section ---
+                    SectionCard {
+                        heading: "STATUS"
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 4
+
+                            Text {
+                                id: statusLabel
+                                text: "Ready"
+                                color: "#ccc"
+                                font.pixelSize: 13
+                            }
+                            Text {
+                                id: timerLabel
+                                text: ""
+                                color: "#BB86FC"
+                                font.pixelSize: 13
+                                font.weight: Font.Medium
+                                visible: text !== ""
+                            }
+                            Text {
+                                id: statsLabel
+                                text: "Size: 0 KB \u00b7 Time: 0s"
+                                color: "#666"
+                                font.pixelSize: 11
+                            }
+                        }
+                    }
+
+                    // --- Capture settings section ---
+                    SectionCard {
+                        heading: "CAPTURE"
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            Text {
+                                text: "Mode"
+                                color: "#999"
+                                font.pixelSize: 12
+                                Layout.preferredWidth: 60
+                            }
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 32
+                                color: "#101010"
+                                radius: 6
+                                border.color: "#1f1f1f"
+                                border.width: 1
+
+                                ComboBox {
+                                    id: modeCombo
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 8
+                                    anchors.rightMargin: 8
+                                    model: [
+                                        { text: "System output (global)", value: "global" },
+                                        { text: "Multi-track (sources)", value: "multi" }
+                                    ]
+                                    textRole: "text"
+                                    valueRole: "value"
+                                    currentIndex: 0
+                                    background: Item {}
+                                    contentItem: Text {
+                                        text: {
+                                            for (var i = 0; i < modeCombo.model.length; i++) {
+                                                if (modeCombo.model[i].value === modeCombo.currentValue)
+                                                    return modeCombo.model[i].text
+                                            }
+                                            return ""
+                                        }
+                                        color: "white"
+                                        font.pixelSize: 12
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+                                    onActivated: {
+                                        captureMode = modeCombo.currentValue
+                                        sourcesDock.visible = (captureMode === "multi")
+                                        updateSources()
+                                    }
+                                }
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 6
+
+                            Text {
+                                text: "Save to"
+                                color: "#999"
+                                font.pixelSize: 12
+                            }
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 6
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    height: 32
+                                    color: "#101010"
+                                    radius: 6
+                                    border.color: "#1f1f1f"
+                                    border.width: 1
+                                    TextInput {
+                                        id: saveDirInput
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 10
+                                        anchors.rightMargin: 10
+                                        verticalAlignment: TextInput.AlignVCenter
+                                        color: "#888"
+                                        font.pixelSize: 11
+                                        readOnly: true
+                                        text: qmlBackend.settings.saveDirectory
+                                    }
+                                }
+                                SmallButton { text: "Open"; onClicked: Qt.openUrlExternally("file:///" + qmlBackend.settings.saveDirectory) }
+                                SmallButton { text: "Change..."; onClicked: folderDialog.open() }
+                            }
+                        }
+                    }
+
+                    // --- Replay buffer section ---
+                    SectionCard {
+                        heading: "REPLAY BUFFER"
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            CustomCheckBox {
+                                id: replayCheck
+                                text: "Enabled"
+                                checked: qmlBackend.settings.replayEnabled
+                                onToggled: {
+                                    qmlBackend.settings.replayEnabled = checked
+                                    qmlBackend.settings.save()
+                                    qmlBackend.recording.setReplayEnabled(checked, captureMode)
+                                }
+                            }
+                            Item { Layout.fillWidth: true }
+                            Text {
+                                text: "Duration"
+                                color: "#999"
+                                font.pixelSize: 11
+                            }
+                            Rectangle {
+                                width: 60
+                                height: 28
+                                color: "#101010"
+                                radius: 6
+                                border.color: "#1f1f1f"
+                                border.width: 1
+                                SpinBox {
+                                    id: replayDurationSpin
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 4
+                                    anchors.rightMargin: 4
+                                    from: 1; to: 120
+                                    value: qmlBackend.settings.replayDuration
+                                    background: Item {}
+                                    contentItem: Text {
+                                        text: replayDurationSpin.value + "s"
+                                        color: "white"
+                                        font.pixelSize: 11
+                                        verticalAlignment: Text.AlignVCenter
+                                        horizontalAlignment: Text.AlignHCenter
+                                    }
+                                    onValueModified: {
+                                        qmlBackend.recording.setReplayDuration(value)
+                                        qmlBackend.settings.replayDuration = value
+                                        qmlBackend.settings.save()
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 60
+                            color: "#0c0c0c"
+                            radius: 8
+                            border.color: "#1c1c1c"
+                            border.width: 1
+                            clip: true
+
+                            WaveformView {
+                                id: replayWaveform
+                                anchors.fill: parent
+                                anchors.margins: 3
+                                waveformData: qmlBackend.replayWaveform
+                                readOnly: true
+                            }
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            Text {
+                                id: replayStatusText
+                                text: isReplayActive ? "Status: active" : "Status: inactive"
+                                color: "#666"
+                                font.pixelSize: 11
+                            }
+                            Item { Layout.fillWidth: true }
+                            SmallButton {
+                                id: saveReplayBtn
+                                text: "Save replay"
+                                enabled: isReplayActive
+                                onClicked: {
+                                    if (isReplayActive) {
+                                        var ts = new Date()
+                                        var fmt = ts.getFullYear() +
+                                            ("0" + (ts.getMonth()+1)).slice(-2) +
+                                            ("0" + ts.getDate()).slice(-2) + "_" +
+                                            ("0" + ts.getHours()).slice(-2) +
+                                            ("0" + ts.getMinutes()).slice(-2) +
+                                            ("0" + ts.getSeconds()).slice(-2)
+                                        var path = qmlBackend.settings.saveDirectory + "/Replay_" + fmt + ".wav"
+                                        if (qmlBackend.recording.saveReplay(path)) {
+                                            statusLabel.text = "Replay saved: Replay_" + fmt + ".wav"
+                                            lastRecordingPath = path
+                                            playBtn.enabled = true
+                                        } else {
+                                            statusLabel.text = "Failed to save replay or buffer empty"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // --- Transport controls ---
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        TransportButton {
+                            id: startBtn
+                            label: "Start recording"
+                            tint: "#4caf50"
+                            onClicked: startRecording()
+                        }
+                        TransportButton {
+                            id: stopBtn
+                            label: "Stop"
+                            tint: "#e35d5d"
+                            enabled: false
+                            onClicked: stopRecording()
+                        }
+                        TransportButton {
+                            id: playBtn
+                            label: "Play last"
+                            tint: "#BB86FC"
+                            enabled: false
+                            onClicked: {
+                                if (lastRecordingPath.length > 0) qmlBackend.playFile(lastRecordingPath)
+                            }
+                        }
+                    }
+
+                    Item { Layout.preferredHeight: 8 }
+                }
+            }
+
+            // ---------------- SOURCES DOCK ----------------
+            Rectangle {
+                id: sourcesDock
+                SplitView.preferredWidth: qmlBackend.settings.sourcesDockWidth > 0 ? qmlBackend.settings.sourcesDockWidth : 320
+                SplitView.minimumWidth: 260
+                color: "#0d0d0d"
+                visible: (captureMode === "multi")
+
+                onWidthChanged: {
+                    if (width > 0 && visible) {
+                        qmlBackend.settings.sourcesDockWidth = width
+                        qmlBackend.settings.save()
+                    }
+                }
+
+                SourcesPanel {
+                    id: sourcesPanel
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    sourceModel: sourcesModel
+                    locked: !startBtn.enabled
+
+                    onSourceAdded: {
+                        qmlBackend.addSource(name, executableName, executablePath)
+                        updateSources()
+                    }
+                    onSourceRemoved: {
+                        qmlBackend.removeSource(sourceId)
+                        updateSources()
+                    }
+                }
+            }
+        }
+
+        // ---------------- BOTTOM DOCK: SOUNDBOARD SLOTS ----------------
+        Rectangle {
+            id: soundboardDock
+            SplitView.preferredHeight: qmlBackend.settings.soundboardDockHeight > 0 ? qmlBackend.settings.soundboardDockHeight : 280
+            SplitView.minimumHeight: 180
+            color: "#0c0c0c"
+            border.color: "#1c1c1c"
+            border.width: 1
+
+            onHeightChanged: {
+                if (height > 0) {
+                    qmlBackend.settings.soundboardDockHeight = height
+                    qmlBackend.settings.save()
+                }
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 0
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 1
+                    color: "#1c1c1c"
+                }
+
+                SoundboardPanel {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                }
+            }
+        }
+    }
+
+    FileDialog {
+        id: folderDialog
+        title: "Select save directory"
+        fileMode: FileDialog.Directory
+        currentFolder: "file:///" + qmlBackend.settings.saveDirectory
+        onAccepted: {
+            var path = selectedFile.toString()
+            if (path.startsWith("file:///"))
+                path = path.substring(8)
+            qmlBackend.settings.saveDirectory = path
+            qmlBackend.settings.save()
+            saveDirInput.text = path
+        }
+    }
+
+    Connections {
+        target: qmlBackend
+        function onCaptureStateChanged(state) {
+            var isRecordingState = (state === 2 || state === 3)
+            var isReplay = (state === 1 || state === 3)
+            isReplayActive = isReplay
+
+            modeCombo.enabled = (state === 0)
+            sourcesPanel.locked = !modeCombo.enabled
+
+            replayStatusText.text = isReplayActive ? "Status: active" : "Status: inactive"
+            saveReplayBtn.enabled = isReplayActive
+            replayCheck.checked = isReplayActive
+
+            if (state === 0) statusLabel.text = "Ready"
+            else if (state === 1) statusLabel.text = "Background replay active..."
+            else if (state === 2) statusLabel.text = "Manual recording active..."
+            else if (state === 3) statusLabel.text = "Recording + replay active..."
+        }
+        function onPlaybackStateChanged() {
+            if (!qmlBackend.isPlaying) {
+                statusLabel.text = "Ready"
+                startBtn.enabled = true
+                playBtn.enabled = (lastRecordingPath.length > 0)
+            }
+        }
+    }
+}

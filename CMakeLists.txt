@@ -34,11 +34,6 @@ set(CORE_ADAPTERS_SOURCES
 )
 
 set(UI_SOURCES
-    src/ui/mainwindow.cpp
-    src/ui/mainwindow.h
-
-    src/ui/waveformwidget.cpp
-    src/ui/waveformwidget.h
     src/ui/realtimewaveformitem.cpp
     src/ui/realtimewaveformitem.h
     src/ui/waveformitem.cpp

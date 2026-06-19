@@ -2,7 +2,6 @@
 #include "ui/realtimewaveformitem.h"
 #include "ui/waveformitem.h"
 #include <QFileInfo>
-#include <QQmlContext>
 #include <QUrl>
 #include <QMediaDevices>
 #include <QAudioDevice>
@@ -11,17 +10,13 @@
 
 QmlBackend::QmlBackend(QObject *parent)
     : QObject(parent)
-    , m_engine(new QQmlEngine(this))
-    , m_qmlWatcher(new QFileSystemWatcher(this))
 {
-    connect(m_qmlWatcher, &QFileSystemWatcher::fileChanged, this, &QmlBackend::reloadComponent);
     m_settings = new SettingsManager(this);
     m_settings->load();
 
     m_recordingManager = new RecordingManager(m_settings, this);
 
     m_soundboardManager = new SoundboardManager(m_settings, this);
-    m_soundboardManager->loadFromSettings();
 
     m_actionManager = new ActionManager(m_soundboardManager, m_recordingManager, m_settings, this);
 
@@ -31,10 +26,46 @@ QmlBackend::QmlBackend(QObject *parent)
 
     m_slotModel = new SoundPlayerSlotModel(m_soundboardManager, this);
 
-    connect(m_recordingManager, &RecordingManager::stateChanged, this, &QmlBackend::captureStateChanged);
+    connect(m_soundboardManager, &SoundboardManager::slotsChanged, this, [this]() {
+        QMap<QString, Action> hotkeyMap;
+        for (const auto &slot : m_soundboardManager->getSlots()) {
+            if (!slot.playHotkey.isEmpty())
+                hotkeyMap[slot.playHotkey] = Action::createPlay(slot.id);
+            if (!slot.assignHotkey.isEmpty())
+                hotkeyMap[slot.assignHotkey] = Action::createAssignReplay(slot.id);
+        }
+        m_hotkeyManager->updateHotkeys(hotkeyMap);
+    });
 
-    m_engine->rootContext()->setContextProperty("qmlBackend", this);
-    m_engine->addImageProvider(QLatin1String("fileicon"), new FileIconProvider());
+    m_soundboardManager->loadFromSettings();
+
+    connect(m_recordingManager, &RecordingManager::stateChanged, this, &QmlBackend::captureStateChanged);
+    connect(m_recordingManager, &RecordingManager::stateChanged, this, [this](CaptureState state) {
+        if (state == CaptureState::Idle) {
+            m_replayWaveformTimer->stop();
+            updateReplayWaveform();
+        } else {
+            if (!m_replayWaveformTimer->isActive())
+                m_replayWaveformTimer->start();
+        }
+    });
+
+    m_replayWaveformTimer = new QTimer(this);
+    m_replayWaveformTimer->setInterval(200);
+    connect(m_replayWaveformTimer, &QTimer::timeout, this, &QmlBackend::updateReplayWaveform);
+
+    m_player = new QMediaPlayer(this);
+    m_audioOutput = new QAudioOutput(this);
+    m_player->setAudioOutput(m_audioOutput);
+    connect(m_player, &QMediaPlayer::playbackStateChanged, this, [this](QMediaPlayer::PlaybackState state) {
+        m_isPlaying = (state == QMediaPlayer::PlayingState);
+        emit playbackStateChanged();
+    });
+    connect(m_player, &QMediaPlayer::errorOccurred, this, [this](QMediaPlayer::Error, const QString &) {
+        m_isPlaying = false;
+        emit playbackStateChanged();
+    });
+
     qmlRegisterType<RealtimeWaveformItem>("Saiko", 1, 0, "RealtimeWaveform");
     qmlRegisterType<WaveformItem>("Saiko", 1, 0, "WaveformData");
 }
@@ -44,6 +75,50 @@ QmlBackend::~QmlBackend()
     m_soundboardManager->saveToSettings();
     m_settings->save();
     delete static_cast<Saiko::Adapters::WindowsHotkeyBackend*>(m_hotkeyBackend);
+}
+
+void QmlBackend::updateReplayWaveform()
+{
+    if (!m_recordingManager || !m_recordingManager->replayBuffer()) return;
+    QByteArray rawPcm = m_recordingManager->replayBuffer()->getBufferData();
+    WAVEFORMATEXTENSIBLE fmt = m_recordingManager->mixer()->getOutputFormat();
+    if (rawPcm.isEmpty() || fmt.Format.nSamplesPerSec <= 0) return;
+
+    m_replayWaveform = WaveformGenerator::generateFromPcm(rawPcm, fmt, 256);
+    emit replayWaveformChanged();
+}
+
+void QmlBackend::playFile(const QString &path)
+{
+    QFileInfo fi(path);
+    if (!fi.exists() || fi.size() <= 100) return;
+    m_player->setSource(QUrl::fromLocalFile(path));
+    m_player->play();
+}
+
+void QmlBackend::stopPlayback()
+{
+    m_player->stop();
+}
+
+QString QmlBackend::renameRecordingFile(const QString &oldPath, const QString &dir, const QString &newName)
+{
+    QString newPath = dir + "/" + newName;
+    if (!newPath.endsWith(".wav", Qt::CaseInsensitive))
+        newPath += ".wav";
+
+    QFileInfo check(newPath);
+    int counter = 1;
+    QString finalPath = newPath;
+    while (check.exists()) {
+        QString base = QFileInfo(newPath).absolutePath() + "/" + QFileInfo(newPath).completeBaseName();
+        finalPath = QString("%1 (%2).wav").arg(base).arg(counter++);
+        check = QFileInfo(finalPath);
+    }
+
+    if (QFile::rename(oldPath, finalPath))
+        return finalPath;
+    return oldPath;
 }
 
 QVariantList QmlBackend::getRunningProcesses() const
@@ -96,31 +171,51 @@ QVariantList QmlBackend::getAudioInputDevices() const
     return result;
 }
 
-QQmlComponent *QmlBackend::loadComponent(const QString &qrcPath, QObject *parent)
+qint64 QmlBackend::recordingFileSize() const
 {
-    m_engine->clearComponentCache();
-
-#ifdef QT_DEBUG
-    QString qmlDir = qEnvironmentVariable("QML_SOURCES_PATH",
-        "C:/Users/B/Desktop/Qt Projects/SaikoSoundboard/src/qml");
-    QFileInfo fi(qrcPath);
-    QString localFile = qmlDir + "/" + fi.fileName();
-    m_watchedFiles[localFile] = qrcPath;
-    m_qmlWatcher->addPath(localFile);
-    return new QQmlComponent(m_engine, QUrl::fromLocalFile(localFile), parent);
-#else
-    Q_UNUSED(m_qmlWatcher);
-    Q_UNUSED(m_watchedFiles);
-    return new QQmlComponent(m_engine, QUrl(qrcPath), parent);
-#endif
+    return (m_recordingManager && m_recordingManager->wavWriter())
+        ? m_recordingManager->wavWriter()->size() : 0;
 }
 
-void QmlBackend::reloadComponent(const QString &filePath)
+void QmlBackend::addSource(const QString &name, const QString &executableName, const QString &executablePath)
 {
-    m_engine->clearComponentCache();
-    if (m_watchedFiles.contains(filePath)) {
-        m_qmlWatcher->addPath(filePath);
+    AudioSource src;
+    src.name = name;
+    src.executableName = executableName;
+    src.executablePath = executablePath;
+    QList<AudioSource> sources = m_settings->sources();
+    sources.append(src);
+    m_settings->setSources(sources);
+    m_settings->save();
+}
+
+void QmlBackend::removeSource(const QString &sourceId)
+{
+    QList<AudioSource> sources = m_settings->sources();
+    for (int i = 0; i < sources.size(); ++i) {
+        if (sources[i].id == sourceId) {
+            sources.removeAt(i);
+            break;
+        }
     }
+    m_settings->setSources(sources);
+    m_settings->save();
+}
+
+QVariantList QmlBackend::getSources() const
+{
+    QVariantList list;
+    for (const auto &src : m_settings->sources()) {
+        QVariantMap map;
+        map["id"] = src.id;
+        map["name"] = src.name;
+        map["executableName"] = src.executableName;
+        map["executablePath"] = src.executablePath;
+        map["enabled"] = src.enabled;
+        map["volume"] = src.volume;
+        list.append(map);
+    }
+    return list;
 }
 
 CaptureState QmlBackend::captureState() const
