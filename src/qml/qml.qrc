@@ -3,5 +3,6 @@
         <file>HotkeyDialog.qml</file>
         <file>SourcesPanel.qml</file>
         <file>RoutingDialog.qml</file>
+        <file>WaveformView.qml</file>
     </qresource>
 </RCC>

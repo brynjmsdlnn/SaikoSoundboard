@@ -1,5 +1,6 @@
 #include "ui/qmlbackend.h"
 #include "ui/realtimewaveformitem.h"
+#include "ui/waveformitem.h"
 #include <QFileInfo>
 #include <QQmlContext>
 #include <QUrl>
@@ -33,6 +34,7 @@ QmlBackend::QmlBackend(QObject *parent)
     m_engine->rootContext()->setContextProperty("qmlBackend", this);
     m_engine->addImageProvider(QLatin1String("fileicon"), new FileIconProvider());
     qmlRegisterType<RealtimeWaveformItem>("Saiko", 1, 0, "RealtimeWaveform");
+    qmlRegisterType<WaveformItem>("Saiko", 1, 0, "WaveformData");
 }
 
 QmlBackend::~QmlBackend()

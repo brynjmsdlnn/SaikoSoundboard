@@ -44,6 +44,8 @@ set(UI_SOURCES
     src/ui/waveformwidget.h
     src/ui/realtimewaveformitem.cpp
     src/ui/realtimewaveformitem.h
+    src/ui/waveformitem.cpp
+    src/ui/waveformitem.h
     src/ui/qmlbackend.cpp
     src/ui/qmlbackend.h
 )
