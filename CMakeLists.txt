@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.16)
 
 project(SaikoSoundboard VERSION 0.1 LANGUAGES CXX)
 
-set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
@@ -13,8 +12,8 @@ set(CMAKE_AUTOMOC_COMPILER_PREDEFINES OFF)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Multimedia Concurrent Quick QuickWidgets Qml Test)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia Concurrent Quick QuickWidgets Qml Test)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Multimedia Concurrent Quick Qml Test)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia Concurrent Quick Qml Test)
 
 enable_testing()
 
@@ -103,7 +102,6 @@ target_link_libraries(SaikoSoundboardCore PUBLIC
     Qt${QT_VERSION_MAJOR}::Multimedia 
     Qt${QT_VERSION_MAJOR}::Concurrent
     Qt${QT_VERSION_MAJOR}::Quick
-    Qt${QT_VERSION_MAJOR}::QuickWidgets
     Qt${QT_VERSION_MAJOR}::Qml
 )
 
