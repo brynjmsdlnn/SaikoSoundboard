@@ -79,6 +79,7 @@ signals:
     void slotsChanged();
     void playerStateChanged(const QString &id, QMediaPlayer::PlaybackState state);
     void playerPositionChanged(const QString &id, qint64 position);
+    void playerDurationChanged(const QString &id, qint64 duration);
     void waveformGenerated(const QString &playerId, const WaveformData &data);
     void micOutputEnabledChanged();
     void localMonitoringEnabledChanged();

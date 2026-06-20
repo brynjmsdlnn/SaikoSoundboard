@@ -21,6 +21,8 @@ SoundPlayer::SoundPlayer(QObject *parent)
     connect(m_micPlayer, &QMediaPlayer::positionChanged, this, &SoundPlayer::handlePositionChanged);
     connect(m_localPlayer, &QMediaPlayer::positionChanged, this, &SoundPlayer::handlePositionChanged);
 
+    connect(m_micPlayer, &QMediaPlayer::durationChanged, this, &SoundPlayer::durationChanged);
+
     connect(m_micPlayer, &QMediaPlayer::errorOccurred, this, [this](QMediaPlayer::Error error, const QString &errorString) {
         emit errorOccurred(error, "Mic Player: " + errorString);
     });

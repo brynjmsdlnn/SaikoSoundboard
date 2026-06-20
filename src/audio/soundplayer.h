@@ -38,6 +38,7 @@ signals:
     void stateChanged(QMediaPlayer::PlaybackState newState);
     void errorOccurred(QMediaPlayer::Error error, const QString &errorString);
     void positionChanged(qint64 position);
+    void durationChanged(qint64 duration);
 
 private slots:
     void handlePlayerStateChanged(QMediaPlayer::PlaybackState state);

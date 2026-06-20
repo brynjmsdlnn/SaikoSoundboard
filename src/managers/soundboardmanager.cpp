@@ -351,6 +351,10 @@ void SoundboardManager::updatePlayerEngine(const SoundPlayerSlot &slot)
         connect(player, &SoundPlayer::positionChanged, this, [this, id = slot.id](qint64 pos) {
             emit playerPositionChanged(id, pos);
         });
+
+        connect(player, &SoundPlayer::durationChanged, this, [this, id = slot.id](qint64 dur) {
+            emit playerDurationChanged(id, dur);
+        });
         
         m_players.insert(slot.id, player);
     }

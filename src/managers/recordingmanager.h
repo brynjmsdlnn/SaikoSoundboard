@@ -18,6 +18,7 @@ class RecordingManager : public QObject
     Q_PROPERTY(bool engineRunning READ isEngineRunning NOTIFY engineRunningChanged)
     Q_PROPERTY(bool recording READ isRecording NOTIFY recordingChanged)
     Q_PROPERTY(CaptureState state READ state NOTIFY stateChanged)
+    Q_PROPERTY(bool isReplayActive READ isReplayActive NOTIFY replayActiveChanged)
 public:
     explicit RecordingManager(SettingsManager *settings, QObject *parent = nullptr);
     ~RecordingManager();
@@ -38,6 +39,7 @@ public:
     Q_INVOKABLE void setReplayDuration(int seconds);
 
     // Accessors
+    bool isReplayActive() const { return m_replayEnabled; }
     WavWriter* wavWriter() const { return m_wavWriter; }
     AudioMixer* mixer() const { return m_mixer; }
     ReplayBuffer* replayBuffer() const { return m_replayBuffer; }
@@ -51,6 +53,7 @@ signals:
     void recordingStopped(const QString &path);
     void recordingChanged();
     void stateChanged(CaptureState newState);
+    void replayActiveChanged();
     void errorOccurred(const QString &msg);
 
 private:

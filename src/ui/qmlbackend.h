@@ -65,6 +65,7 @@ class QmlBackend : public QObject
     Q_PROPERTY(SoundPlayerSlotModel* slotModel READ slotModel CONSTANT)
     Q_PROPERTY(AudioSourceListModel* sourceModel READ sourceModel CONSTANT)
     Q_PROPERTY(bool isPlaying READ isPlaying NOTIFY playbackStateChanged)
+    Q_PROPERTY(qint64 playbackDuration READ playbackDuration NOTIFY playbackDurationChanged)
 public:
     explicit QmlBackend(QObject *parent = nullptr);
     ~QmlBackend();
@@ -80,11 +81,13 @@ public:
     CaptureState captureState() const;
     QVariant replayWaveform() const { return QVariant::fromValue(m_replayWaveform); }
     bool isPlaying() const { return m_isPlaying; }
+    qint64 playbackDuration() const { return m_playbackDuration; }
 
     Q_INVOKABLE QVariantList getRunningProcesses() const;
     Q_INVOKABLE QVariantList getAudioOutputDevices() const;
     Q_INVOKABLE QVariantList getAudioInputDevices() const;
     Q_INVOKABLE qint64 recordingFileSize() const;
+    Q_INVOKABLE qint64 playbackPosition() const;
     Q_INVOKABLE void playFile(const QString &path);
     Q_INVOKABLE void stopPlayback();
     Q_INVOKABLE QString renameRecordingFile(const QString &oldPath, const QString &dir, const QString &newName);
@@ -93,6 +96,7 @@ signals:
     void captureStateChanged(CaptureState state);
     void replayWaveformChanged();
     void playbackStateChanged();
+    void playbackDurationChanged();
 
 private slots:
     void updateReplayWaveform();
@@ -111,6 +115,7 @@ private:
     QMediaPlayer *m_player = nullptr;
     QAudioOutput *m_audioOutput = nullptr;
     bool m_isPlaying = false;
+    qint64 m_playbackDuration = 0;
 };
 
 #endif

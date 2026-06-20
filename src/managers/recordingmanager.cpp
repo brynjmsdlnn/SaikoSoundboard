@@ -140,6 +140,7 @@ void RecordingManager::stopRecording()
 
 void RecordingManager::setReplayEnabled(bool enabled, const QString &mode)
 {
+    if (enabled == m_replayEnabled) return;
     m_replayEnabled = enabled;
     if (enabled) {
         if (!isEngineRunning()) {
@@ -152,6 +153,7 @@ void RecordingManager::setReplayEnabled(bool enabled, const QString &mode)
         }
     }
     updateState();
+    emit replayActiveChanged();
 }
 
 void RecordingManager::setReplayDuration(int seconds)

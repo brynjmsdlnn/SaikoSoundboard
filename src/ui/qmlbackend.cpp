@@ -62,6 +62,10 @@ QmlBackend::QmlBackend(QObject *parent)
         m_isPlaying = (state == QMediaPlayer::PlayingState);
         emit playbackStateChanged();
     });
+    connect(m_player, &QMediaPlayer::durationChanged, this, [this](qint64 dur) {
+        m_playbackDuration = dur;
+        emit playbackDurationChanged();
+    });
     connect(m_player, &QMediaPlayer::errorOccurred, this, [this](QMediaPlayer::Error, const QString &) {
         m_isPlaying = false;
         emit playbackStateChanged();
@@ -179,4 +183,9 @@ qint64 QmlBackend::recordingFileSize() const
 CaptureState QmlBackend::captureState() const
 {
     return m_recordingManager ? m_recordingManager->state() : CaptureState::Idle;
+}
+
+qint64 QmlBackend::playbackPosition() const
+{
+    return m_player ? m_player->position() : 0;
 }
