@@ -12,6 +12,11 @@ set(CMAKE_AUTOMOC_COMPILER_PREDEFINES OFF)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+endif()
+
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Multimedia Concurrent Quick Qml Test)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia Concurrent Quick Qml Test)
 

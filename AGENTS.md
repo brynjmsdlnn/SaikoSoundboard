@@ -76,7 +76,7 @@ Default section order:
 
 ## User Preferences
 
-- Build system: MinGW 13.1, Qt 6.11.1 mingw_64, CMake with `MinGW Makefiles` generator
+- Build system: MinGW 13.1, Qt 6.11.1 mingw_64, CMake with `Ninja` generator (preferred) or `MinGW Makefiles`
 - CMake prefix path: `C:\Qt\6.11.1\mingw_64`
 - Build directory: `build/` (out-of-source)
 - Entry point: `src/qml/Main.qml` loaded via `qrc:/qt/qml/Saiko/src/qml/Main.qml`
@@ -84,6 +84,7 @@ Default section order:
 - C++ standard: C++17 with `-std=gnu++17`
 - `QT_QUICK_CONTROLS_STYLE = "Basic"` set at startup
 - `CMAKE_AUTOMOC_COMPILER_PREDEFINES OFF` required for MinGW 13.1
+- `CMAKE_CXX_COMPILER_LAUNCHER` set to `ccache` when available (configured in CMakeLists.txt)
 
 ## Child DOX Index
 
