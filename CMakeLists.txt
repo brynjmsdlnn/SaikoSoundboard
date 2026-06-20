@@ -12,8 +12,8 @@ set(CMAKE_AUTOMOC_COMPILER_PREDEFINES OFF)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Multimedia Concurrent Quick Qml Test)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia Concurrent Quick Qml Test)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Multimedia Concurrent Quick Qml Test)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia Concurrent Quick Qml Test)
 
 enable_testing()
 
@@ -98,7 +98,6 @@ target_include_directories(SaikoSoundboardCore PUBLIC src/core)
 target_include_directories(SaikoSoundboardCore PUBLIC src/core/domain)
 target_include_directories(SaikoSoundboardCore PRIVATE src/core/adapters)
 target_link_libraries(SaikoSoundboardCore PUBLIC 
-    Qt${QT_VERSION_MAJOR}::Widgets 
     Qt${QT_VERSION_MAJOR}::Multimedia 
     Qt${QT_VERSION_MAJOR}::Concurrent
     Qt${QT_VERSION_MAJOR}::Quick
@@ -106,7 +105,7 @@ target_link_libraries(SaikoSoundboardCore PUBLIC
 )
 
 if(WIN32)
-    target_link_libraries(SaikoSoundboardCore PUBLIC ole32 mmdevapi)
+    target_link_libraries(SaikoSoundboardCore PUBLIC ole32 mmdevapi shell32)
 endif()
 
 # --- Application Target ---

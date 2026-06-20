@@ -1,6 +1,6 @@
 #include "ui/qmlbackend.h"
 
-#include <QApplication>
+#include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QLoggingCategory>
@@ -8,7 +8,7 @@
 int main(int argc, char *argv[])
 {
     qputenv("QT_QUICK_CONTROLS_STYLE", "Basic");
-    QApplication a(argc, argv);
+    QGuiApplication a(argc, argv);
     Q_INIT_RESOURCE(qml);
 
     QLoggingCategory::setFilterRules("qt.multimedia.ffmpeg.mediacapturesession.warning=false");
@@ -22,5 +22,5 @@ int main(int argc, char *argv[])
 
     engine.load(QUrl("qrc:/qml/Main.qml"));
 
-    return QApplication::exec();
+    return QGuiApplication::exec();
 }

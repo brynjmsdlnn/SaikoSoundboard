@@ -3,10 +3,13 @@
 
 #include <QObject>
 #include <QQuickImageProvider>
-#include <QFileIconProvider>
-#include <QIcon>
 #include <QPixmap>
 #include <QFileInfo>
+#include <QImage>
+#ifdef Q_OS_WIN
+#include <windows.h>
+#include <shellapi.h>
+#endif
 #include <QUrl>
 #include <QTimer>
 #include <QElapsedTimer>
@@ -31,11 +34,20 @@ public:
     QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize) override
     {
         QString filePath = QUrl::fromPercentEncoding(id.toUtf8());
-        QFileIconProvider provider;
-        QIcon icon = provider.icon(QFileInfo(filePath));
         QSize actualSize = requestedSize.isValid() ? requestedSize : QSize(32, 32);
         if (size) *size = actualSize;
-        return icon.pixmap(actualSize);
+
+#ifdef Q_OS_WIN
+        SHFILEINFOW sfi = {};
+        SHGetFileInfoW(reinterpret_cast<const wchar_t *>(filePath.utf16()),
+                       0, &sfi, sizeof(sfi), SHGFI_ICON | SHGFI_LARGEICON);
+        if (sfi.hIcon) {
+            QPixmap px = QPixmap::fromImage(QImage::fromHICON(sfi.hIcon));
+            DestroyIcon(sfi.hIcon);
+            return px.scaled(actualSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        }
+#endif
+        return QPixmap(actualSize);
     }
 };
 
