@@ -13,7 +13,7 @@ ApplicationWindow {
     minimumWidth: 900
     minimumHeight: 600
     title: "Saiko Soundboard"
-    color: "#0f0f0f"
+    color: Theme.appBackground
 
     property string captureMode: "global"
     property bool isRecording: false
@@ -104,105 +104,35 @@ ApplicationWindow {
     // Reusable section card wrapper
     // ============================================================
     component SectionCard: Rectangle {
-        id: section
-        default property alias content: sectionLayout.children
-        property string heading: ""
+            id: section
+            default property alias content: sectionLayout.children
+            property string heading: ""
 
-        Layout.fillWidth: true
-        Layout.preferredHeight: sectionLayout.implicitHeight + 28
-        color: "#131313"
-        radius: 10
-        border.color: "#1e1e1e"
-        border.width: 1
+            Layout.fillWidth: true
+            Layout.preferredHeight: sectionLayout.implicitHeight + 28
+            color: Theme.cardBackground
+            radius: Theme.cardRadius
+            border.color: Theme.borderDefault
+            border.width: 1
 
-        ColumnLayout {
-            id: sectionLayout
-            anchors.fill: parent
-            anchors.margins: 14
-            spacing: 10
+            ColumnLayout {
+                id: sectionLayout
+                anchors.fill: parent
+                anchors.margins: 14
+                spacing: 10
 
-            Text {
-                visible: section.heading !== ""
-                text: section.heading
-                color: "#4a4a4a"
-                font.pixelSize: 10
-                font.letterSpacing: 1.2
-                font.weight: Font.Bold
+                Text {
+                    visible: section.heading !== ""
+                    text: section.heading
+                    color: Theme.textDim
+                    font.pixelSize: Theme.fontSizeSmall
+                    font.letterSpacing: 1.2
+                    font.weight: Font.Bold
+                }
             }
         }
-    }
 
-    component SmallButton: Rectangle {
-        id: smallBtn
-        implicitWidth: textItem.implicitWidth + 24
-        height: 30
-        radius: 6
-        color: btnMouse.containsMouse ? "#1c1c1c" : "#141414"
-        border.color: btnMouse.containsMouse ? "#333" : "#1f1f1f"
-        border.width: 1
-        opacity: enabled ? 1.0 : 0.4
-        Behavior on color { ColorAnimation { duration: 150 } }
-        Behavior on border.color { ColorAnimation { duration: 150 } }
 
-        property alias text: textItem.text
-        signal clicked()
-
-        Text {
-            id: textItem
-            anchors.centerIn: parent
-            color: smallBtn.enabled && btnMouse.containsMouse ? "white" : "#999"
-            font.pixelSize: 11
-            Behavior on color { ColorAnimation { duration: 150 } }
-        }
-
-        MouseArea {
-            id: btnMouse
-            anchors.fill: parent
-            enabled: smallBtn.enabled
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: smallBtn.clicked()
-        }
-    }
-
-    component TransportButton: Rectangle {
-        id: tBtn
-        property string label: ""
-        property color tint: "#888888"
-        signal clicked()
-
-        Layout.fillWidth: true
-        height: 38
-        radius: 8
-        color: enabled
-            ? (tMouse.containsMouse ? Qt.rgba(tint.r, tint.g, tint.b, 0.18) : "#141414")
-            : "#121212"
-        border.color: enabled
-            ? (tMouse.containsMouse ? Qt.rgba(tint.r, tint.g, tint.b, 0.6) : "#1f1f1f")
-            : "#1a1a1a"
-        border.width: 1
-        opacity: enabled ? 1.0 : 0.4
-        Behavior on color { ColorAnimation { duration: 150 } }
-        Behavior on border.color { ColorAnimation { duration: 150 } }
-
-        Text {
-            anchors.centerIn: parent
-            text: tBtn.label
-            color: tBtn.enabled && tMouse.containsMouse ? tBtn.tint : "#aaa"
-            font.pixelSize: 12
-            font.weight: Font.Medium
-            Behavior on color { ColorAnimation { duration: 150 } }
-        }
-
-        MouseArea {
-            id: tMouse
-            anchors.fill: parent
-            enabled: tBtn.enabled
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: tBtn.clicked()
-        }
-    }
 
     Dialog {
         id: renameDialog
@@ -214,10 +144,10 @@ ApplicationWindow {
         width: 360
 
         background: Rectangle {
-            color: "#161616"
-            border.color: "#222"
+            color: Theme.inputBackground
+            border.color: Theme.borderHover
             border.width: 1
-            radius: 8
+            radius: Theme.cardRadius
         }
 
         contentItem: ColumnLayout {
@@ -225,25 +155,25 @@ ApplicationWindow {
             spacing: 12
             Text {
                 text: "Enter a name for the recording:"
-                color: "white"
-                font.pixelSize: 13
+                color: Theme.textPrimary
+                font.pixelSize: Theme.fontSizeHeading
             }
             Rectangle {
                 Layout.fillWidth: true
                 height: 36
-                color: "#101010"
-                radius: 6
-                border.color: renameInput.activeFocus ? "#BB86FC" : "#1c1c1c"
+                color: Theme.appBackground
+                radius: Theme.borderRadius
+                border.color: renameInput.activeFocus ? Theme.accentPurple : Theme.borderDefault
                 border.width: 1
-                Behavior on border.color { ColorAnimation { duration: 150 } }
+                Behavior on border.color { ColorAnimation { duration: Theme.animDuration } }
                 TextInput {
                     id: renameInput
                     anchors.fill: parent
                     anchors.leftMargin: 10
                     anchors.rightMargin: 10
                     verticalAlignment: TextInput.AlignVCenter
-                    color: "white"
-                    font.pixelSize: 12
+                    color: Theme.textPrimary
+                    font.pixelSize: Theme.fontSizeNormal
                     focus: true
                     onAccepted: renameDialog.accept()
                 }
@@ -272,7 +202,7 @@ ApplicationWindow {
 
         handle: Rectangle {
             implicitHeight: 4
-            color: SplitHandle.pressed ? "#BB86FC" : (SplitHandle.hovered ? "#333" : "#1c1c1c")
+            color: SplitHandle.pressed ? Theme.accentPurple : (SplitHandle.hovered ? Theme.borderHover : Theme.borderDefault)
             Behavior on color { ColorAnimation { duration: 120 } }
         }
 
@@ -283,7 +213,7 @@ ApplicationWindow {
 
             handle: Rectangle {
                 implicitWidth: 4
-                color: SplitHandle.pressed ? "#BB86FC" : (SplitHandle.hovered ? "#333" : "#1c1c1c")
+                color: SplitHandle.pressed ? Theme.accentPurple : (SplitHandle.hovered ? Theme.borderHover : Theme.borderDefault)
                 Behavior on color { ColorAnimation { duration: 120 } }
             }
 
@@ -312,7 +242,7 @@ ApplicationWindow {
 
                     Text {
                         text: "Saiko Soundboard"
-                        color: "white"
+                        color: Theme.textPrimary
                         font.pixelSize: 18
                         font.weight: Font.Bold
                     }
@@ -325,26 +255,26 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             spacing: 4
 
-                            Text {
-                                id: statusLabel
-                                text: "Ready"
-                                color: "#ccc"
-                                font.pixelSize: 13
-                            }
-                            Text {
-                                id: timerLabel
-                                text: ""
-                                color: "#BB86FC"
-                                font.pixelSize: 13
-                                font.weight: Font.Medium
-                                visible: text !== ""
-                            }
-                            Text {
-                                id: statsLabel
-                                text: "Size: 0 KB \u00b7 Time: 0s"
-                                color: "#666"
-                                font.pixelSize: 11
-                            }
+                    Text {
+                        id: statusLabel
+                        text: "Ready"
+                        color: Theme.textSecondary
+                        font.pixelSize: Theme.fontSizeHeading
+                    }
+                    Text {
+                        id: timerLabel
+                        text: ""
+                        color: Theme.accentPurple
+                        font.pixelSize: Theme.fontSizeHeading
+                        font.weight: Font.Medium
+                        visible: text !== ""
+                    }
+                    Text {
+                        id: statsLabel
+                        text: "Size: 0 KB \u00b7 Time: 0s"
+                        color: Theme.textDim
+                        font.pixelSize: Theme.fontSizeSmall
+                    }
                         }
                     }
 
@@ -355,45 +285,45 @@ ApplicationWindow {
                         RowLayout {
                             Layout.fillWidth: true
                             spacing: 8
-                            Text {
-                                text: "Mode"
-                                color: "#999"
-                                font.pixelSize: 12
-                                Layout.preferredWidth: 60
-                            }
-                            Rectangle {
-                                Layout.fillWidth: true
-                                height: 32
-                                color: "#101010"
-                                radius: 6
-                                border.color: "#1f1f1f"
-                                border.width: 1
+                    Text {
+                        text: "Mode"
+                        color: Theme.textSecondary
+                        font.pixelSize: Theme.fontSizeNormal
+                        Layout.preferredWidth: 60
+                    }
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 32
+                        color: Theme.appBackground
+                        radius: Theme.borderRadius
+                        border.color: Theme.borderDefault
+                        border.width: 1
 
-                                ComboBox {
-                                    id: modeCombo
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 8
-                                    anchors.rightMargin: 8
-                                    model: [
-                                        { text: "System output (global)", value: "global" },
-                                        { text: "Multi-track (sources)", value: "multi" }
-                                    ]
-                                    textRole: "text"
-                                    valueRole: "value"
-                                    currentIndex: 0
-                                    background: Item {}
-                                    contentItem: Text {
-                                        text: {
-                                            for (var i = 0; i < modeCombo.model.length; i++) {
-                                                if (modeCombo.model[i].value === modeCombo.currentValue)
-                                                    return modeCombo.model[i].text
-                                            }
-                                            return ""
-                                        }
-                                        color: "white"
-                                        font.pixelSize: 12
-                                        verticalAlignment: Text.AlignVCenter
+                        ComboBox {
+                            id: modeCombo
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
+                            model: [
+                                { text: "System output (global)", value: "global" },
+                                { text: "Multi-track (sources)", value: "multi" }
+                            ]
+                            textRole: "text"
+                            valueRole: "value"
+                            currentIndex: 0
+                            background: Item {}
+                            contentItem: Text {
+                                text: {
+                                    for (var i = 0; i < modeCombo.model.length; i++) {
+                                        if (modeCombo.model[i].value === modeCombo.currentValue)
+                                            return modeCombo.model[i].text
                                     }
+                                    return ""
+                                }
+                                color: Theme.textPrimary
+                                font.pixelSize: Theme.fontSizeNormal
+                                verticalAlignment: Text.AlignVCenter
+                            }
                                     onActivated: {
                                         captureMode = modeCombo.currentValue
                                         sourcesDock.visible = (captureMode === "multi")
@@ -406,36 +336,36 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             spacing: 6
 
-                            Text {
-                                text: "Save to"
-                                color: "#999"
-                                font.pixelSize: 12
+                    Text {
+                        text: "Save to"
+                        color: Theme.textSecondary
+                        font.pixelSize: Theme.fontSizeNormal
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 6
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 32
+                            color: Theme.appBackground
+                            radius: Theme.borderRadius
+                            border.color: Theme.borderDefault
+                            border.width: 1
+                            TextInput {
+                                id: saveDirInput
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 10
+                                verticalAlignment: TextInput.AlignVCenter
+                                color: Theme.textDim
+                                font.pixelSize: Theme.fontSizeSmall
+                                readOnly: true
+                                text: Backend.settings.saveDirectory
                             }
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: 6
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    height: 32
-                                    color: "#101010"
-                                    radius: 6
-                                    border.color: "#1f1f1f"
-                                    border.width: 1
-                                    TextInput {
-                                        id: saveDirInput
-                                        anchors.fill: parent
-                                        anchors.leftMargin: 10
-                                        anchors.rightMargin: 10
-                                        verticalAlignment: TextInput.AlignVCenter
-                                        color: "#888"
-                                        font.pixelSize: 11
-                                        readOnly: true
-                                        text: Backend.settings.saveDirectory
-                                    }
-                                }
-                                SmallButton { text: "Open"; onClicked: Qt.openUrlExternally("file:///" + Backend.settings.saveDirectory) }
-                                SmallButton { text: "Change..."; onClicked: folderDialog.open() }
-                            }
+                        }
+                        ThemedButton { text: "Open"; small: true; onClicked: Qt.openUrlExternally("file:///" + Backend.settings.saveDirectory) }
+                        ThemedButton { text: "Change..."; small: true; onClicked: folderDialog.open() }
+                    }
                         }
                     }
 
@@ -459,15 +389,15 @@ ApplicationWindow {
                             Item { Layout.fillWidth: true }
                             Text {
                                 text: "Duration"
-                                color: "#999"
-                                font.pixelSize: 11
+                                color: Theme.textSecondary
+                                font.pixelSize: Theme.fontSizeSmall
                             }
                             Rectangle {
                                 width: 60
                                 height: 28
-                                color: "#101010"
-                                radius: 6
-                                border.color: "#1f1f1f"
+                                color: Theme.appBackground
+                                radius: Theme.borderRadius
+                                border.color: Theme.borderDefault
                                 border.width: 1
                                 SpinBox {
                                     id: replayDurationSpin
@@ -479,8 +409,8 @@ ApplicationWindow {
                                     background: Item {}
                                     contentItem: Text {
                                         text: replayDurationSpin.value + "s"
-                                        color: "white"
-                                        font.pixelSize: 11
+                                        color: Theme.textPrimary
+                                        font.pixelSize: Theme.fontSizeSmall
                                         verticalAlignment: Text.AlignVCenter
                                         horizontalAlignment: Text.AlignHCenter
                                     }
@@ -496,9 +426,9 @@ ApplicationWindow {
                         Rectangle {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 60
-                            color: "#0c0c0c"
-                            radius: 8
-                            border.color: "#1c1c1c"
+                            color: Theme.recessedBackground
+                            radius: Theme.cardRadius
+                            border.color: Theme.borderDefault
                             border.width: 1
                             clip: true
 
@@ -514,17 +444,18 @@ ApplicationWindow {
                         RowLayout {
                             Layout.fillWidth: true
                             spacing: 8
-                            Text {
-                                id: replayStatusText
-                                text: isReplayActive ? "Status: active" : "Status: inactive"
-                                color: "#666"
-                                font.pixelSize: 11
-                            }
-                            Item { Layout.fillWidth: true }
-                            SmallButton {
-                                id: saveReplayBtn
-                                text: "Save replay"
-                                enabled: isReplayActive
+                    Text {
+                            id: replayStatusText
+                            text: isReplayActive ? "Status: active" : "Status: inactive"
+                            color: Theme.textDim
+                            font.pixelSize: Theme.fontSizeSmall
+                        }
+                        Item { Layout.fillWidth: true }
+                        ThemedButton {
+                            id: saveReplayBtn
+                            text: "Save replay"
+                            small: true
+                            enabled: isReplayActive
                                 onClicked: {
                                     if (isReplayActive) {
                                         var ts = new Date()
@@ -553,23 +484,26 @@ ApplicationWindow {
                         Layout.fillWidth: true
                         spacing: 8
 
-                        TransportButton {
+                        ThemedButton {
                             id: startBtn
-                            label: "Start recording"
-                            tint: "#4caf50"
+                            text: "Start recording"
+                            accentColor: Theme.accentGreen
+                            filled: true
                             onClicked: startRecording()
                         }
-                        TransportButton {
+                        ThemedButton {
                             id: stopBtn
-                            label: "Stop"
-                            tint: "#e35d5d"
+                            text: "Stop"
+                            accentColor: Theme.accentRed
+                            filled: true
                             enabled: false
                             onClicked: stopRecording()
                         }
-                        TransportButton {
+                        ThemedButton {
                             id: playBtn
-                            label: "Play last"
-                            tint: "#BB86FC"
+                            text: "Play last"
+                            accentColor: Theme.accentPurple
+                            filled: true
                             enabled: false
                             onClicked: {
                                 if (lastRecordingPath.length > 0) Backend.playFile(lastRecordingPath)
@@ -586,7 +520,7 @@ ApplicationWindow {
                 id: sourcesDock
                 SplitView.preferredWidth: Backend.settings.sourcesDockWidth > 0 ? Backend.settings.sourcesDockWidth : 320
                 SplitView.minimumWidth: 260
-                color: "#0d0d0d"
+                color: Theme.appBackground
                 visible: (captureMode === "multi")
 
                 onWidthChanged: {
@@ -618,8 +552,8 @@ ApplicationWindow {
             id: soundboardDock
             SplitView.preferredHeight: Backend.settings.soundboardDockHeight > 0 ? Backend.settings.soundboardDockHeight : 280
             SplitView.minimumHeight: 180
-            color: "#0c0c0c"
-            border.color: "#1c1c1c"
+            color: Theme.recessedBackground
+            border.color: Theme.borderDefault
             border.width: 1
 
             onHeightChanged: {
@@ -636,7 +570,7 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     height: 1
-                    color: "#1c1c1c"
+                    color: Theme.borderDefault
                 }
 
                 SoundboardPanel {

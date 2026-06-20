@@ -7,7 +7,7 @@ Rectangle {
     id: root
     implicitWidth: 320
     implicitHeight: 450
-    color: "#0f0f0f"
+    color: Theme.appBackground
 
     property var sourceModel: null
     property bool locked: false
@@ -34,13 +34,13 @@ Rectangle {
                 id: itemCard
                 width: listView.width
                 height: 48
-                radius: 8
+                radius: Theme.cardRadius
                 color: listView.currentIndex === index ? "#161616" : (mouseArea.containsMouse ? "#121212" : "#101010")
-                border.color: listView.currentIndex === index ? "#BB86FC" : (mouseArea.containsMouse ? "#2a2a2a" : "#1a1a1a")
+                border.color: listView.currentIndex === index ? Theme.accentPurple : (mouseArea.containsMouse ? Theme.borderHover : Theme.borderDefault)
                 border.width: 1
 
-                Behavior on color { ColorAnimation { duration: 150 } }
-                Behavior on border.color { ColorAnimation { duration: 150 } }
+                Behavior on color { ColorAnimation { duration: Theme.animDuration } }
+                Behavior on border.color { ColorAnimation { duration: Theme.animDuration } }
 
                 MouseArea {
                     id: mouseArea
@@ -74,15 +74,15 @@ Rectangle {
                         spacing: 2
                         Text {
                             text: name
-                            color: "white"
-                            font.pixelSize: 13
+                            color: Theme.textPrimary
+                            font.pixelSize: Theme.fontSizeHeading
                             font.weight: Font.DemiBold
                             elide: Text.ElideRight
                         }
                         Text {
                             text: executableName
-                            color: "#555"
-                            font.pixelSize: 10
+                            color: Theme.textDim
+                            font.pixelSize: Theme.fontSizeSmall
                             elide: Text.ElideRight
                         }
                     }
@@ -92,7 +92,7 @@ Rectangle {
                         width: 6
                         height: 6
                         radius: 3
-                        color: "#BB86FC"
+                        color: Theme.accentPurple
                         visible: listView.currentIndex === index
                         Layout.alignment: Qt.AlignVCenter
                     }
@@ -110,72 +110,26 @@ Rectangle {
             Layout.fillWidth: true
             spacing: 10
 
-            Rectangle {
+            ThemedButton {
                 id: addBtn
+                text: "+ Add Source"
                 Layout.fillWidth: true
-                height: 38
-                radius: 8
-                color: !root.locked && addMouse.containsMouse ? "#1c1c1c" : "#121212"
-                border.color: !root.locked && addMouse.containsMouse ? "#333" : "#1c1c1c"
-                border.width: 1
-                opacity: root.locked ? 0.4 : 1.0
-                Behavior on color { ColorAnimation { duration: 150 } }
-                Behavior on border.color { ColorAnimation { duration: 150 } }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "+ Add Source"
-                    color: !root.locked && addMouse.containsMouse ? "#fff" : "#bbb"
-                    font.pixelSize: 12
-                    font.weight: Font.Medium
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                }
-
-                MouseArea {
-                    id: addMouse
-                    anchors.fill: parent
-                    enabled: !root.locked
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: processPopup.open()
-                }
+                enabled: !root.locked
+                onClicked: processPopup.open()
             }
 
-            Rectangle {
+            ThemedButton {
                 id: removeBtn
+                text: "- Remove"
                 Layout.fillWidth: true
-                height: 38
-                radius: 8
-                property bool canRemove: !root.locked && listView.currentIndex >= 0
-                color: canRemove && removeMouse.containsMouse ? "#2a1414" : "#121212"
-                border.color: canRemove && removeMouse.containsMouse ? "#ff5555" : "#1c1c1c"
-                border.width: 1
-                opacity: canRemove ? 1.0 : 0.4
-                Behavior on color { ColorAnimation { duration: 150 } }
-                Behavior on border.color { ColorAnimation { duration: 150 } }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "- Remove"
-                    color: removeBtn.canRemove && removeMouse.containsMouse ? "#ff5555" : "#bbb"
-                    font.pixelSize: 12
-                    font.weight: Font.Medium
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                }
-
-                MouseArea {
-                    id: removeMouse
-                    anchors.fill: parent
-                    enabled: removeBtn.canRemove
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        var idx = listView.currentIndex
-                        if (idx >= 0) {
-                            var id = root.sourceModel.getSourceId(idx)
-                            if (id) root.sourceRemoved(id)
-                            listView.currentIndex = -1
-                        }
+                accentColor: Theme.destructiveRed
+                enabled: !root.locked && listView.currentIndex >= 0
+                onClicked: {
+                    var idx = listView.currentIndex
+                    if (idx >= 0) {
+                        var id = root.sourceModel.getSourceId(idx)
+                        if (id) root.sourceRemoved(id)
+                        listView.currentIndex = -1
                     }
                 }
             }
@@ -229,8 +183,8 @@ Rectangle {
 
         Rectangle {
             anchors.fill: parent
-            color: "#0f0f0f"
-            border.color: "#222"
+            color: Theme.appBackground
+            border.color: Theme.borderHover
             border.width: 1
             radius: 12
 
@@ -241,7 +195,7 @@ Rectangle {
 
                 Text {
                     text: "Select Process"
-                    color: "white"
+                    color: Theme.textPrimary
                     font.pixelSize: 16
                     font.weight: Font.Bold
                 }
@@ -251,11 +205,11 @@ Rectangle {
                     id: searchFieldContainer
                     Layout.fillWidth: true
                     height: 36
-                    color: "#121212"
-                    radius: 8
-                    border.color: "#1c1c1c"
+                    color: Theme.inputBackground
+                    radius: Theme.cardRadius
+                    border.color: Theme.borderDefault
                     border.width: 1
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
+                    Behavior on border.color { ColorAnimation { duration: Theme.animDuration } }
 
                     TextInput {
                         id: searchField
@@ -263,18 +217,18 @@ Rectangle {
                         anchors.leftMargin: 10
                         anchors.rightMargin: 10
                         verticalAlignment: TextInput.AlignVCenter
-                        color: "white"
-                        font.pixelSize: 12
+                        color: Theme.textPrimary
+                        font.pixelSize: Theme.fontSizeNormal
                         selectByMouse: true
 
                         onActiveFocusChanged: {
-                            searchFieldContainer.border.color = activeFocus ? "#BB86FC" : "#1c1c1c"
+                            searchFieldContainer.border.color = activeFocus ? Theme.accentPurple : Theme.borderDefault
                         }
 
                         Text {
                             text: "Search running processes..."
-                            color: "#4a4a4a"
-                            font.pixelSize: 12
+                            color: Theme.textDim
+                            font.pixelSize: Theme.fontSizeNormal
                             visible: !searchField.text && !searchField.activeFocus
                             anchors.fill: parent
                             verticalAlignment: Text.AlignVCenter
@@ -310,11 +264,11 @@ Rectangle {
                         id: procItem
                         width: processList.width
                         height: 42
-                        radius: 6
-                        color: processList.currentIndex === index ? "#1c1c1c" : (procMouse.containsMouse ? "#121212" : "transparent")
-                        border.color: processList.currentIndex === index ? "#BB86FC" : "transparent"
+                        radius: Theme.borderRadius
+                        color: processList.currentIndex === index ? "#1c1c1c" : (procMouse.containsMouse ? Theme.inputBackground : "transparent")
+                        border.color: processList.currentIndex === index ? Theme.accentPurple : "transparent"
                         border.width: 1
-                        Behavior on color { ColorAnimation { duration: 150 } }
+                        Behavior on color { ColorAnimation { duration: Theme.animDuration } }
 
                         MouseArea {
                             id: procMouse
@@ -347,13 +301,13 @@ Rectangle {
                                 spacing: 1
                                 Text {
                                     text: modelData.name
-                                    color: "white"
-                                    font.pixelSize: 12
+                                    color: Theme.textPrimary
+                                    font.pixelSize: Theme.fontSizeNormal
                                     font.weight: Font.Medium
                                 }
                                 Text {
                                     text: modelData.fullPath
-                                    color: "#444"
+                                    color: Theme.textDim
                                     font.pixelSize: 9
                                     elide: Text.ElideLeft
                                     Layout.fillWidth: true
@@ -373,60 +327,20 @@ Rectangle {
                     Layout.fillWidth: true
                     spacing: 10
 
-                    Rectangle {
+                    ThemedButton {
                         id: popupCancel
+                        text: "Cancel"
                         Layout.fillWidth: true
-                        height: 36
-                        radius: 8
-                        color: cancelMouse.containsMouse ? "#1c1c1c" : "#121212"
-                        border.color: "#1c1c1c"
-                        border.width: 1
-                        Behavior on color { ColorAnimation { duration: 150 } }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "Cancel"
-                            color: cancelMouse.containsMouse ? "#777" : "#444"
-                            font.pixelSize: 12
-                        }
-
-                        MouseArea {
-                            id: cancelMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: processPopup.close()
-                        }
+                        onClicked: processPopup.close()
                     }
 
-                    Rectangle {
+                    ThemedButton {
                         id: popupAdd
+                        text: "Add"
                         Layout.fillWidth: true
-                        height: 36
-                        radius: 8
-                        property bool canAdd: processList.currentIndex >= 0
-                        color: canAdd && addProcMouse.containsMouse ? "#222" : "#121212"
-                        border.color: canAdd && addProcMouse.containsMouse ? "#333" : "#1c1c1c"
-                        border.width: 1
-                        opacity: canAdd ? 1.0 : 0.4
-                        Behavior on color { ColorAnimation { duration: 150 } }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "Add"
-                            color: popupAdd.canAdd && addProcMouse.containsMouse ? "#fff" : "#bbb"
-                            font.pixelSize: 12
-                            font.weight: Font.Medium
-                        }
-
-                        MouseArea {
-                            id: addProcMouse
-                            anchors.fill: parent
-                            enabled: popupAdd.canAdd
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: processPopup.acceptProcess()
-                        }
+                        accentColor: Theme.accentPurple
+                        enabled: processList.currentIndex >= 0
+                        onClicked: processPopup.acceptProcess()
                     }
                 }
             }

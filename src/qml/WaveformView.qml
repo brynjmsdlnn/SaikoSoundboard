@@ -4,9 +4,9 @@ import Saiko 1.0
 Rectangle {
     id: root
     implicitHeight: 55
-    color: "#0a0a0a"
-    radius: 6
-    border.color: "#1c1c1c"
+    color: Theme.recessedBackground
+    radius: Theme.borderRadius
+    border.color: Theme.borderDefault
     border.width: 1
     clip: true
 
@@ -58,11 +58,11 @@ Rectangle {
 
             ctx.clearRect(0, 0, w, h)
 
-            ctx.fillStyle = "#0a0a0a"
+            ctx.fillStyle = Theme.recessedBackground
             ctx.fillRect(0, 0, w, h)
 
             if (!dataSource.valid || !peaks || peaks.length === 0) {
-                ctx.fillStyle = "#444"
+                ctx.fillStyle = Theme.textDim
                 ctx.font = "11px sans-serif"
                 ctx.textAlign = "center"
                 ctx.fillText("[No Waveform]", w / 2, centerY + 4)
@@ -74,7 +74,7 @@ Rectangle {
 
             // Center reference line
             ctx.save()
-            ctx.strokeStyle = "#222"
+            ctx.strokeStyle = Theme.borderDefault
             ctx.lineWidth = 1
             ctx.setLineDash([4, 4])
             ctx.beginPath()
@@ -98,7 +98,7 @@ Rectangle {
                 var peakH = peak * (graphH - 10) / 2
 
                 var inActive = dataSource.readOnly || (x >= startX && x <= endX)
-                ctx.strokeStyle = inActive ? "#BB86FC" : "#2a2a2a"
+                ctx.strokeStyle = inActive ? Theme.accentPurple : Theme.borderHover
 
                 ctx.beginPath()
                 ctx.moveTo(x, centerY - peakH)
@@ -108,14 +108,14 @@ Rectangle {
 
             if (!dataSource.readOnly) {
                 // Start trim marker (teal)
-                ctx.strokeStyle = "#03DAC6"
+                ctx.strokeStyle = Theme.accentTeal
                 ctx.lineWidth = 2
                 ctx.beginPath()
                 ctx.moveTo(startX, 0)
                 ctx.lineTo(startX, graphH)
                 ctx.stroke()
 
-                ctx.fillStyle = "#03DAC6"
+                ctx.fillStyle = Theme.accentTeal
                 ctx.beginPath()
                 ctx.moveTo(startX, 0)
                 ctx.lineTo(startX + 6, 0)
@@ -124,14 +124,14 @@ Rectangle {
                 ctx.fill()
 
                 // End trim marker (red)
-                ctx.strokeStyle = "#ff5555"
+                ctx.strokeStyle = Theme.destructiveRed
                 ctx.lineWidth = 2
                 ctx.beginPath()
                 ctx.moveTo(endX, 0)
                 ctx.lineTo(endX, graphH)
                 ctx.stroke()
 
-                ctx.fillStyle = "#ff5555"
+                ctx.fillStyle = Theme.destructiveRed
                 ctx.beginPath()
                 ctx.moveTo(endX, 0)
                 ctx.lineTo(endX - 6, 0)
@@ -143,7 +143,7 @@ Rectangle {
             // Playback cursor (white)
             if (dataSource.playPositionMs >= 0) {
                 var cursorX = (dataSource.playPositionMs / duration) * w
-                ctx.strokeStyle = "#ffffff"
+                ctx.strokeStyle = Theme.textPrimary
                 ctx.lineWidth = 2
                 ctx.beginPath()
                 ctx.moveTo(cursorX, 0)
@@ -152,7 +152,7 @@ Rectangle {
             }
 
             // Timeline labels
-            ctx.fillStyle = "#666"
+            ctx.fillStyle = Theme.textDim
             ctx.font = "9px sans-serif"
             ctx.textBaseline = "middle"
 

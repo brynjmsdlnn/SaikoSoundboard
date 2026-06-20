@@ -13,7 +13,7 @@ Window {
     minimumHeight: 650
     maximumWidth: 520
     maximumHeight: 700
-    color: "#0f0f0f"
+    color: Theme.appBackground
     title: "Audio Routing & Settings"
     modality: Qt.ApplicationModal
     flags: Qt.Dialog | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
@@ -64,14 +64,14 @@ Window {
             spacing: 4
             Text {
                 text: "Audio Routing & Settings"
-                color: "white"
+                color: Theme.textPrimary
                 font.pixelSize: 22
                 font.weight: Font.Bold
             }
             Text {
                 text: "Configure output routes and voice passthrough devices."
-                color: "#4a4a4a"
-                font.pixelSize: 13
+                color: Theme.textDim
+                font.pixelSize: Theme.fontSizeHeading
             }
         }
 
@@ -80,9 +80,9 @@ Window {
             id: outputsGroup
             Layout.fillWidth: true
             Layout.preferredHeight: outputsLayout.implicitHeight + 28
-            color: "#111111"
-            radius: 10
-            border.color: "#1c1c1c"
+            color: Theme.cardBackground
+            radius: Theme.cardRadius + 2
+            border.color: Theme.borderDefault
             border.width: 1
 
             ColumnLayout {
@@ -93,8 +93,8 @@ Window {
 
                 Text {
                     text: "SOUNDBOARD OUTPUTS"
-                    color: "#555"
-                    font.pixelSize: 10
+                    color: Theme.textDim
+                    font.pixelSize: Theme.fontSizeSmall
                     font.letterSpacing: 1.5
                     font.weight: Font.Bold
                 }
@@ -115,8 +115,8 @@ Window {
                     spacing: 12
                     Text {
                         text: "Broadcast Device:"
-                        color: "#888"
-                        font.pixelSize: 12
+                        color: Theme.textDim
+                        font.pixelSize: Theme.fontSizeNormal
                         Layout.preferredWidth: 120
                     }
                     CustomComboBox {
@@ -143,8 +143,8 @@ Window {
                     spacing: 12
                     Text {
                         text: "Monitoring Device:"
-                        color: "#888"
-                        font.pixelSize: 12
+                        color: Theme.textDim
+                        font.pixelSize: Theme.fontSizeNormal
                         Layout.preferredWidth: 120
                     }
                     CustomComboBox {
@@ -162,9 +162,9 @@ Window {
             id: inputGroup
             Layout.fillWidth: true
             Layout.fillHeight: true
-            color: "#111111"
-            radius: 10
-            border.color: "#1c1c1c"
+            color: Theme.cardBackground
+            radius: Theme.cardRadius + 2
+            border.color: Theme.borderDefault
             border.width: 1
 
             ColumnLayout {
@@ -174,8 +174,8 @@ Window {
 
                 Text {
                     text: "VOICE PASSTHROUGH (MIC INPUT)"
-                    color: "#555"
-                    font.pixelSize: 10
+                    color: Theme.textDim
+                    font.pixelSize: Theme.fontSizeSmall
                     font.letterSpacing: 1.5
                     font.weight: Font.Bold
                 }
@@ -196,8 +196,8 @@ Window {
                     spacing: 12
                     Text {
                         text: "Voice Input Source:"
-                        color: "#888"
-                        font.pixelSize: 12
+                        color: Theme.textDim
+                        font.pixelSize: Theme.fontSizeNormal
                         Layout.preferredWidth: 120
                     }
                     CustomComboBox {
@@ -218,8 +218,8 @@ Window {
 
                     Text {
                         text: "Live Voice Input Level / Waveform:"
-                        color: "#888"
-                        font.pixelSize: 11
+                        color: Theme.textDim
+                        font.pixelSize: Theme.fontSizeSmall
                     }
 
                     // Pure QML Waveform Visualizer
@@ -313,36 +313,15 @@ Window {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignRight
 
-            Rectangle {
+            ThemedButton {
                 id: closeBtn
+                text: "Close"
                 Layout.alignment: Qt.AlignRight
-                width: 120
-                height: 38
-                radius: 8
-                color: closeMouse.containsMouse ? "#222" : "#1c1c1c"
-                border.color: closeMouse.containsMouse ? "#333" : "#282828"
-                border.width: 1
-                Behavior on color { ColorAnimation { duration: 150 } }
-                Behavior on border.color { ColorAnimation { duration: 150 } }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "Close"
-                    color: closeMouse.containsMouse ? "#fff" : "#bbb"
-                    font.pixelSize: 13
-                    font.weight: Font.Medium
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                }
-
-                MouseArea {
-                    id: closeMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        audioSource.stopMonitoring()
-                        root.accepted()
-                    }
+                implicitWidth: 120
+                accentColor: Theme.accentPurple
+                onClicked: {
+                    audioSource.stopMonitoring()
+                    root.accepted()
                 }
             }
         }

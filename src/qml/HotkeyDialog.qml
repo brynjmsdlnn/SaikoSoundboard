@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
+import Saiko 1.0
 
 Window {
     id: root
@@ -11,7 +12,7 @@ Window {
     minimumHeight: 340
     maximumWidth: 520
     maximumHeight: 340
-    color: "#0f0f0f"
+    color: Theme.appBackground
     title: "Hotkey Configuration"
     modality: Qt.ApplicationModal
     flags: Qt.Dialog | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
@@ -54,14 +55,14 @@ Window {
             spacing: 4
             Text {
                 text: "Configure Controls"
-                color: "white"
+                color: Theme.textPrimary
                 font.pixelSize: 22
                 font.weight: Font.Bold
             }
             Text {
                 text: "Click a card below to rebind the key combination."
-                color: "#4a4a4a"
-                font.pixelSize: 13
+                color: Theme.textDim
+                font.pixelSize: Theme.fontSizeHeading
             }
         }
 
@@ -74,7 +75,7 @@ Window {
                 title: "PLAY ACTION"
                 currentKey: root.playKey
                 isRecording: root.activeField === "play"
-                accentColor: "#BB86FC"
+                accentColor: Theme.accentPurple
                 onClicked: root.activeField = "play"
                 onKeyCaptured: (seq) => { root.playKey = seq; root.activeField = "" }
             }
@@ -82,7 +83,7 @@ Window {
                 title: "ASSIGN ACTION"
                 currentKey: root.assignKey
                 isRecording: root.activeField === "assign"
-                accentColor: "#03DAC6"
+                accentColor: Theme.accentTeal
                 onClicked: root.activeField = "assign"
                 onKeyCaptured: (seq) => { root.assignKey = seq; root.activeField = "" }
             }
@@ -92,54 +93,17 @@ Window {
             Layout.fillWidth: true
             spacing: 10
 
-            Rectangle {
+            ThemedButton {
+                text: "Cancel"
                 Layout.fillWidth: true
-                height: 38
-                radius: 8
-                color: cancelMouse.containsMouse ? "#1c1c1c" : "#161616"
-                border.color: "#252525"
-                border.width: 1
-                Behavior on color { ColorAnimation { duration: 150 } }
-                Text {
-                    anchors.centerIn: parent
-                    text: "Cancel"
-                    color: cancelMouse.containsMouse ? "#777" : "#444"
-                    font.pixelSize: 13
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                }
-                MouseArea {
-                    id: cancelMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.rejected()
-                }
+                onClicked: root.rejected()
             }
 
-            Rectangle {
+            ThemedButton {
+                text: "Save bindings"
                 Layout.fillWidth: true
-                height: 38
-                radius: 8
-                color: saveMouse.containsMouse ? "#222" : "#1c1c1c"
-                border.color: saveMouse.containsMouse ? "#333" : "#282828"
-                border.width: 1
-                Behavior on color { ColorAnimation { duration: 150 } }
-                Behavior on border.color { ColorAnimation { duration: 150 } }
-                Text {
-                    anchors.centerIn: parent
-                    text: "Save bindings"
-                    color: saveMouse.containsMouse ? "#fff" : "#bbb"
-                    font.pixelSize: 13
-                    font.weight: Font.Medium
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                }
-                MouseArea {
-                    id: saveMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.accepted()
-                }
+                accentColor: Theme.accentPurple
+                onClicked: root.accepted()
             }
         }
     }
@@ -159,7 +123,7 @@ Window {
         Layout.fillHeight: true
         radius: 12
         color: isRecording ? "#161616" : (isHovered ? "#141414" : "#111111")
-        border.color: isRecording ? accentColor : (isHovered ? "#282828" : "#1c1c1c")
+        border.color: isRecording ? accentColor : (isHovered ? Theme.borderHover : Theme.borderDefault)
         border.width: 1
         Behavior on color { ColorAnimation { duration: 180 } }
         Behavior on border.color { ColorAnimation { duration: 180 } }
@@ -182,13 +146,13 @@ Window {
                 Layout.alignment: Qt.AlignHCenter
                 font.pixelSize: 10
                 font.letterSpacing: 2.5
-                color: card.isRecording ? card.accentColor : "#3a3a3a"
+                color: card.isRecording ? card.accentColor : Theme.textDim
                 Behavior on color { ColorAnimation { duration: 180 } }
             }
 
             Text {
                 text: card.isRecording ? "· · ·" : card.currentKey
-                color: card.isRecording ? card.accentColor : "white"
+                color: card.isRecording ? card.accentColor : Theme.textPrimary
                 font.pixelSize: card.currentKey.length > 5 ? 22 : 30
                 font.weight: Font.Bold
                 Layout.alignment: Qt.AlignHCenter
@@ -207,7 +171,7 @@ Window {
                 Layout.alignment: Qt.AlignHCenter
                 font.pixelSize: 9
                 font.letterSpacing: 1.5
-                color: card.isRecording ? card.accentColor : "#2a2a2a"
+                color: card.isRecording ? card.accentColor : Theme.textDim
                 opacity: card.isHovered && !card.isRecording ? 0.8 : (card.isRecording ? 1.0 : 0.4)
                 Behavior on color { ColorAnimation { duration: 180 } }
                 Behavior on opacity { NumberAnimation { duration: 180 } }

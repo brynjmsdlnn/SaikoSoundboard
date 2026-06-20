@@ -129,10 +129,14 @@ target_include_directories(SaikoSoundboard PRIVATE src src/ui)
 qt_policy(SET QTP0001 NEW)
 qt_policy(SET QTP0004 NEW)
 
+set_source_files_properties(src/qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+
 qt_add_qml_module(SaikoSoundboard
     URI Saiko
     VERSION 1.0
     QML_FILES
+        src/qml/Theme.qml
+        src/qml/ThemedButton.qml
         src/qml/Main.qml
         src/qml/HotkeyDialog.qml
         src/qml/SourcesPanel.qml

@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Templates 2.15 as T
+import Saiko 1.0
 
 T.ComboBox {
     id: combo
@@ -18,14 +19,14 @@ T.ComboBox {
         rightPadding: combo.font.pixelSize >= 12 ? 28 : 16
         text: combo.displayText
         font: combo.font
-        color: "white"
+        color: Theme.textPrimary
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
     }
 
     background: Rectangle {
-        color: combo.hovered ? "#1a1a1a" : "#121212"
-        border.color: combo.visualFocus ? "#BB86FC" : (combo.hovered ? "#2a2a2a" : "#1c1c1c")
+        color: combo.hovered ? "#1a1a1a" : Theme.inputBackground
+        border.color: combo.visualFocus ? Theme.accentPurple : (combo.hovered ? Theme.borderHover : Theme.borderDefault)
         border.width: 1
         radius: combo.radius
         Behavior on color { ColorAnimation { duration: 150 } }
@@ -37,7 +38,7 @@ T.ComboBox {
             anchors.rightMargin: combo.font.pixelSize >= 12 ? 12 : 6
             anchors.verticalCenter: parent.verticalCenter
             font.pixelSize: combo.font.pixelSize >= 12 ? 8 : 6
-            color: combo.hovered ? "white" : "#555"
+            color: combo.hovered ? Theme.textPrimary : Theme.textDim
             Behavior on color { ColorAnimation { duration: 150 } }
         }
     }
@@ -61,8 +62,8 @@ T.ComboBox {
         }
 
         background: Rectangle {
-            color: "#0f0f0f"
-            border.color: "#222"
+            color: Theme.appBackground
+            border.color: Theme.borderHover
             border.width: 1
             radius: combo.radius
         }
@@ -79,7 +80,7 @@ T.ComboBox {
         
         contentItem: Text {
             text: modelData.text || modelData
-            color: delegateItem.highlighted || delegateItem.hovered ? "white" : "#aaa"
+            color: delegateItem.highlighted || delegateItem.hovered ? Theme.textPrimary : Theme.textSecondary
             font: combo.font
             elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
@@ -87,7 +88,7 @@ T.ComboBox {
         }
         
         background: Rectangle {
-            color: delegateItem.highlighted || delegateItem.hovered ? "#1c1c1c" : "transparent"
+            color: delegateItem.highlighted || delegateItem.hovered ? Theme.borderDefault : "transparent"
             radius: combo.radius - 2
             Behavior on color { ColorAnimation { duration: 100 } }
         }

@@ -12,7 +12,7 @@ Rectangle {
     height: cardColumn.implicitHeight + 28
     color: cardHover.hovered ? "#141414" : "#111111"
     radius: 12
-    border.color: cardHover.hovered ? "#262626" : "#1c1c1c"
+    border.color: cardHover.hovered ? "#262626" : Theme.borderDefault
     border.width: 1
 
     Behavior on color { ColorAnimation { duration: 180 } }
@@ -46,9 +46,9 @@ Rectangle {
         background: Rectangle {
             implicitWidth: 168
             color: "#171717"
-            border.color: "#262626"
+            border.color: Theme.borderHover
             border.width: 1
-            radius: 8
+            radius: Theme.cardRadius
         }
 
         enter: Transition {
@@ -67,8 +67,8 @@ Rectangle {
 
         contentItem: Text {
             text: menuItem.text
-            color: menuItem.hovered ? "white" : "#aaa"
-            font.pixelSize: 11
+            color: menuItem.hovered ? Theme.textPrimary : Theme.textSecondary
+            font.pixelSize: Theme.fontSizeSmall
             leftPadding: 8
             verticalAlignment: Text.AlignVCenter
             Behavior on color { ColorAnimation { duration: 100 } }
@@ -76,49 +76,8 @@ Rectangle {
 
         background: Rectangle {
             color: menuItem.hovered ? "#242424" : "transparent"
-            radius: 6
+            radius: Theme.borderRadius
             Behavior on color { ColorAnimation { duration: 100 } }
-        }
-    }
-
-    // ============================================================
-    // Reusable small action button (Play / Preview / Stop / Assign)
-    // ============================================================
-    component ActionButton: Rectangle {
-        id: btn
-        property string label: ""
-        property color tint: "#888888"
-        property bool filled: false
-        signal clicked()
-
-        Layout.fillWidth: true
-        height: 26
-        radius: 6
-        color: filled
-            ? Qt.rgba(tint.r, tint.g, tint.b, mouse.containsMouse ? 0.22 : 0.13)
-            : (mouse.containsMouse ? "#1c1c1c" : "transparent")
-        border.color: filled
-            ? Qt.rgba(tint.r, tint.g, tint.b, mouse.containsMouse ? 0.7 : 0.4)
-            : (mouse.containsMouse ? "#2a2a2a" : "#1f1f1f")
-        border.width: 1
-        Behavior on color { ColorAnimation { duration: 130 } }
-        Behavior on border.color { ColorAnimation { duration: 130 } }
-
-        Text {
-            anchors.centerIn: parent
-            text: btn.label
-            color: filled ? btn.tint : (mouse.containsMouse ? "#ddd" : "#888")
-            font.pixelSize: 10
-            font.weight: Font.Medium
-            Behavior on color { ColorAnimation { duration: 130 } }
-        }
-
-        MouseArea {
-            id: mouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: btn.clicked()
         }
     }
 
@@ -141,8 +100,8 @@ Rectangle {
             Text {
                 Layout.fillWidth: true
                 text: slotName || "Untitled"
-                color: "white"
-                font.pixelSize: 13
+                color: Theme.textPrimary
+                font.pixelSize: Theme.fontSizeHeading
                 font.weight: Font.Medium
                 elide: Text.ElideRight
                 maximumLineCount: 1
@@ -156,15 +115,15 @@ Rectangle {
                 color: optionsMouse.containsMouse ? "#1f1f1f" : "transparent"
                 border.color: optionsMouse.containsMouse ? "#2e2e2e" : "transparent"
                 border.width: 1
-                Behavior on color { ColorAnimation { duration: 120 } }
-                Behavior on border.color { ColorAnimation { duration: 120 } }
+                Behavior on color { ColorAnimation { duration: Theme.animDuration - 30 } }
+                Behavior on border.color { ColorAnimation { duration: Theme.animDuration - 30 } }
 
                 Text {
                     anchors.centerIn: parent
                     text: "\u22EF"
-                    color: optionsMouse.containsMouse ? "white" : "#666"
+                    color: optionsMouse.containsMouse ? Theme.textPrimary : Theme.textDim
                     font.pixelSize: 15
-                    Behavior on color { ColorAnimation { duration: 120 } }
+                    Behavior on color { ColorAnimation { duration: Theme.animDuration - 30 } }
                 }
 
                 MouseArea {
@@ -202,8 +161,8 @@ Rectangle {
                 var name = parts[parts.length - 1]
                 return isTemporary ? "Temporary \u00b7 " + name : name
             }
-            color: isTemporary ? "#d99a3d" : "#555555"
-            font.pixelSize: 10
+            color: isTemporary ? "#d99a3d" : Theme.textDim
+            font.pixelSize: Theme.fontSizeSmall
             elide: Text.ElideRight
             maximumLineCount: 1
 
@@ -218,9 +177,9 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 50
-            color: "#0c0c0c"
-            radius: 8
-            border.color: "#1c1c1c"
+            color: Theme.recessedBackground
+            radius: Theme.cardRadius
+            border.color: Theme.borderDefault
             border.width: 1
             clip: true
 
@@ -244,9 +203,9 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: clipColumn.implicitHeight + 16
-            color: "#151515"
-            radius: 8
-            border.color: "#1f1f1f"
+            color: Theme.cardBackground
+            radius: Theme.cardRadius
+            border.color: Theme.borderDefault
             border.width: 1
 
             ColumnLayout {
@@ -257,7 +216,7 @@ Rectangle {
 
                 Text {
                     text: "SELECTED CLIP"
-                    color: "#454545"
+                    color: Theme.textDim
                     font.pixelSize: 8
                     font.letterSpacing: 1.2
                     font.weight: Font.Bold
@@ -267,7 +226,7 @@ Rectangle {
                     Layout.fillWidth: true
                     spacing: 8
 
-                    Text { text: "Start"; color: "#777"; font.pixelSize: 9; Layout.preferredWidth: 30 }
+                    Text { text: "Start"; color: Theme.textDim; font.pixelSize: 9; Layout.preferredWidth: 30 }
 
                     SpinBox {
                         id: startSpin
@@ -288,7 +247,7 @@ Rectangle {
 
                         contentItem: TextInput {
                             text: startSpin.textFromValue(startSpin.value, startSpin.locale)
-                            color: "white"
+                            color: Theme.textPrimary
                             font: startSpin.font
                             readOnly: !startSpin.editable
                             validator: startSpin.validator
@@ -300,10 +259,10 @@ Rectangle {
 
                         background: Rectangle {
                             implicitHeight: 24
-                            color: "#0e0e0e"
+                            color: Theme.recessedBackground
                             radius: 5
                             border.width: 1
-                            border.color: startSpin.activeFocus ? "#BB86FC" : (startSpin.hovered ? "#2a2a2a" : "#1c1c1c")
+                            border.color: startSpin.activeFocus ? Theme.accentPurple : (startSpin.hovered ? Theme.borderHover : Theme.borderDefault)
                             Behavior on border.color { ColorAnimation { duration: 100 } }
                         }
 
@@ -326,7 +285,7 @@ Rectangle {
                     Layout.fillWidth: true
                     spacing: 8
 
-                    Text { text: "End"; color: "#777"; font.pixelSize: 9; Layout.preferredWidth: 30 }
+                    Text { text: "End"; color: Theme.textDim; font.pixelSize: 9; Layout.preferredWidth: 30 }
 
                     SpinBox {
                         id: endSpin
@@ -347,7 +306,7 @@ Rectangle {
 
                         contentItem: TextInput {
                             text: endSpin.textFromValue(endSpin.value, endSpin.locale)
-                            color: "white"
+                            color: Theme.textPrimary
                             font: endSpin.font
                             readOnly: !endSpin.editable
                             validator: endSpin.validator
@@ -359,10 +318,10 @@ Rectangle {
 
                         background: Rectangle {
                             implicitHeight: 24
-                            color: "#0e0e0e"
+                            color: Theme.recessedBackground
                             radius: 5
                             border.width: 1
-                            border.color: endSpin.activeFocus ? "#BB86FC" : (endSpin.hovered ? "#2a2a2a" : "#1c1c1c")
+                            border.color: endSpin.activeFocus ? Theme.accentPurple : (endSpin.hovered ? Theme.borderHover : Theme.borderDefault)
                             Behavior on border.color { ColorAnimation { duration: 100 } }
                         }
 
@@ -406,7 +365,7 @@ Rectangle {
                     width: 4
                     height: volSlider.availableHeight
                     radius: 2
-                    color: "#222"
+                    color: Theme.borderDefault
 
                     Rectangle {
                         x: 0
@@ -414,7 +373,7 @@ Rectangle {
                         width: parent.width
                         height: parent.height * (1.0 - volSlider.visualPosition)
                         radius: 2
-                        color: "#BB86FC"
+                        color: Theme.accentPurple
                     }
                 }
 
@@ -424,8 +383,8 @@ Rectangle {
                     width: 14
                     height: 14
                     radius: 7
-                    color: volSlider.pressed ? "#BB86FC" : (volSlider.hovered ? "#fff" : "#888")
-                    border.color: volSlider.hovered ? "#BB86FC" : "#555"
+                    color: volSlider.pressed ? Theme.accentPurple : (volSlider.hovered ? Theme.textPrimary : Theme.textDim)
+                    border.color: volSlider.hovered ? Theme.accentPurple : "#555"
                     border.width: 1
                     Behavior on color { ColorAnimation { duration: 100 } }
                     Behavior on border.color { ColorAnimation { duration: 100 } }
@@ -444,24 +403,27 @@ Rectangle {
                     Layout.fillWidth: true
                     spacing: 6
 
-                    ActionButton {
-                        label: "Play"
-                        tint: "#4caf50"
+                    ThemedButton {
+                        text: "Play"
+                        accentColor: Theme.accentGreen
                         filled: true
+                        small: true
                         onClicked: Backend.soundboard.playPlayer(slotId)
                     }
-                    ActionButton {
-                        label: "Preview"
-                        tint: "#03DAC6"
+                    ThemedButton {
+                        text: "Preview"
+                        accentColor: Theme.accentTeal
                         filled: true
+                        small: true
                         onClicked: Backend.soundboard.playPlayerPreview(slotId)
                     }
                 }
 
-                ActionButton {
-                    label: "Stop"
-                    tint: "#e35d5d"
+                ThemedButton {
+                    text: "Stop"
+                    accentColor: Theme.accentRed
                     filled: true
+                    small: true
                     onClicked: Backend.soundboard.stopPlayer(slotId)
                 }
             }
@@ -474,7 +436,7 @@ Rectangle {
 
             Text {
                 text: "Route"
-                color: "#777"
+                color: Theme.textDim
                 font.pixelSize: 9
                 Layout.preferredWidth: 32
             }
@@ -508,7 +470,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             height: 1
-            color: "#1e1e1e"
+            color: Theme.borderDefault
         }
 
         // --- Footer: assign / remove ---
@@ -516,32 +478,12 @@ Rectangle {
             Layout.fillWidth: true
             spacing: 6
 
-            Rectangle {
+            ThemedButton {
                 id: assignBtn
+                text: "Assign"
+                small: true
                 Layout.fillWidth: true
-                height: 28
-                radius: 7
-                color: assignMouse.containsMouse ? "#1c1c1c" : "transparent"
-                border.color: assignMouse.containsMouse ? "#2a2a2a" : "#1c1c1c"
-                border.width: 1
-                Behavior on color { ColorAnimation { duration: 130 } }
-                Behavior on border.color { ColorAnimation { duration: 130 } }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "Assign"
-                    color: assignMouse.containsMouse ? "white" : "#999"
-                    font.pixelSize: 10
-                    Behavior on color { ColorAnimation { duration: 130 } }
-                }
-
-                MouseArea {
-                    id: assignMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: assignMenu.open()
-                }
+                onClicked: assignMenu.open()
 
                 CardMenu {
                     id: assignMenu
@@ -559,32 +501,13 @@ Rectangle {
                 }
             }
 
-            Rectangle {
+            ThemedButton {
                 id: removeBtn
-                width: 28
-                height: 28
-                radius: 7
-                color: removeMouse.containsMouse ? "#2c1212" : "transparent"
-                border.color: removeMouse.containsMouse ? "#a13c3c" : "#1c1c1c"
-                border.width: 1
-                Behavior on color { ColorAnimation { duration: 130 } }
-                Behavior on border.color { ColorAnimation { duration: 130 } }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "\u2715"
-                    color: removeMouse.containsMouse ? "#ff6b6b" : "#666"
-                    font.pixelSize: 11
-                    Behavior on color { ColorAnimation { duration: 130 } }
-                }
-
-                MouseArea {
-                    id: removeMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: removeConfirmDialog.open()
-                }
+                text: "\u2715"
+                small: true
+                accentColor: Theme.destructiveRed
+                implicitWidth: 28
+                onClicked: removeConfirmDialog.open()
             }
         }
 
@@ -608,16 +531,16 @@ Rectangle {
         y: root.height / 2 - height / 2
 
         background: Rectangle {
-            color: "#161616"
-            border.color: "#222"
+            color: Theme.inputBackground
+            border.color: Theme.borderHover
             border.width: 1
-            radius: 8
+            radius: Theme.cardRadius
         }
 
         header: Label {
             text: "Rename player"
-            color: "white"
-            font.pixelSize: 13
+            color: Theme.textPrimary
+            font.pixelSize: Theme.fontSizeHeading
             font.weight: Font.Bold
             padding: 12
         }
@@ -625,15 +548,15 @@ Rectangle {
         contentItem: TextField {
             id: renameField
             text: slotName || ""
-            color: "white"
-            font.pixelSize: 12
+            color: Theme.textPrimary
+            font.pixelSize: Theme.fontSizeNormal
             selectByMouse: true
             background: Rectangle {
-                color: "#121212"
-                border.color: renameField.activeFocus ? "#BB86FC" : "#222"
+                color: Theme.inputBackground
+                border.color: renameField.activeFocus ? Theme.accentPurple : Theme.borderHover
                 border.width: 1
-                radius: 6
-                Behavior on border.color { ColorAnimation { duration: 150 } }
+                radius: Theme.borderRadius
+                Behavior on border.color { ColorAnimation { duration: Theme.animDuration } }
             }
         }
 
@@ -653,16 +576,16 @@ Rectangle {
         y: root.height / 2 - height / 2
 
         background: Rectangle {
-            color: "#161616"
-            border.color: "#222"
+            color: Theme.inputBackground
+            border.color: Theme.borderHover
             border.width: 1
-            radius: 8
+            radius: Theme.cardRadius
         }
 
         header: Label {
             text: "Enter permanent file name:"
-            color: "white"
-            font.pixelSize: 12
+            color: Theme.textPrimary
+            font.pixelSize: Theme.fontSizeNormal
             font.weight: Font.Bold
             padding: 12
         }
@@ -673,15 +596,15 @@ Rectangle {
                 var parts = (filePath || "").toString().split("/")
                 return parts[parts.length - 1] || ""
             }
-            color: "white"
-            font.pixelSize: 12
+            color: Theme.textPrimary
+            font.pixelSize: Theme.fontSizeNormal
             selectByMouse: true
             background: Rectangle {
-                color: "#121212"
-                border.color: permanentField.activeFocus ? "#BB86FC" : "#222"
+                color: Theme.appBackground
+                border.color: permanentField.activeFocus ? Theme.accentPurple : Theme.borderHover
                 border.width: 1
-                radius: 6
-                Behavior on border.color { ColorAnimation { duration: 150 } }
+                radius: Theme.borderRadius
+                Behavior on border.color { ColorAnimation { duration: Theme.animDuration } }
             }
         }
 
