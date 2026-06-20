@@ -4,6 +4,7 @@ import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
 import QtQuick.Dialogs
 import Saiko 1.0
+import "utils.js" as Utils
 
 ApplicationWindow {
     id: app
@@ -23,13 +24,7 @@ ApplicationWindow {
     property string lastRecordingPath: ""
 
     function startRecording() {
-        var ts = new Date()
-        var fmt = ts.getFullYear() +
-            ("0" + (ts.getMonth()+1)).slice(-2) +
-            ("0" + ts.getDate()).slice(-2) + "_" +
-            ("0" + ts.getHours()).slice(-2) +
-            ("0" + ts.getMinutes()).slice(-2) +
-            ("0" + ts.getSeconds()).slice(-2)
+        var fmt = Utils.formatTimestamp(new Date())
         lastRecordingPath = Backend.settings.saveDirectory + "/Recording_" + fmt + ".wav"
 
         if (!Backend.recording.isEngineRunning)
@@ -425,14 +420,8 @@ ApplicationWindow {
                             enabled: isReplayActive
                                 onClicked: {
                                     if (isReplayActive) {
-                                        var ts = new Date()
-                                        var fmt = ts.getFullYear() +
-                                            ("0" + (ts.getMonth()+1)).slice(-2) +
-                                            ("0" + ts.getDate()).slice(-2) + "_" +
-                                            ("0" + ts.getHours()).slice(-2) +
-                                            ("0" + ts.getMinutes()).slice(-2) +
-                                            ("0" + ts.getSeconds()).slice(-2)
-                                        var path = Backend.settings.saveDirectory + "/Replay_" + fmt + ".wav"
+                                            var fmt = Utils.formatTimestamp(new Date())
+                                            var path = Backend.settings.saveDirectory + "/Replay_" + fmt + ".wav"
                                         if (Backend.recording.saveReplay(path)) {
                                             statusLabel.text = "Replay saved: Replay_" + fmt + ".wav"
                                             lastRecordingPath = path

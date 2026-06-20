@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
 import Saiko 1.0
+import "utils.js" as Utils
 
 Rectangle {
     id: root
@@ -97,15 +98,6 @@ Rectangle {
     }
 
     function openRoutingDialog() {
-        var component = Qt.createComponent("RoutingDialog.qml")
-        if (component.status === Component.Ready) {
-            var win = component.createObject(null, {})
-            win.accepted.connect(function() { win.close() })
-            win.rejected.connect(function() { win.close() })
-            win.show()
-        } else {
-            if (component.status === Component.Error)
-                console.error("RoutingDialog error:", component.errorString())
-        }
+        Utils.openDialog("RoutingDialog.qml")
     }
 }

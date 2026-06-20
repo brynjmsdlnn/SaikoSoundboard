@@ -150,6 +150,9 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/SoundboardPanel.qml
         src/qml/CustomComboBox.qml
         src/qml/CustomCheckBox.qml
+        src/qml/ProcessSelectionPopup.qml
+        src/qml/ClipRangeEditor.qml
+        src/qml/utils.js
     SOURCES
         src/ui/waveformitem.h src/ui/waveformitem.cpp
         src/ui/realtimewaveformitem.h src/ui/realtimewaveformitem.cpp
