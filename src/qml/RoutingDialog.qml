@@ -105,8 +105,8 @@ Window {
                     CustomCheckBox {
                         id: micCb
                         text: "Enable Broadcast Output (to virtual mic)"
-                        checked: qmlBackend.soundboard.micOutputEnabled
-                        onToggled: qmlBackend.soundboard.setMicOutputEnabled(checked)
+                        checked: Backend.soundboard.micOutputEnabled
+                        onToggled: Backend.soundboard.setMicOutputEnabled(checked)
                     }
                 }
 
@@ -122,7 +122,7 @@ Window {
                     CustomComboBox {
                         id: micCombo
                         onCurrentValueChanged: {
-                            if (initialized) qmlBackend.soundboard.setMicOutputDevice(currentValue)
+                            if (initialized) Backend.soundboard.setMicOutputDevice(currentValue)
                         }
                     }
                 }
@@ -133,8 +133,8 @@ Window {
                     CustomCheckBox {
                         id: localCb
                         text: "Enable Local Monitoring (hear soundboard)"
-                        checked: qmlBackend.soundboard.localMonitoringEnabled
-                        onToggled: qmlBackend.soundboard.setLocalMonitoringEnabled(checked)
+                        checked: Backend.soundboard.localMonitoringEnabled
+                        onToggled: Backend.soundboard.setLocalMonitoringEnabled(checked)
                     }
                 }
 
@@ -150,7 +150,7 @@ Window {
                     CustomComboBox {
                         id: localCombo
                         onCurrentValueChanged: {
-                            if (initialized) qmlBackend.soundboard.setLocalMonitorDevice(currentValue)
+                            if (initialized) Backend.soundboard.setLocalMonitorDevice(currentValue)
                         }
                     }
                 }
@@ -186,8 +186,8 @@ Window {
                     CustomCheckBox {
                         id: feedMicCb
                         text: "Feed Voice to Broadcast (Mix Soundboard + Voice)"
-                        checked: qmlBackend.soundboard.micPassthroughEnabled
-                        onToggled: qmlBackend.soundboard.setMicPassthroughEnabled(checked)
+                        checked: Backend.soundboard.micPassthroughEnabled
+                        onToggled: Backend.soundboard.setMicPassthroughEnabled(checked)
                     }
                 }
 
@@ -204,7 +204,7 @@ Window {
                         id: voiceCombo
                         onCurrentValueChanged: {
                             if (initialized) {
-                                qmlBackend.soundboard.setVoiceInputDevice(currentValue)
+                                Backend.soundboard.setVoiceInputDevice(currentValue)
                                 audioSource.startMonitoring(currentValue)
                             }
                         }
@@ -349,19 +349,19 @@ Window {
     }
 
     Component.onCompleted: {
-        micCombo.model = buildDeviceList(qmlBackend.getAudioOutputDevices(), false)
-        localCombo.model = buildDeviceList(qmlBackend.getAudioOutputDevices(), true)
+        micCombo.model = buildDeviceList(Backend.getAudioOutputDevices(), false)
+        localCombo.model = buildDeviceList(Backend.getAudioOutputDevices(), true)
 
-        var inputs = qmlBackend.getAudioInputDevices()
+        var inputs = Backend.getAudioInputDevices()
         var voiceItems = [{ text: "Default Microphone", value: "" }]
         for (var i = 0; i < inputs.length; i++) {
             voiceItems.push({ text: inputs[i].description, value: inputs[i].description })
         }
         voiceCombo.model = voiceItems
 
-        selectDevice(micCombo, qmlBackend.settings.micOutputDevice)
-        selectDevice(localCombo, qmlBackend.settings.localMonitorDevice)
-        selectDevice(voiceCombo, qmlBackend.settings.voiceInputDevice)
+        selectDevice(micCombo, Backend.settings.micOutputDevice)
+        selectDevice(localCombo, Backend.settings.localMonitorDevice)
+        selectDevice(voiceCombo, Backend.settings.voiceInputDevice)
 
         initialized = true
 

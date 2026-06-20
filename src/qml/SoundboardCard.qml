@@ -448,13 +448,13 @@ Rectangle {
                         label: "Play"
                         tint: "#4caf50"
                         filled: true
-                        onClicked: qmlBackend.soundboard.playPlayer(slotId)
+                        onClicked: Backend.soundboard.playPlayer(slotId)
                     }
                     ActionButton {
                         label: "Preview"
                         tint: "#03DAC6"
                         filled: true
-                        onClicked: qmlBackend.soundboard.playPlayerPreview(slotId)
+                        onClicked: Backend.soundboard.playPlayerPreview(slotId)
                     }
                 }
 
@@ -462,7 +462,7 @@ Rectangle {
                     label: "Stop"
                     tint: "#e35d5d"
                     filled: true
-                    onClicked: qmlBackend.soundboard.stopPlayer(slotId)
+                    onClicked: Backend.soundboard.stopPlayer(slotId)
                 }
             }
         }
@@ -554,7 +554,7 @@ Rectangle {
                     }
                     CardMenuItem {
                         text: "From replay buffer"
-                        onClicked: qmlBackend.actions.dispatchAssignReplay(slotId, preserveCb.checked)
+                        onClicked: Backend.actions.dispatchAssignReplay(slotId, preserveCb.checked)
                     }
                 }
             }
@@ -639,7 +639,7 @@ Rectangle {
 
         onAccepted: {
             if (renameField.text.trim() !== "") {
-                qmlBackend.soundboard.renamePlayer(slotId, renameField.text.trim())
+                Backend.soundboard.renamePlayer(slotId, renameField.text.trim())
             }
         }
     }
@@ -687,7 +687,7 @@ Rectangle {
 
         onAccepted: {
             if (permanentField.text.trim() !== "") {
-                qmlBackend.actions.dispatchMakePermanent(slotId, permanentField.text.trim())
+                Backend.actions.dispatchMakePermanent(slotId, permanentField.text.trim())
             }
         }
     }
@@ -699,7 +699,7 @@ Rectangle {
         informativeText: (filePath && filePath !== "") || (playHotkey && playHotkey !== "") || (assignHotkey && assignHotkey !== "") ?
             "It has an assigned audio file and/or hotkey bindings." : ""
         buttons: MessageDialog.Yes | MessageDialog.No
-        onAccepted: qmlBackend.soundboard.removePlayer(slotId)
+        onAccepted: Backend.soundboard.removePlayer(slotId)
     }
 
     FileDialog {
@@ -707,7 +707,7 @@ Rectangle {
         title: "Select audio file"
         nameFilters: ["Audio files (*.wav *.mp3 *.ogg)"]
         onAccepted: {
-            if (selectedFile) qmlBackend.soundboard.assignAudioFile(slotId, selectedFile)
+            if (selectedFile) Backend.soundboard.assignAudioFile(slotId, selectedFile)
         }
     }
 
@@ -715,7 +715,7 @@ Rectangle {
     // Backend connections
     // ============================================================
     Connections {
-        target: qmlBackend.soundboard
+        target: Backend.soundboard
         function onPlayerPositionChanged(id, position) {
             if (id === slotId) waveformView.playPositionMs = position
         }
@@ -730,11 +730,11 @@ Rectangle {
 
     Component.onCompleted: {
         if (filePath && filePath !== "") {
-            var wfData = qmlBackend.soundboard.getWaveformData(slotId)
+            var wfData = Backend.soundboard.getWaveformData(slotId)
             if (wfData && wfData.isValid) {
                 waveformView.waveformData = wfData
             } else {
-                qmlBackend.soundboard.loadWaveformData(slotId, filePath)
+                Backend.soundboard.loadWaveformData(slotId, filePath)
             }
         }
     }
@@ -748,7 +748,7 @@ Rectangle {
                 assignKey: assignHotkey || ""
             })
             win.accepted.connect(function() {
-                qmlBackend.soundboard.setHotkeys(slotId, win.playKey, win.assignKey)
+                Backend.soundboard.setHotkeys(slotId, win.playKey, win.assignKey)
                 win.close()
             })
             win.rejected.connect(function() { win.close() })

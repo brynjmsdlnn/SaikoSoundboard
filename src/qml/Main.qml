@@ -26,7 +26,7 @@ ApplicationWindow {
     Component.onCompleted: updateSources()
 
     function updateSources() {
-        sourcesModel = qmlBackend.getSources()
+        sourcesModel = Backend.getSources()
         sourcesPanel.sourceModel = sourcesModel
     }
 
@@ -38,12 +38,12 @@ ApplicationWindow {
             ("0" + ts.getHours()).slice(-2) +
             ("0" + ts.getMinutes()).slice(-2) +
             ("0" + ts.getSeconds()).slice(-2)
-        lastRecordingPath = qmlBackend.settings.saveDirectory + "/Recording_" + fmt + ".wav"
+        lastRecordingPath = Backend.settings.saveDirectory + "/Recording_" + fmt + ".wav"
 
-        if (!qmlBackend.recording.isEngineRunning)
-            qmlBackend.recording.startEngine(captureMode)
+        if (!Backend.recording.isEngineRunning)
+            Backend.recording.startEngine(captureMode)
 
-        if (!qmlBackend.recording.startRecording(lastRecordingPath))
+        if (!Backend.recording.startRecording(lastRecordingPath))
             return
 
         remainingSec = 10
@@ -61,9 +61,9 @@ ApplicationWindow {
     function stopRecording() {
         recordingTimer.stop()
         stopTimer.stop()
-        qmlBackend.recording.stopRecording()
+        Backend.recording.stopRecording()
 
-        var fileSize = qmlBackend.recordingFileSize()
+        var fileSize = Backend.recordingFileSize()
         if (fileSize > 100) {
             renameDialog.open()
         } else {
@@ -74,7 +74,7 @@ ApplicationWindow {
 
     function finishRename(newName) {
         var dir = lastRecordingPath.substring(0, lastRecordingPath.lastIndexOf("/"))
-        var finalPath = qmlBackend.renameRecordingFile(lastRecordingPath, dir, newName)
+        var finalPath = Backend.renameRecordingFile(lastRecordingPath, dir, newName)
         lastRecordingPath = finalPath
         statusLabel.text = "Saved: " + lastRecordingPath.substring(lastRecordingPath.lastIndexOf("/") + 1)
         playBtn.enabled = true
@@ -96,7 +96,7 @@ ApplicationWindow {
             elapsedSec += 0.1
             remainingSec = Math.max(0, 10 - Math.floor(elapsedSec))
             timerLabel.text = "Time remaining: " + remainingSec + "s"
-            var bytes = qmlBackend.recordingFileSize()
+            var bytes = Backend.recordingFileSize()
             statsLabel.text = "Size: " + Math.round(bytes/1024) + " KB \u00b7 Time: " + elapsedSec.toFixed(1) + "s"
         }
     }
@@ -298,7 +298,7 @@ ApplicationWindow {
             // ---------------- LEFT PANEL ----------------
             Flickable {
                 id: leftPanelFlickable
-                SplitView.preferredWidth: qmlBackend.settings.leftPanelWidth > 0 ? qmlBackend.settings.leftPanelWidth : 340
+                SplitView.preferredWidth: Backend.settings.leftPanelWidth > 0 ? Backend.settings.leftPanelWidth : 340
                 SplitView.minimumWidth: 300
                 contentWidth: width
                 contentHeight: leftColumn.implicitHeight + 32
@@ -306,8 +306,8 @@ ApplicationWindow {
 
                 onWidthChanged: {
                     if (width > 0) {
-                        qmlBackend.settings.leftPanelWidth = width
-                        qmlBackend.settings.save()
+                        Backend.settings.leftPanelWidth = width
+                        Backend.settings.save()
                     }
                 }
 
@@ -439,10 +439,10 @@ ApplicationWindow {
                                         color: "#888"
                                         font.pixelSize: 11
                                         readOnly: true
-                                        text: qmlBackend.settings.saveDirectory
+                                        text: Backend.settings.saveDirectory
                                     }
                                 }
-                                SmallButton { text: "Open"; onClicked: Qt.openUrlExternally("file:///" + qmlBackend.settings.saveDirectory) }
+                                SmallButton { text: "Open"; onClicked: Qt.openUrlExternally("file:///" + Backend.settings.saveDirectory) }
                                 SmallButton { text: "Change..."; onClicked: folderDialog.open() }
                             }
                         }
@@ -458,11 +458,11 @@ ApplicationWindow {
                             CustomCheckBox {
                                 id: replayCheck
                                 text: "Enabled"
-                                checked: qmlBackend.settings.replayEnabled
+                                checked: Backend.settings.replayEnabled
                                 onToggled: {
-                                    qmlBackend.settings.replayEnabled = checked
-                                    qmlBackend.settings.save()
-                                    qmlBackend.recording.setReplayEnabled(checked, captureMode)
+                                    Backend.settings.replayEnabled = checked
+                                    Backend.settings.save()
+                                    Backend.recording.setReplayEnabled(checked, captureMode)
                                 }
                             }
                             Item { Layout.fillWidth: true }
@@ -484,7 +484,7 @@ ApplicationWindow {
                                     anchors.leftMargin: 4
                                     anchors.rightMargin: 4
                                     from: 1; to: 120
-                                    value: qmlBackend.settings.replayDuration
+                                    value: Backend.settings.replayDuration
                                     background: Item {}
                                     contentItem: Text {
                                         text: replayDurationSpin.value + "s"
@@ -494,9 +494,9 @@ ApplicationWindow {
                                         horizontalAlignment: Text.AlignHCenter
                                     }
                                     onValueModified: {
-                                        qmlBackend.recording.setReplayDuration(value)
-                                        qmlBackend.settings.replayDuration = value
-                                        qmlBackend.settings.save()
+                                        Backend.recording.setReplayDuration(value)
+                                        Backend.settings.replayDuration = value
+                                        Backend.settings.save()
                                     }
                                 }
                             }
@@ -515,7 +515,7 @@ ApplicationWindow {
                                 id: replayWaveform
                                 anchors.fill: parent
                                 anchors.margins: 3
-                                waveformData: qmlBackend.replayWaveform
+                                waveformData: Backend.replayWaveform
                                 readOnly: true
                             }
                         }
@@ -543,8 +543,8 @@ ApplicationWindow {
                                             ("0" + ts.getHours()).slice(-2) +
                                             ("0" + ts.getMinutes()).slice(-2) +
                                             ("0" + ts.getSeconds()).slice(-2)
-                                        var path = qmlBackend.settings.saveDirectory + "/Replay_" + fmt + ".wav"
-                                        if (qmlBackend.recording.saveReplay(path)) {
+                                        var path = Backend.settings.saveDirectory + "/Replay_" + fmt + ".wav"
+                                        if (Backend.recording.saveReplay(path)) {
                                             statusLabel.text = "Replay saved: Replay_" + fmt + ".wav"
                                             lastRecordingPath = path
                                             playBtn.enabled = true
@@ -581,7 +581,7 @@ ApplicationWindow {
                             tint: "#BB86FC"
                             enabled: false
                             onClicked: {
-                                if (lastRecordingPath.length > 0) qmlBackend.playFile(lastRecordingPath)
+                                if (lastRecordingPath.length > 0) Backend.playFile(lastRecordingPath)
                             }
                         }
                     }
@@ -593,15 +593,15 @@ ApplicationWindow {
             // ---------------- SOURCES DOCK ----------------
             Rectangle {
                 id: sourcesDock
-                SplitView.preferredWidth: qmlBackend.settings.sourcesDockWidth > 0 ? qmlBackend.settings.sourcesDockWidth : 320
+                SplitView.preferredWidth: Backend.settings.sourcesDockWidth > 0 ? Backend.settings.sourcesDockWidth : 320
                 SplitView.minimumWidth: 260
                 color: "#0d0d0d"
                 visible: (captureMode === "multi")
 
                 onWidthChanged: {
                     if (width > 0 && visible) {
-                        qmlBackend.settings.sourcesDockWidth = width
-                        qmlBackend.settings.save()
+                        Backend.settings.sourcesDockWidth = width
+                        Backend.settings.save()
                     }
                 }
 
@@ -613,11 +613,11 @@ ApplicationWindow {
                     locked: !startBtn.enabled
 
                     onSourceAdded: {
-                        qmlBackend.addSource(name, executableName, executablePath)
+                        Backend.addSource(name, executableName, executablePath)
                         updateSources()
                     }
                     onSourceRemoved: {
-                        qmlBackend.removeSource(sourceId)
+                        Backend.removeSource(sourceId)
                         updateSources()
                     }
                 }
@@ -627,7 +627,7 @@ ApplicationWindow {
         // ---------------- BOTTOM DOCK: SOUNDBOARD SLOTS ----------------
         Rectangle {
             id: soundboardDock
-            SplitView.preferredHeight: qmlBackend.settings.soundboardDockHeight > 0 ? qmlBackend.settings.soundboardDockHeight : 280
+            SplitView.preferredHeight: Backend.settings.soundboardDockHeight > 0 ? Backend.settings.soundboardDockHeight : 280
             SplitView.minimumHeight: 180
             color: "#0c0c0c"
             border.color: "#1c1c1c"
@@ -635,8 +635,8 @@ ApplicationWindow {
 
             onHeightChanged: {
                 if (height > 0) {
-                    qmlBackend.settings.soundboardDockHeight = height
-                    qmlBackend.settings.save()
+                    Backend.settings.soundboardDockHeight = height
+                    Backend.settings.save()
                 }
             }
 
@@ -662,19 +662,19 @@ ApplicationWindow {
         id: folderDialog
         title: "Select save directory"
         fileMode: FileDialog.Directory
-        currentFolder: "file:///" + qmlBackend.settings.saveDirectory
+        currentFolder: "file:///" + Backend.settings.saveDirectory
         onAccepted: {
             var path = selectedFile.toString()
             if (path.startsWith("file:///"))
                 path = path.substring(8)
-            qmlBackend.settings.saveDirectory = path
-            qmlBackend.settings.save()
+            Backend.settings.saveDirectory = path
+            Backend.settings.save()
             saveDirInput.text = path
         }
     }
 
     Connections {
-        target: qmlBackend
+        target: Backend
         function onCaptureStateChanged(state) {
             var isRecordingState = (state === 2 || state === 3)
             var isReplay = (state === 1 || state === 3)
@@ -693,7 +693,7 @@ ApplicationWindow {
             else if (state === 3) statusLabel.text = "Recording + replay active..."
         }
         function onPlaybackStateChanged() {
-            if (!qmlBackend.isPlaying) {
+            if (!Backend.isPlaying) {
                 statusLabel.text = "Ready"
                 startBtn.enabled = true
                 playBtn.enabled = (lastRecordingPath.length > 0)

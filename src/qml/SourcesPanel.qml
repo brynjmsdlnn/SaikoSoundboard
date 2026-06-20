@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import Saiko 1.0
 
 Rectangle {
     id: root
@@ -194,7 +195,7 @@ Rectangle {
         property var allProcesses: []
 
         function refresh() {
-            var raw = qmlBackend.getRunningProcesses()
+            var raw = Backend.getRunningProcesses()
             var seen = {}
             var deduped = []
             for (var i = 0; i < raw.length; i++) {

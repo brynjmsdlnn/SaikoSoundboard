@@ -4,6 +4,8 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QLoggingCategory>
+#include <QtQml>
+#include "models/soundplayerslotmodel.h"
 
 int main(int argc, char *argv[])
 {
@@ -15,9 +17,10 @@ int main(int argc, char *argv[])
 
     QmlBackend backend;
 
+    qmlRegisterSingletonInstance("Saiko", 1, 0, "Backend", &backend);
+    qmlRegisterSingletonInstance("Saiko", 1, 0, "SlotModel", backend.slotModel());
+
     QQmlApplicationEngine engine;
-    engine.rootContext()->setContextProperty("qmlBackend", &backend);
-    engine.rootContext()->setContextProperty("soundboardSlotModel", backend.slotModel());
     engine.addImageProvider(QLatin1String("fileicon"), new FileIconProvider());
 
     engine.load(QUrl("qrc:/qml/Main.qml"));

@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
+import Saiko 1.0
 
 Rectangle {
     id: root
@@ -60,7 +61,7 @@ Rectangle {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: qmlBackend.soundboard.addPlayer()
+                        onClicked: Backend.soundboard.addPlayer()
                     }
                 }
 
@@ -126,9 +127,9 @@ Rectangle {
                     leftMargin: 14
                     rightMargin: 14
 
-                    model: soundboardSlotModel
+                    model: SlotModel
                     delegate: SoundboardCard {
-                        slotModel: soundboardSlotModel
+                        slotModel: SlotModel
                         slotIndex: index
                     }
                 }
