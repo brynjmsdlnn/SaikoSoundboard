@@ -71,6 +71,8 @@ set(MODEL_SOURCES
     src/models/soundplayerslot.h
     src/models/soundplayerslotmodel.cpp
     src/models/soundplayerslotmodel.h
+    src/models/audiosourcelistmodel.cpp
+    src/models/audiosourcelistmodel.h
 )
 
 # --- Core Library ---

@@ -9,7 +9,7 @@ Rectangle {
     implicitHeight: 450
     color: "#0f0f0f"
 
-    property var sourceModel: []
+    property var sourceModel: null
     property bool locked: false
 
     signal sourceAdded(string name, string executableName, string executablePath)
@@ -58,14 +58,14 @@ Rectangle {
 
                     // Process Icon
                     Image {
-                        source: modelData.executablePath ? "image://fileicon/" + encodeURIComponent(modelData.executablePath) : ""
+                        source: executablePath ? "image://fileicon/" + encodeURIComponent(executablePath) : ""
                         width: 24
                         height: 24
                         fillMode: Image.PreserveAspectFit
                         Layout.preferredWidth: 24
                         Layout.preferredHeight: 24
-                        opacity: modelData.executablePath ? 0.9 : 0.2
-                        visible: modelData.executablePath !== ""
+                        opacity: executablePath ? 0.9 : 0.2
+                        visible: executablePath !== ""
                     }
 
                     // Process Details
@@ -73,14 +73,14 @@ Rectangle {
                         Layout.fillWidth: true
                         spacing: 2
                         Text {
-                            text: modelData.name
+                            text: name
                             color: "white"
                             font.pixelSize: 13
                             font.weight: Font.DemiBold
                             elide: Text.ElideRight
                         }
                         Text {
-                            text: modelData.executableName
+                            text: executableName
                             color: "#555"
                             font.pixelSize: 10
                             elide: Text.ElideRight
@@ -170,9 +170,10 @@ Rectangle {
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
-                        var item = root.sourceModel[listView.currentIndex]
-                        if (item) {
-                            root.sourceRemoved(item.id)
+                        var idx = listView.currentIndex
+                        if (idx >= 0) {
+                            var id = root.sourceModel.getSourceId(idx)
+                            if (id) root.sourceRemoved(id)
                             listView.currentIndex = -1
                         }
                     }
@@ -200,7 +201,7 @@ Rectangle {
             var deduped = []
             for (var i = 0; i < raw.length; i++) {
                 var p = raw[i]
-                if (!seen[p.name]) {
+                if (!seen[p.name] && !root.sourceModel.hasExecutable(p.name)) {
                     seen[p.name] = true
                     deduped.push(p)
                 }

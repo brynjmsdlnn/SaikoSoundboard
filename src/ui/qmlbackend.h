@@ -24,6 +24,7 @@
 #include "managers/hotkeymanager.h"
 #include "models/capturestate.h"
 #include "models/soundplayerslotmodel.h"
+#include "models/audiosourcelistmodel.h"
 #include "audio/waveformgenerator.h"
 
 class FileIconProvider : public QQuickImageProvider
@@ -62,6 +63,7 @@ class QmlBackend : public QObject
     Q_PROPERTY(ActionManager* actions READ actionManager CONSTANT)
     Q_PROPERTY(HotkeyManager* hotkeys READ hotkeyManager CONSTANT)
     Q_PROPERTY(SoundPlayerSlotModel* slotModel READ slotModel CONSTANT)
+    Q_PROPERTY(AudioSourceListModel* sourceModel READ sourceModel CONSTANT)
     Q_PROPERTY(bool isPlaying READ isPlaying NOTIFY playbackStateChanged)
 public:
     explicit QmlBackend(QObject *parent = nullptr);
@@ -73,6 +75,7 @@ public:
     ActionManager *actionManager() const { return m_actionManager; }
     HotkeyManager *hotkeyManager() const { return m_hotkeyManager; }
     SoundPlayerSlotModel *slotModel() const { return m_slotModel; }
+    AudioSourceListModel *sourceModel() const { return m_sourceModel; }
 
     CaptureState captureState() const;
     QVariant replayWaveform() const { return QVariant::fromValue(m_replayWaveform); }
@@ -82,9 +85,6 @@ public:
     Q_INVOKABLE QVariantList getAudioOutputDevices() const;
     Q_INVOKABLE QVariantList getAudioInputDevices() const;
     Q_INVOKABLE qint64 recordingFileSize() const;
-    Q_INVOKABLE void addSource(const QString &name, const QString &executableName, const QString &executablePath);
-    Q_INVOKABLE void removeSource(const QString &sourceId);
-    Q_INVOKABLE QVariantList getSources() const;
     Q_INVOKABLE void playFile(const QString &path);
     Q_INVOKABLE void stopPlayback();
     Q_INVOKABLE QString renameRecordingFile(const QString &oldPath, const QString &dir, const QString &newName);
@@ -106,6 +106,7 @@ private:
     ActionManager *m_actionManager;
     HotkeyManager *m_hotkeyManager;
     SoundPlayerSlotModel *m_slotModel = nullptr;
+    AudioSourceListModel *m_sourceModel = nullptr;
     void *m_hotkeyBackend;
     QMediaPlayer *m_player = nullptr;
     QAudioOutput *m_audioOutput = nullptr;

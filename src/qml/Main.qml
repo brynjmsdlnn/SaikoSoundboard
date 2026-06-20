@@ -15,20 +15,12 @@ ApplicationWindow {
     title: "Saiko Soundboard"
     color: "#0f0f0f"
 
-    property var sourcesModel: []
     property string captureMode: "global"
     property bool isRecording: false
     property bool isReplayActive: false
     property int remainingSec: 0
     property real elapsedSec: 0.0
     property string lastRecordingPath: ""
-
-    Component.onCompleted: updateSources()
-
-    function updateSources() {
-        sourcesModel = Backend.getSources()
-        sourcesPanel.sourceModel = sourcesModel
-    }
 
     function startRecording() {
         var ts = new Date()
@@ -405,7 +397,6 @@ ApplicationWindow {
                                     onActivated: {
                                         captureMode = modeCombo.currentValue
                                         sourcesDock.visible = (captureMode === "multi")
-                                        updateSources()
                                     }
                                 }
                             }
@@ -609,16 +600,14 @@ ApplicationWindow {
                     id: sourcesPanel
                     anchors.fill: parent
                     anchors.margins: 12
-                    sourceModel: sourcesModel
+                    sourceModel: Backend.sourceModel
                     locked: !startBtn.enabled
 
-                    onSourceAdded: {
-                        Backend.addSource(name, executableName, executablePath)
-                        updateSources()
+                    onSourceAdded: function(name, executableName, executablePath) {
+                        Backend.sourceModel.addSource(name, executableName, executablePath)
                     }
-                    onSourceRemoved: {
-                        Backend.removeSource(sourceId)
-                        updateSources()
+                    onSourceRemoved: function(sourceId) {
+                        Backend.sourceModel.removeSource(sourceId)
                     }
                 }
             }

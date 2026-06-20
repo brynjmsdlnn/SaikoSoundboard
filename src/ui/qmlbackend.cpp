@@ -25,6 +25,7 @@ QmlBackend::QmlBackend(QObject *parent)
     m_hotkeyManager = new HotkeyManager(m_actionManager, backend, this);
 
     m_slotModel = new SoundPlayerSlotModel(m_soundboardManager, this);
+    m_sourceModel = new AudioSourceListModel(m_settings, this);
 
     connect(m_soundboardManager, &SoundboardManager::slotsChanged, this, [this]() {
         QMap<QString, Action> hotkeyMap;
@@ -173,47 +174,6 @@ qint64 QmlBackend::recordingFileSize() const
 {
     return (m_recordingManager && m_recordingManager->wavWriter())
         ? m_recordingManager->wavWriter()->size() : 0;
-}
-
-void QmlBackend::addSource(const QString &name, const QString &executableName, const QString &executablePath)
-{
-    AudioSource src;
-    src.name = name;
-    src.executableName = executableName;
-    src.executablePath = executablePath;
-    QList<AudioSource> sources = m_settings->sources();
-    sources.append(src);
-    m_settings->setSources(sources);
-    m_settings->save();
-}
-
-void QmlBackend::removeSource(const QString &sourceId)
-{
-    QList<AudioSource> sources = m_settings->sources();
-    for (int i = 0; i < sources.size(); ++i) {
-        if (sources[i].id == sourceId) {
-            sources.removeAt(i);
-            break;
-        }
-    }
-    m_settings->setSources(sources);
-    m_settings->save();
-}
-
-QVariantList QmlBackend::getSources() const
-{
-    QVariantList list;
-    for (const auto &src : m_settings->sources()) {
-        QVariantMap map;
-        map["id"] = src.id;
-        map["name"] = src.name;
-        map["executableName"] = src.executableName;
-        map["executablePath"] = src.executablePath;
-        map["enabled"] = src.enabled;
-        map["volume"] = src.volume;
-        list.append(map);
-    }
-    return list;
 }
 
 CaptureState QmlBackend::captureState() const
