@@ -2,7 +2,6 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
-import QtQuick.Templates 2.15 as T
 import QtQuick.Dialogs
 import Saiko 1.0
 
@@ -24,62 +23,6 @@ Rectangle {
 
     property var slotModel: null
     property int slotIndex: -1
-
-    // ============================================================
-    // Reusable dropdown menu, built on Templates to dodge the
-    // Controls.Menu "highlighted" scoping bug seen with nested
-    // component blocks.
-    // ============================================================
-    component CardMenu: T.Menu {
-        id: menu
-        width: 168
-        margins: 0
-        implicitHeight: contentItem.contentHeight + 10
-
-        contentItem: ListView {
-            implicitHeight: contentHeight
-            model: menu.contentModel
-            interactive: false
-            spacing: 2
-        }
-
-        background: Rectangle {
-            implicitWidth: 168
-            color: "#171717"
-            border.color: Theme.borderHover
-            border.width: 1
-            radius: Theme.cardRadius
-        }
-
-        enter: Transition {
-            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 110 }
-        }
-        exit: Transition {
-            NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 80 }
-        }
-    }
-
-    component CardMenuItem: T.MenuItem {
-        id: menuItem
-        implicitWidth: 160
-        implicitHeight: 30
-        padding: 4
-
-        contentItem: Text {
-            text: menuItem.text
-            color: menuItem.hovered ? Theme.textPrimary : Theme.textSecondary
-            font.pixelSize: Theme.fontSizeSmall
-            leftPadding: 8
-            verticalAlignment: Text.AlignVCenter
-            Behavior on color { ColorAnimation { duration: 100 } }
-        }
-
-        background: Rectangle {
-            color: menuItem.hovered ? "#242424" : "transparent"
-            radius: Theme.borderRadius
-            Behavior on color { ColorAnimation { duration: 100 } }
-        }
-    }
 
     // ============================================================
     // Card content
