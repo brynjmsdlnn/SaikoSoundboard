@@ -66,8 +66,6 @@ QmlBackend::QmlBackend(QObject *parent)
         emit playbackStateChanged();
     });
 
-    qmlRegisterType<RealtimeWaveformItem>("Saiko", 1, 0, "RealtimeWaveform");
-    qmlRegisterType<WaveformItem>("Saiko", 1, 0, "WaveformData");
 }
 
 QmlBackend::~QmlBackend()

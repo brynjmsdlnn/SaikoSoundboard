@@ -740,7 +740,7 @@ Rectangle {
     }
 
     function openHotkeyDialog() {
-        var component = Qt.createComponent("qrc:/qml/HotkeyDialog.qml")
+        var component = Qt.createComponent("HotkeyDialog.qml")
         if (component.status === Component.Ready) {
             var win = component.createObject(null, {
                 playerId: slotId,

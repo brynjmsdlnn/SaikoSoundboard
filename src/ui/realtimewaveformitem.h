@@ -8,10 +8,13 @@
 #include <QList>
 #include <QVariantList>
 #include <QVariant>
+#include <QtQml/qqmlregistration.h>
 
 class RealtimeWaveformItem : public QQuickItem
 {
     Q_OBJECT
+    QML_ELEMENT
+    QML_NAMED_ELEMENT(RealtimeWaveform)
     Q_PROPERTY(QString deviceDescription READ deviceDescription WRITE setDeviceDescription NOTIFY deviceDescriptionChanged)
     Q_PROPERTY(QVariantList samples READ samples NOTIFY samplesChanged)
 public:

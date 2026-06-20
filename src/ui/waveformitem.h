@@ -3,11 +3,14 @@
 
 #include <QQuickItem>
 #include <QVariantList>
+#include <QtQml/qqmlregistration.h>
 #include "audio/waveformgenerator.h"
 
 class WaveformItem : public QQuickItem
 {
     Q_OBJECT
+    QML_ELEMENT
+    QML_NAMED_ELEMENT(WaveformData)
     Q_PROPERTY(QVariantList peaks READ peaks NOTIFY dataChanged)
     Q_PROPERTY(qint64 durationMs READ durationMs NOTIFY dataChanged)
     Q_PROPERTY(bool valid READ isValid NOTIFY dataChanged)

@@ -138,7 +138,7 @@ Rectangle {
     }
 
     function openRoutingDialog() {
-        var component = Qt.createComponent("qrc:/qml/RoutingDialog.qml")
+        var component = Qt.createComponent("RoutingDialog.qml")
         if (component.status === Component.Ready) {
             var win = component.createObject(null, {})
             win.accepted.connect(function() { win.close() })

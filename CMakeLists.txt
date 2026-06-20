@@ -33,16 +33,8 @@ set(CORE_ADAPTERS_SOURCES
 )
 
 set(UI_SOURCES
-    src/ui/realtimewaveformitem.cpp
-    src/ui/realtimewaveformitem.h
-    src/ui/waveformitem.cpp
-    src/ui/waveformitem.h
     src/ui/qmlbackend.cpp
     src/ui/qmlbackend.h
-)
-
-set(QML_SOURCES
-    src/qml/qml.qrc
 )
 
 set(AUDIO_SOURCES
@@ -90,7 +82,6 @@ add_library(SaikoSoundboardCore STATIC
     ${AUDIO_SOURCES}
     ${MANAGER_SOURCES}
     ${MODEL_SOURCES}
-    ${QML_SOURCES}
 )
 
 target_include_directories(SaikoSoundboardCore PUBLIC src)
@@ -130,6 +121,29 @@ else()
         )
     endif()
 endif()
+
+target_include_directories(SaikoSoundboard PRIVATE src src/ui)
+
+qt_policy(SET QTP0001 NEW)
+qt_policy(SET QTP0004 NEW)
+
+qt_add_qml_module(SaikoSoundboard
+    URI Saiko
+    VERSION 1.0
+    QML_FILES
+        src/qml/Main.qml
+        src/qml/HotkeyDialog.qml
+        src/qml/SourcesPanel.qml
+        src/qml/RoutingDialog.qml
+        src/qml/WaveformView.qml
+        src/qml/SoundboardCard.qml
+        src/qml/SoundboardPanel.qml
+        src/qml/CustomComboBox.qml
+        src/qml/CustomCheckBox.qml
+    SOURCES
+        src/ui/waveformitem.h src/ui/waveformitem.cpp
+        src/ui/realtimewaveformitem.h src/ui/realtimewaveformitem.cpp
+)
 
 target_link_libraries(SaikoSoundboard PRIVATE SaikoSoundboardCore)
 

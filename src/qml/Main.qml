@@ -215,7 +215,7 @@ ApplicationWindow {
     Dialog {
         id: renameDialog
         title: "Save recording"
-        standardButtons: StandardButton.Ok | StandardButton.Cancel
+        standardButtons: Dialog.Ok | Dialog.Cancel
         modal: true
         x: Math.round((app.width - width) / 2)
         y: Math.round((app.height - height) / 2)

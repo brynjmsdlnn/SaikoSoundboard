@@ -1,4 +1,6 @@
 #include "ui/qmlbackend.h"
+#include "ui/realtimewaveformitem.h"
+#include "ui/waveformitem.h"
 
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
@@ -11,9 +13,11 @@ int main(int argc, char *argv[])
 {
     qputenv("QT_QUICK_CONTROLS_STYLE", "Basic");
     QGuiApplication a(argc, argv);
-    Q_INIT_RESOURCE(qml);
 
     QLoggingCategory::setFilterRules("qt.multimedia.ffmpeg.mediacapturesession.warning=false");
+
+    qmlRegisterType<RealtimeWaveformItem>("Saiko", 1, 0, "RealtimeWaveform");
+    qmlRegisterType<WaveformItem>("Saiko", 1, 0, "WaveformData");
 
     QmlBackend backend;
 
@@ -23,7 +27,7 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
     engine.addImageProvider(QLatin1String("fileicon"), new FileIconProvider());
 
-    engine.load(QUrl("qrc:/qml/Main.qml"));
+    engine.load(QUrl("qrc:/qt/qml/Saiko/src/qml/Main.qml"));
 
     return QGuiApplication::exec();
 }
