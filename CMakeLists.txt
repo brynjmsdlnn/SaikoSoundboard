@@ -137,6 +137,7 @@ qt_add_qml_module(SaikoSoundboard
     QML_FILES
         src/qml/Theme.qml
         src/qml/ThemedButton.qml
+        src/qml/RecordingPanel.qml
         src/qml/SectionCard.qml
         src/qml/HotkeyCard.qml
         src/qml/CardMenu.qml

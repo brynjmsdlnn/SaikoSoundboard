@@ -17,10 +17,7 @@ ApplicationWindow {
     color: Theme.appBackground
 
     property string captureMode: "global"
-    property bool isRecording: false
     property bool isReplayActive: false
-    property int remainingSec: 0
-    property real elapsedSec: 0.0
     property string lastRecordingPath: ""
 
     function startRecording() {
@@ -33,66 +30,44 @@ ApplicationWindow {
         if (!Backend.recording.startRecording(lastRecordingPath))
             return
 
-        remainingSec = 10
-        elapsedSec = 0.0
-        isRecording = true
-        playBtn.enabled = false
-        stopBtn.enabled = true
-        startBtn.enabled = false
-        timerLabel.text = "Time remaining: 10s"
-        statsLabel.text = "Size: 0 KB \u00b7 Time: 0.0s"
-        recordingTimer.start()
-        stopTimer.start()
+        recordingPanel.notifyRecordingStarted()
     }
 
     function stopRecording() {
-        recordingTimer.stop()
-        stopTimer.stop()
+        recordingPanel.notifyRecordingStopped()
         Backend.recording.stopRecording()
 
         var fileSize = Backend.recordingFileSize()
         if (fileSize > 100) {
             renameDialog.open()
         } else {
-            statusLabel.text = "Recording failed or was empty"
+            recordingPanel.setStatusText("Recording failed or was empty")
             resetAfterStop()
         }
     }
 
     function finishRename(newName) {
         var dir = lastRecordingPath.substring(0, lastRecordingPath.lastIndexOf("/"))
+        var currentFilename = lastRecordingPath.substring(lastRecordingPath.lastIndexOf("/") + 1)
+        var dot = currentFilename.lastIndexOf(".")
+        var currentName = dot > 0 ? currentFilename.substring(0, dot) : currentFilename
+
+        if (newName === currentName) {
+            recordingPanel.setStatusText("Saved: " + currentFilename)
+            recordingPanel.setPlayEnabled(true)
+            resetAfterStop()
+            return
+        }
+
         var finalPath = Backend.renameRecordingFile(lastRecordingPath, dir, newName)
         lastRecordingPath = finalPath
-        statusLabel.text = "Saved: " + lastRecordingPath.substring(lastRecordingPath.lastIndexOf("/") + 1)
-        playBtn.enabled = true
+        recordingPanel.setStatusText("Saved: " + lastRecordingPath.substring(lastRecordingPath.lastIndexOf("/") + 1))
+        recordingPanel.setPlayEnabled(true)
         resetAfterStop()
     }
 
     function resetAfterStop() {
-        isRecording = false
-        timerLabel.text = ""
-        stopBtn.enabled = false
-        startBtn.enabled = true
-    }
-
-    Timer {
-        id: recordingTimer
-        interval: 100
-        repeat: true
-        onTriggered: {
-            elapsedSec += 0.1
-            remainingSec = Math.max(0, 10 - Math.floor(elapsedSec))
-            timerLabel.text = "Time remaining: " + remainingSec + "s"
-            var bytes = Backend.recordingFileSize()
-            statsLabel.text = "Size: " + Math.round(bytes/1024) + " KB \u00b7 Time: " + elapsedSec.toFixed(1) + "s"
-        }
-    }
-
-    Timer {
-        id: stopTimer
-        interval: 10000
-        repeat: false
-        onTriggered: stopRecording()
+        recordingPanel.resetUI()
     }
 
 
@@ -150,7 +125,12 @@ ApplicationWindow {
             resetAfterStop()
         }
         onVisibleChanged: {
-            if (visible) renameInput.text = ""
+            if (visible) {
+                var parts = lastRecordingPath.split("/")
+                var filename = parts[parts.length - 1] || ""
+                var dot = filename.lastIndexOf(".")
+                renameInput.text = dot > 0 ? filename.substring(0, dot) : filename
+            }
         }
     }
 
@@ -180,13 +160,11 @@ ApplicationWindow {
             }
 
             // ---------------- LEFT PANEL ----------------
-            Flickable {
-                id: leftPanelFlickable
+            RecordingPanel {
+                id: recordingPanel
                 SplitView.preferredWidth: Backend.settings.leftPanelWidth > 0 ? Backend.settings.leftPanelWidth : 340
-                SplitView.minimumWidth: 300
-                contentWidth: width
-                contentHeight: leftColumn.implicitHeight + 32
-                clip: true
+                captureMode: app.captureMode
+                lastRecordingPath: app.lastRecordingPath
 
                 onWidthChanged: {
                     if (width > 0) {
@@ -195,279 +173,11 @@ ApplicationWindow {
                     }
                 }
 
-                ColumnLayout {
-                    id: leftColumn
-                    x: Math.max(16, (parent.width - width) / 2)
-                    y: 16
-                    width: Math.min(parent.width - 32, 420)
-                    spacing: 14
-
-                    Text {
-                        text: "Saiko Soundboard"
-                        color: Theme.textPrimary
-                        font.pixelSize: 18
-                        font.weight: Font.Bold
-                    }
-
-                    // --- Status section ---
-                    SectionCard {
-                        heading: "STATUS"
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 4
-
-                    Text {
-                        id: statusLabel
-                        text: "Ready"
-                        color: Theme.textSecondary
-                        font.pixelSize: Theme.fontSizeHeading
-                    }
-                    Text {
-                        id: timerLabel
-                        text: ""
-                        color: Theme.accentPurple
-                        font.pixelSize: Theme.fontSizeHeading
-                        font.weight: Font.Medium
-                        visible: text !== ""
-                    }
-                    Text {
-                        id: statsLabel
-                        text: "Size: 0 KB \u00b7 Time: 0s"
-                        color: Theme.textDim
-                        font.pixelSize: Theme.fontSizeSmall
-                    }
-                        }
-                    }
-
-                    // --- Capture settings section ---
-                    SectionCard {
-                        heading: "CAPTURE"
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 8
-                    Text {
-                        text: "Mode"
-                        color: Theme.textSecondary
-                        font.pixelSize: Theme.fontSizeNormal
-                        Layout.preferredWidth: 60
-                    }
-                    Rectangle {
-                        Layout.fillWidth: true
-                        height: 32
-                        color: Theme.appBackground
-                        radius: Theme.borderRadius
-                        border.color: Theme.borderDefault
-                        border.width: 1
-
-                        ComboBox {
-                            id: modeCombo
-                            anchors.fill: parent
-                            anchors.leftMargin: 8
-                            anchors.rightMargin: 8
-                            model: [
-                                { text: "System output (global)", value: "global" },
-                                { text: "Multi-track (sources)", value: "multi" }
-                            ]
-                            textRole: "text"
-                            valueRole: "value"
-                            currentIndex: 0
-                            background: Item {}
-                            contentItem: Text {
-                                text: {
-                                    for (var i = 0; i < modeCombo.model.length; i++) {
-                                        if (modeCombo.model[i].value === modeCombo.currentValue)
-                                            return modeCombo.model[i].text
-                                    }
-                                    return ""
-                                }
-                                color: Theme.textPrimary
-                                font.pixelSize: Theme.fontSizeNormal
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                                    onActivated: {
-                                        captureMode = modeCombo.currentValue
-                                        sourcesDock.visible = (captureMode === "multi")
-                                    }
-                                }
-                            }
-                        }
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 6
-
-                    Text {
-                        text: "Save to"
-                        color: Theme.textSecondary
-                        font.pixelSize: Theme.fontSizeNormal
-                    }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 6
-                        Rectangle {
-                            Layout.fillWidth: true
-                            height: 32
-                            color: Theme.appBackground
-                            radius: Theme.borderRadius
-                            border.color: Theme.borderDefault
-                            border.width: 1
-                            TextInput {
-                                id: saveDirInput
-                                anchors.fill: parent
-                                anchors.leftMargin: 10
-                                anchors.rightMargin: 10
-                                verticalAlignment: TextInput.AlignVCenter
-                                color: Theme.textDim
-                                font.pixelSize: Theme.fontSizeSmall
-                                readOnly: true
-                                text: Backend.settings.saveDirectory
-                            }
-                        }
-                        ThemedButton { text: "Open"; small: true; onClicked: Qt.openUrlExternally("file:///" + Backend.settings.saveDirectory) }
-                        ThemedButton { text: "Change..."; small: true; onClicked: folderDialog.open() }
-                    }
-                        }
-                    }
-
-                    // --- Replay buffer section ---
-                    SectionCard {
-                        heading: "REPLAY BUFFER"
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 8
-                            CustomCheckBox {
-                                id: replayCheck
-                                text: "Enabled"
-                                checked: Backend.settings.replayEnabled
-                                onToggled: {
-                                    Backend.settings.replayEnabled = checked
-                                    Backend.settings.save()
-                                    Backend.recording.setReplayEnabled(checked, captureMode)
-                                }
-                            }
-                            Item { Layout.fillWidth: true }
-                            Text {
-                                text: "Duration"
-                                color: Theme.textSecondary
-                                font.pixelSize: Theme.fontSizeSmall
-                            }
-                            Rectangle {
-                                width: 60
-                                height: 28
-                                color: Theme.appBackground
-                                radius: Theme.borderRadius
-                                border.color: Theme.borderDefault
-                                border.width: 1
-                                SpinBox {
-                                    id: replayDurationSpin
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 4
-                                    anchors.rightMargin: 4
-                                    from: 1; to: 120
-                                    value: Backend.settings.replayDuration
-                                    background: Item {}
-                                    contentItem: Text {
-                                        text: replayDurationSpin.value + "s"
-                                        color: Theme.textPrimary
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        verticalAlignment: Text.AlignVCenter
-                                        horizontalAlignment: Text.AlignHCenter
-                                    }
-                                    onValueModified: {
-                                        Backend.recording.setReplayDuration(value)
-                                        Backend.settings.replayDuration = value
-                                        Backend.settings.save()
-                                    }
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 60
-                            color: Theme.recessedBackground
-                            radius: Theme.cardRadius
-                            border.color: Theme.borderDefault
-                            border.width: 1
-                            clip: true
-
-                            WaveformView {
-                                id: replayWaveform
-                                anchors.fill: parent
-                                anchors.margins: 3
-                                waveformData: Backend.replayWaveform
-                                readOnly: true
-                            }
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 8
-                    Text {
-                            id: replayStatusText
-                            text: isReplayActive ? "Status: active" : "Status: inactive"
-                            color: Theme.textDim
-                            font.pixelSize: Theme.fontSizeSmall
-                        }
-                        Item { Layout.fillWidth: true }
-                        ThemedButton {
-                            id: saveReplayBtn
-                            text: "Save replay"
-                            small: true
-                            enabled: isReplayActive
-                                onClicked: {
-                                    if (isReplayActive) {
-                                            var fmt = Utils.formatTimestamp(new Date())
-                                            var path = Backend.settings.saveDirectory + "/Replay_" + fmt + ".wav"
-                                        if (Backend.recording.saveReplay(path)) {
-                                            statusLabel.text = "Replay saved: Replay_" + fmt + ".wav"
-                                            lastRecordingPath = path
-                                            playBtn.enabled = true
-                                        } else {
-                                            statusLabel.text = "Failed to save replay or buffer empty"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // --- Transport controls ---
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 8
-
-                        ThemedButton {
-                            id: startBtn
-                            text: "Start recording"
-                            accentColor: Theme.accentGreen
-                            filled: true
-                            onClicked: startRecording()
-                        }
-                        ThemedButton {
-                            id: stopBtn
-                            text: "Stop"
-                            accentColor: Theme.accentRed
-                            filled: true
-                            enabled: false
-                            onClicked: stopRecording()
-                        }
-                        ThemedButton {
-                            id: playBtn
-                            text: "Play last"
-                            accentColor: Theme.accentPurple
-                            filled: true
-                            enabled: false
-                            onClicked: {
-                                if (lastRecordingPath.length > 0) Backend.playFile(lastRecordingPath)
-                            }
-                        }
-                    }
-
-                    Item { Layout.preferredHeight: 8 }
+                onStartRequested: app.startRecording()
+                onStopRequested: app.stopRecording()
+                onChangeFolderRequested: folderDialog.open()
+                onCaptureModeSelected: function(newMode) {
+                    sourcesDock.visible = (newMode === "multi")
                 }
             }
 
@@ -491,7 +201,7 @@ ApplicationWindow {
                     anchors.fill: parent
                     anchors.margins: 12
                     sourceModel: Backend.sourceModel
-                    locked: !startBtn.enabled
+                    locked: false
 
                     onSourceAdded: function(name, executableName, executablePath) {
                         Backend.sourceModel.addSource(name, executableName, executablePath)
@@ -548,7 +258,6 @@ ApplicationWindow {
                 path = path.substring(8)
             Backend.settings.saveDirectory = path
             Backend.settings.save()
-            saveDirInput.text = path
         }
     }
 
@@ -559,23 +268,23 @@ ApplicationWindow {
             var isReplay = (state === 1 || state === 3)
             isReplayActive = isReplay
 
-            modeCombo.enabled = (state === 0)
-            sourcesPanel.locked = !modeCombo.enabled
+            recordingPanel.setModeEnabled(state === 0)
+            sourcesPanel.locked = !(state === 0)
 
-            replayStatusText.text = isReplayActive ? "Status: active" : "Status: inactive"
-            saveReplayBtn.enabled = isReplayActive
-            replayCheck.checked = isReplayActive
+            recordingPanel.setReplayStatusText(isReplayActive ? "Status: active" : "Status: inactive")
+            recordingPanel.setSaveReplayEnabled(isReplayActive)
+            recordingPanel.setReplayChecked(isReplayActive)
 
-            if (state === 0) statusLabel.text = "Ready"
-            else if (state === 1) statusLabel.text = "Background replay active..."
-            else if (state === 2) statusLabel.text = "Manual recording active..."
-            else if (state === 3) statusLabel.text = "Recording + replay active..."
+            if (state === 0) recordingPanel.setStatusText("Ready")
+            else if (state === 1) recordingPanel.setStatusText("Background replay active...")
+            else if (state === 2) recordingPanel.setStatusText("Manual recording active...")
+            else if (state === 3) recordingPanel.setStatusText("Recording + replay active...")
         }
         function onPlaybackStateChanged() {
             if (!Backend.isPlaying) {
-                statusLabel.text = "Ready"
-                startBtn.enabled = true
-                playBtn.enabled = (lastRecordingPath.length > 0)
+                recordingPanel.setStatusText("Ready")
+                recordingPanel.setStartEnabled(true)
+                recordingPanel.setPlayEnabled(lastRecordingPath.length > 0)
             }
         }
     }
