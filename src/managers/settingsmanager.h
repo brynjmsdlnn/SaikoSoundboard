@@ -20,7 +20,11 @@ class SettingsManager : public QObject
     Q_PROPERTY(QList<SoundPlayerSlot> soundBoardSlots READ soundBoardSlots NOTIFY soundBoardSlotsChanged)
     Q_PROPERTY(bool replayEnabled READ replayEnabled WRITE setReplayEnabled NOTIFY replayEnabledChanged)
     Q_PROPERTY(int replayDuration READ replayDuration WRITE setReplayDuration NOTIFY replayDurationChanged)
-    Q_PROPERTY(QString saveDirectory READ saveDirectory WRITE setSaveDirectory NOTIFY saveDirectoryChanged)
+    Q_PROPERTY(QString baseDirectory READ baseDirectory WRITE setBaseDirectory NOTIFY baseDirectoryChanged)
+    Q_PROPERTY(QString recordingDirectoryOverride READ recordingDirectoryOverride WRITE setRecordingDirectoryOverride NOTIFY recordingDirectoryOverrideChanged)
+    Q_PROPERTY(QString replayDirectoryOverride READ replayDirectoryOverride WRITE setReplayDirectoryOverride NOTIFY replayDirectoryOverrideChanged)
+    Q_PROPERTY(QString recordingDirectory READ recordingDirectory NOTIFY recordingDirectoryChanged)
+    Q_PROPERTY(QString replayDirectory READ replayDirectory NOTIFY replayDirectoryChanged)
     Q_PROPERTY(bool enableMicOutput READ enableMicOutput WRITE setEnableMicOutput NOTIFY enableMicOutputChanged)
     Q_PROPERTY(bool enableLocalMonitoring READ enableLocalMonitoring WRITE setEnableLocalMonitoring NOTIFY enableLocalMonitoringChanged)
     Q_PROPERTY(QString micOutputDevice READ micOutputDevice WRITE setMicOutputDevice NOTIFY micOutputDeviceChanged)
@@ -38,7 +42,11 @@ public:
     QList<SoundPlayerSlot> soundBoardSlots() const { return m_soundBoardSlots; }
     bool replayEnabled() const { return m_replayEnabled; }
     int replayDuration() const { return m_replayDuration; }
-    QString saveDirectory() const { return m_saveDirectory; }
+    QString baseDirectory() const { return m_baseDirectory; }
+    QString recordingDirectoryOverride() const { return m_recordingDirectoryOverride; }
+    QString replayDirectoryOverride() const { return m_replayDirectoryOverride; }
+    QString recordingDirectory() const;
+    QString replayDirectory() const;
     bool enableMicOutput() const { return m_enableMicOutput; }
     bool enableLocalMonitoring() const { return m_enableLocalMonitoring; }
     QString micOutputDevice() const { return m_micOutputDevice; }
@@ -51,7 +59,9 @@ public:
     void setSoundBoardSlots(const QList<SoundPlayerSlot> &soundBoardSlots);
     void setReplayEnabled(bool enabled);
     void setReplayDuration(int duration);
-    void setSaveDirectory(const QString &dir);
+    void setBaseDirectory(const QString &dir);
+    void setRecordingDirectoryOverride(const QString &dir);
+    void setReplayDirectoryOverride(const QString &dir);
     void setEnableMicOutput(bool enabled);
     void setEnableLocalMonitoring(bool enabled);
     void setMicOutputDevice(const QString &device);
@@ -64,7 +74,11 @@ signals:
     void soundBoardSlotsChanged();
     void replayEnabledChanged();
     void replayDurationChanged();
-    void saveDirectoryChanged();
+    void baseDirectoryChanged();
+    void recordingDirectoryOverrideChanged();
+    void replayDirectoryOverrideChanged();
+    void recordingDirectoryChanged();
+    void replayDirectoryChanged();
     void enableMicOutputChanged();
     void enableLocalMonitoringChanged();
     void micOutputDeviceChanged();
@@ -79,7 +93,9 @@ private:
     QList<SoundPlayerSlot> m_soundBoardSlots;
     bool m_replayEnabled;
     int m_replayDuration;
-    QString m_saveDirectory;
+    QString m_baseDirectory;
+    QString m_recordingDirectoryOverride;
+    QString m_replayDirectoryOverride;
     bool m_enableMicOutput = true;
     bool m_enableLocalMonitoring = true;
     QString m_micOutputDevice;

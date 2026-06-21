@@ -29,7 +29,7 @@ ApplicationWindow {
 
     function startRecording() {
         var fmt = Utils.formatTimestamp(new Date())
-        lastRecordingPath = Backend.settings.saveDirectory + "/Recording_" + fmt + ".wav"
+        lastRecordingPath = Backend.settings.recordingDirectory + "/Recording_" + fmt + ".wav"
 
         if (!Backend.recording.isEngineRunning)
             Backend.recording.startEngine(captureMode)
@@ -183,13 +183,13 @@ ApplicationWindow {
 
                 onStartRequested: app.startRecording()
                 onStopRequested: app.stopRecording()
-                onChangeFolderRequested: folderDialog.open()
                 onCaptureModeSelected: function(newMode) {
                     sourcesDock.visible = (newMode === "multi")
                 }
                 onReplaySaved: function(path) {
                     app.lastRecordingPath = path
                 }
+                onSettingsRequested: settingsDialog.show()
             }
 
             // ---------------- SOURCES DOCK ----------------
@@ -258,16 +258,52 @@ ApplicationWindow {
         }
     }
 
-    FileDialog {
+    property int folderPickerTarget: 0
+
+    FolderDialog {
         id: folderDialog
-        title: "Select save directory"
-        fileMode: FileDialog.Directory
-        currentFolder: "file:///" + Backend.settings.saveDirectory
+        title: "Please choose a folder"
         onAccepted: {
-            var path = selectedFile.toString()
-            if (path.startsWith("file:///"))
-                path = path.substring(8)
-            Backend.settings.saveDirectory = path
+            let folderUrl = selectedFolder.toString();
+            let path = folderUrl.replace(/^(file:\/{2,3})/, "");
+            switch (folderPickerTarget) {
+            case 0: Backend.settings.recordingDirectoryOverride = path; break
+            case 1: Backend.settings.replayDirectoryOverride = path; break
+            case 2: Backend.settings.baseDirectory = path; break
+            }
+            Backend.settings.save()
+        }
+    }
+
+    function openFolderPicker(initialPath) {
+        let url = initialPath
+        if (url && !url.startsWith("file://")) {
+            url = "file:///" + url
+        }
+        folderDialog.currentFolder = url
+        folderDialog.open()
+    }
+
+    SettingsDialog {
+        id: settingsDialog
+        onChangeBaseRequested: {
+            folderPickerTarget = 2
+            openFolderPicker(Backend.settings.baseDirectory)
+        }
+        onChangeRecordingRequested: {
+            folderPickerTarget = 0
+            openFolderPicker(Backend.settings.recordingDirectory)
+        }
+        onChangeReplayRequested: {
+            folderPickerTarget = 1
+            openFolderPicker(Backend.settings.replayDirectory)
+        }
+        onResetRecordingRequested: {
+            Backend.settings.recordingDirectoryOverride = ""
+            Backend.settings.save()
+        }
+        onResetReplayRequested: {
+            Backend.settings.replayDirectoryOverride = ""
             Backend.settings.save()
         }
     }

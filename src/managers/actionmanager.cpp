@@ -74,7 +74,7 @@ void ActionManager::handleSaveReplay()
     if (!m_rec || !m_settings) return;
 
     QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
-    QString path = m_settings->saveDirectory() + QString("/Replay_%1.wav").arg(timestamp);
+    QString path = m_settings->replayDirectory() + QString("/Replay_%1.wav").arg(timestamp);
     
     if (!m_rec->saveReplay(path)) {
         qWarning() << "ActionManager: Failed to save replay";
@@ -121,7 +121,7 @@ void ActionManager::handleMakePermanent(const QString &playerId, const QString &
     QFileInfo fileInfo(slot->filePath);
     if (!fileInfo.exists()) return;
 
-    QString dirPath = m_settings->saveDirectory() + "/replays";
+    QString dirPath = m_settings->replayDirectory();
     QDir().mkpath(dirPath);
 
     QString targetName = customFileName.isEmpty() ? fileInfo.fileName() : customFileName;

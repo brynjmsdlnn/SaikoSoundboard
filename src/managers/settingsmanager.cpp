@@ -1,12 +1,18 @@
 #include "managers/settingsmanager.h"
 #include <QDir>
+#include <QFileInfo>
+
+static QString defaultBaseDir()
+{
+    return QDir::toNativeSeparators(QDir::homePath() + "/Saiko Soundboard");
+}
 
 SettingsManager::SettingsManager(QObject *parent)
     : QObject(parent)
     , m_replayEnabled(false)
     , m_replayDuration(30)
+    , m_baseDirectory(defaultBaseDir())
 {
-    m_saveDirectory = QDir::toNativeSeparators(QDir::homePath() + "/Saiko Soundboard/recordings");
 }
 
 void SettingsManager::load()
@@ -21,7 +27,9 @@ void SettingsManager::load()
     bool slotsDirty = false;
     bool replayEnabledDirty = false;
     bool replayDurationDirty = false;
-    bool saveDirDirty = false;
+    bool baseDirDirty = false;
+    bool recOverrideDirty = false;
+    bool replayOverrideDirty = false;
     bool micOutDirty = false;
     bool localMonDirty = false;
     bool micOutDevDirty = false;
@@ -64,10 +72,22 @@ void SettingsManager::load()
             replayDurationDirty = true;
         }
 
-        QString newSaveDir = obj["saveDirectory"].toString(m_saveDirectory);
-        if (newSaveDir != m_saveDirectory) {
-            m_saveDirectory = newSaveDir;
-            saveDirDirty = true;
+        QString newBaseDir = obj["baseDirectory"].toString(m_baseDirectory);
+        if (newBaseDir != m_baseDirectory) {
+            m_baseDirectory = newBaseDir;
+            baseDirDirty = true;
+        }
+
+        QString newRecOverride = obj["recordingDirectoryOverride"].toString(m_recordingDirectoryOverride);
+        if (newRecOverride != m_recordingDirectoryOverride) {
+            m_recordingDirectoryOverride = newRecOverride;
+            recOverrideDirty = true;
+        }
+
+        QString newReplayOverride = obj["replayDirectoryOverride"].toString(m_replayDirectoryOverride);
+        if (newReplayOverride != m_replayDirectoryOverride) {
+            m_replayDirectoryOverride = newReplayOverride;
+            replayOverrideDirty = true;
         }
 
         bool newMicOutput = obj["enableMicOutput"].toBool(true);
@@ -117,17 +137,25 @@ void SettingsManager::load()
         }
     }
 
-    if (sourcesDirty)        emit sourcesChanged();
-    if (slotsDirty)          emit soundBoardSlotsChanged();
-    if (replayEnabledDirty)  emit replayEnabledChanged();
-    if (replayDurationDirty) emit replayDurationChanged();
-    if (saveDirDirty)        emit saveDirectoryChanged();
-    if (micOutDirty)         emit enableMicOutputChanged();
-    if (localMonDirty)       emit enableLocalMonitoringChanged();
-    if (micOutDevDirty)      emit micOutputDeviceChanged();
-    if (localMonDevDirty)    emit localMonitorDeviceChanged();
-    if (micPassDirty)        emit enableMicPassthroughChanged();
-    if (voiceDevDirty)       emit voiceInputDeviceChanged();
+    // Ensure resolved paths exist (all fields assigned by now)
+    QDir().mkpath(recordingDirectory());
+    QDir().mkpath(replayDirectory());
+
+    if (sourcesDirty)          emit sourcesChanged();
+    if (slotsDirty)            emit soundBoardSlotsChanged();
+    if (replayEnabledDirty)    emit replayEnabledChanged();
+    if (replayDurationDirty)   emit replayDurationChanged();
+    if (baseDirDirty)          emit baseDirectoryChanged();
+    if (recOverrideDirty)      emit recordingDirectoryOverrideChanged();
+    if (replayOverrideDirty)   emit replayDirectoryOverrideChanged();
+    if (baseDirDirty || recOverrideDirty)    emit recordingDirectoryChanged();
+    if (baseDirDirty || replayOverrideDirty) emit replayDirectoryChanged();
+    if (micOutDirty)           emit enableMicOutputChanged();
+    if (localMonDirty)         emit enableLocalMonitoringChanged();
+    if (micOutDevDirty)        emit micOutputDeviceChanged();
+    if (localMonDevDirty)      emit localMonitorDeviceChanged();
+    if (micPassDirty)          emit enableMicPassthroughChanged();
+    if (voiceDevDirty)         emit voiceInputDeviceChanged();
 }
 
 void SettingsManager::save()
@@ -148,7 +176,9 @@ void SettingsManager::save()
 
     root["replayEnabled"] = m_replayEnabled;
     root["replayDuration"] = m_replayDuration;
-    root["saveDirectory"] = m_saveDirectory;
+    root["baseDirectory"] = m_baseDirectory;
+    root["recordingDirectoryOverride"] = m_recordingDirectoryOverride;
+    root["replayDirectoryOverride"] = m_replayDirectoryOverride;
     root["enableMicOutput"] = m_enableMicOutput;
     root["enableLocalMonitoring"] = m_enableLocalMonitoring;
     root["micOutputDevice"] = m_micOutputDevice;
@@ -204,12 +234,52 @@ void SettingsManager::setReplayDuration(int duration)
     }
 }
 
-void SettingsManager::setSaveDirectory(const QString &dir)
+QString SettingsManager::recordingDirectory() const
 {
-    if (m_saveDirectory != dir) {
-        m_saveDirectory = dir;
-        emit saveDirectoryChanged();
+    return m_recordingDirectoryOverride.isEmpty()
+        ? QDir::toNativeSeparators(m_baseDirectory + "/recordings")
+        : m_recordingDirectoryOverride;
+}
+
+QString SettingsManager::replayDirectory() const
+{
+    return m_replayDirectoryOverride.isEmpty()
+        ? QDir::toNativeSeparators(m_baseDirectory + "/replays")
+        : m_replayDirectoryOverride;
+}
+
+void SettingsManager::setBaseDirectory(const QString &dir)
+{
+    if (m_baseDirectory == dir) return;
+    m_baseDirectory = dir;
+    QDir().mkpath(dir);
+    emit baseDirectoryChanged();
+    if (m_recordingDirectoryOverride.isEmpty()) {
+        QDir().mkpath(recordingDirectory());
+        emit recordingDirectoryChanged();
     }
+    if (m_replayDirectoryOverride.isEmpty()) {
+        QDir().mkpath(replayDirectory());
+        emit replayDirectoryChanged();
+    }
+}
+
+void SettingsManager::setRecordingDirectoryOverride(const QString &dir)
+{
+    if (m_recordingDirectoryOverride == dir) return;
+    m_recordingDirectoryOverride = dir;
+    QDir().mkpath(recordingDirectory());
+    emit recordingDirectoryOverrideChanged();
+    emit recordingDirectoryChanged();
+}
+
+void SettingsManager::setReplayDirectoryOverride(const QString &dir)
+{
+    if (m_replayDirectoryOverride == dir) return;
+    m_replayDirectoryOverride = dir;
+    QDir().mkpath(replayDirectory());
+    emit replayDirectoryOverrideChanged();
+    emit replayDirectoryChanged();
 }
 
 void SettingsManager::setEnableMicOutput(bool enabled)

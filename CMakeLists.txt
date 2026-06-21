@@ -40,6 +40,10 @@ set(CORE_ADAPTERS_SOURCES
 set(UI_SOURCES
     src/ui/qmlbackend.cpp
     src/ui/qmlbackend.h
+    src/ui/waveformitem.h
+    src/ui/waveformitem.cpp
+    src/ui/realtimewaveformitem.h
+    src/ui/realtimewaveformitem.cpp
 )
 
 set(AUDIO_SOURCES
@@ -144,6 +148,7 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/ThemedButton.qml
         src/qml/RecordingPanel.qml
         src/qml/SectionCard.qml
+        src/qml/SettingsDialog.qml
         src/qml/HotkeyCard.qml
         src/qml/CardMenu.qml
         src/qml/CardMenuItem.qml
@@ -159,9 +164,6 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/ProcessSelectionPopup.qml
         src/qml/ClipRangeEditor.qml
         src/qml/utils.js
-    SOURCES
-        src/ui/waveformitem.h src/ui/waveformitem.cpp
-        src/ui/realtimewaveformitem.h src/ui/realtimewaveformitem.cpp
 )
 
 target_link_libraries(SaikoSoundboard PRIVATE SaikoSoundboardCore)
