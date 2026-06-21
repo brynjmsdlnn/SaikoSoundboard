@@ -14,21 +14,30 @@ T.ComboBox {
     font.pixelSize: 12
     property int radius: 8
 
+    // Use this instead of `enabled` to allow the danger cursor to work
+    property bool isActive: true
+
     contentItem: Text {
         leftPadding: combo.font.pixelSize >= 12 ? 12 : 6
         rightPadding: combo.font.pixelSize >= 12 ? 28 : 16
         text: combo.displayText
         font: combo.font
-        color: Theme.textPrimary
+        // Grey out text when disabled
+        color: combo.isActive ? Theme.textPrimary : Theme.textDim
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
     }
 
     background: Rectangle {
-        color: combo.hovered ? "#1a1a1a" : Theme.inputBackground
-        border.color: combo.visualFocus ? Theme.accentPurple : (combo.hovered ? Theme.borderHover : Theme.borderDefault)
+        // Change background colors based on active state
+        color: combo.isActive ? (combo.hovered ? "#1a1a1a" : Theme.inputBackground) : Theme.appBackground
+        border.color: combo.isActive ? (combo.visualFocus ? Theme.accentPurple : (combo.hovered ? Theme.borderHover : Theme.borderDefault)) : Theme.borderDefault
         border.width: 1
         radius: combo.radius
+        
+        // Lower opacity to make it look greyed out
+        opacity: combo.isActive ? 1.0 : 0.6
+        
         Behavior on color { ColorAnimation { duration: 150 } }
         Behavior on border.color { ColorAnimation { duration: 150 } }
 
@@ -39,7 +48,33 @@ T.ComboBox {
             anchors.verticalCenter: parent.verticalCenter
             font.pixelSize: combo.font.pixelSize >= 12 ? 8 : 6
             color: combo.hovered ? Theme.textPrimary : Theme.textDim
+            
+            // Hide the dropdown icon when disabled
+            visible: combo.isActive
+            
             Behavior on color { ColorAnimation { duration: 150 } }
+        }
+    }
+
+    // --- MAGIC OVERLAY ---
+    // This handles the danger cursor and intercepts clicks so the menu doesn't open
+    MouseArea {
+        anchors.fill: parent
+        hoverEnabled: true
+        
+        // If inactive, swallow all clicks. If active, let clicks pass through to the ComboBox.
+        acceptedButtons: combo.isActive ? Qt.NoButton : Qt.AllButtons
+        
+        // Show Forbidden (danger) cursor when disabled, pointing hand when active
+        cursorShape: combo.isActive ? Qt.PointingHandCursor : Qt.ForbiddenCursor
+        
+        // Prevent scroll wheel from changing dropdown values while disabled
+        onWheel: {
+            if (!combo.isActive) {
+                wheel.accepted = true
+            } else {
+                wheel.accepted = false
+            }
         }
     }
 

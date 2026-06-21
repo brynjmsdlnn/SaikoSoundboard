@@ -11,14 +11,21 @@ ApplicationWindow {
     visible: true
     width: 1100
     height: 700
-    minimumWidth: 900
+    minimumWidth: 1100
     minimumHeight: 600
     title: "Saiko Soundboard"
     color: Theme.appBackground
 
     property string captureMode: "global"
-    property bool isReplayActive: false
     property string lastRecordingPath: ""
+
+    // Named capture states instead of bare 0/1/2/3 sprinkled through
+    // onCaptureStateChanged. Mirrors whatever CaptureState enum the backend
+    // actually uses - keep these in sync if that enum changes.
+    readonly property int stateIdle: 0
+    readonly property int stateReplay: 1
+    readonly property int stateRecording: 2
+    readonly property int stateRecordingAndReplay: 3
 
     function startRecording() {
         var fmt = Utils.formatTimestamp(new Date())
@@ -162,7 +169,8 @@ ApplicationWindow {
             // ---------------- LEFT PANEL ----------------
             RecordingPanel {
                 id: recordingPanel
-                SplitView.preferredWidth: Backend.settings.leftPanelWidth > 0 ? Backend.settings.leftPanelWidth : 340
+                SplitView.preferredWidth: Backend.settings.leftPanelWidth > 0 ? Backend.settings.leftPanelWidth : 800
+                SplitView.minimumWidth: sourcesDock.visible ? horizontalSplit.width - 500 - 4 : 300
                 captureMode: app.captureMode
                 lastRecordingPath: app.lastRecordingPath
 
@@ -179,19 +187,22 @@ ApplicationWindow {
                 onCaptureModeSelected: function(newMode) {
                     sourcesDock.visible = (newMode === "multi")
                 }
+                onReplaySaved: function(path) {
+                    app.lastRecordingPath = path
+                }
             }
 
             // ---------------- SOURCES DOCK ----------------
             Rectangle {
                 id: sourcesDock
-                SplitView.preferredWidth: Backend.settings.sourcesDockWidth > 0 ? Backend.settings.sourcesDockWidth : 320
-                SplitView.minimumWidth: 260
+                SplitView.preferredWidth: Backend.settings.sourcesDockWidth > 0 ? Backend.settings.sourcesDockWidth : 300
+                SplitView.minimumWidth: 300
                 color: Theme.appBackground
                 visible: (captureMode === "multi")
 
                 onWidthChanged: {
                     if (width > 0 && visible) {
-                        Backend.settings.sourcesDockWidth = width
+                        Backend.settings.sourcesDockWidth = Math.min(width, 500)
                         Backend.settings.save()
                     }
                 }
@@ -264,27 +275,34 @@ ApplicationWindow {
     Connections {
         target: Backend
         function onCaptureStateChanged(state) {
-            var isRecordingState = (state === 2 || state === 3)
-            var isReplay = (state === 1 || state === 3)
-            isReplayActive = isReplay
+            var isReplay = (state === app.stateReplay || state === app.stateRecordingAndReplay)
 
-            recordingPanel.setModeEnabled(state === 0)
-            sourcesPanel.locked = !(state === 0)
+            recordingPanel.setModeEnabled(state === app.stateIdle)
+            sourcesPanel.locked = (state !== app.stateIdle)
 
-            recordingPanel.setReplayStatusText(isReplayActive ? "Status: active" : "Status: inactive")
-            recordingPanel.setSaveReplayEnabled(isReplayActive)
-            recordingPanel.setReplayChecked(isReplayActive)
+            recordingPanel.setSaveReplayEnabled(isReplay)
+            recordingPanel.setReplayChecked(isReplay)
 
-            if (state === 0) recordingPanel.setStatusText("Ready")
-            else if (state === 1) recordingPanel.setStatusText("Background replay active...")
-            else if (state === 2) recordingPanel.setStatusText("Manual recording active...")
-            else if (state === 3) recordingPanel.setStatusText("Recording + replay active...")
+            switch (state) {
+            case app.stateIdle:
+                recordingPanel.setStatusText("Ready")
+                break
+            case app.stateReplay:
+                recordingPanel.setStatusText("Background replay active...")
+                break
+            case app.stateRecording:
+                recordingPanel.setStatusText("Manual recording active...")
+                break
+            case app.stateRecordingAndReplay:
+                recordingPanel.setStatusText("Recording + replay active...")
+                break
+            }
         }
         function onPlaybackStateChanged() {
             if (!Backend.isPlaying) {
                 recordingPanel.setStatusText("Ready")
                 recordingPanel.setStartEnabled(true)
-                recordingPanel.setPlayEnabled(lastRecordingPath.length > 0)
+                recordingPanel.setPlayEnabled(app.lastRecordingPath.length > 0)
             }
         }
     }

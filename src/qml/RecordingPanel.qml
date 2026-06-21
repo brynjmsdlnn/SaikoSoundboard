@@ -19,12 +19,17 @@ Flickable {
     property bool saveReplayEnabled: false
     property bool replayChecked: false
     property string statusText: "Ready"
-    property string replayStatusText: "Status: inactive"
 
     signal startRequested()
     signal stopRequested()
     signal changeFolderRequested()
     signal captureModeSelected(string newMode)
+    // Emitted instead of mutating root.lastRecordingPath directly. Main.qml
+    // binds lastRecordingPath: app.lastRecordingPath one-way; writing to it
+    // from in here would fork it from app.lastRecordingPath permanently
+    // (QML silently breaks the binding on the first imperative assignment).
+    // Main.qml should listen for this and update app.lastRecordingPath itself.
+    signal replaySaved(string path)
 
     function notifyRecordingStarted() {
         startEnabled = false
@@ -47,7 +52,6 @@ Flickable {
     function setModeEnabled(e) { modeEnabled = e }
     function setReplayChecked(c) { replayChecked = c }
     function setSaveReplayEnabled(e) { saveReplayEnabled = e }
-    function setReplayStatusText(t) { replayStatusText = t }
     function resetUI() {
         timerLabel.text = ""
         statsLabel.text = ""
@@ -176,7 +180,7 @@ Flickable {
                             { text: "Multi-track (sources)", value: "multi" }
                         ]
                         textRole: "text"; valueRole: "value"
-                        enabled: root.modeEnabled
+                        isActive: root.modeEnabled
                         onActivated: {
                             root.captureMode = currentValue
                             root.captureModeSelected(currentValue)
@@ -349,7 +353,7 @@ Flickable {
                             var path = Backend.settings.saveDirectory + "/Replay_" + stamp + ".wav"
 
                             if (Backend.recording.saveReplay(path)) {
-                                root.lastRecordingPath = path
+                                root.replaySaved(path)
                                 root.setStatusText("Replay saved: Replay_" + stamp + ".wav")
                                 root.playEnabled = true
                             } else {
