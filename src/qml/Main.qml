@@ -157,7 +157,8 @@ ApplicationWindow {
 
         SplitView {
             id: horizontalSplit
-            SplitView.fillHeight: true
+            SplitView.fillHeight: false
+            SplitView.minimumHeight: 380
             orientation: Qt.Horizontal
 
             handle: Rectangle {
@@ -228,7 +229,7 @@ ApplicationWindow {
         Rectangle {
             id: soundboardDock
             SplitView.preferredHeight: Backend.settings.soundboardDockHeight > 0 ? Backend.settings.soundboardDockHeight : 280
-            SplitView.minimumHeight: 180
+            SplitView.minimumHeight: 500
             color: Theme.recessedBackground
             border.color: Theme.borderDefault
             border.width: 1
@@ -250,7 +251,8 @@ ApplicationWindow {
                     color: Theme.borderDefault
                 }
 
-                SoundboardPanel {
+                SoundboardGridView {
+                    id: soundboardGrid
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                 }

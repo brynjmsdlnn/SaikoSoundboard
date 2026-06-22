@@ -164,6 +164,9 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/ProcessSelectionPopup.qml
         src/qml/ClipRangeEditor.qml
         src/qml/utils.js
+        src/qml/SoundboardGridView.qml
+        src/qml/SoundboardGridCard.qml
+        src/qml/ItemEditor.qml
 )
 
 target_link_libraries(SaikoSoundboard PRIVATE SaikoSoundboardCore)

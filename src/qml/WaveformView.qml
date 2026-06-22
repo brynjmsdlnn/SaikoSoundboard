@@ -21,8 +21,7 @@ Rectangle {
     signal trimRangeCommit(double startMs, double endMs)
 
     onWaveformDataChanged: {
-        if (waveformData !== null)
-            dataSource.setWaveformData(waveformData)
+        dataSource.setWaveformData(waveformData)
     }
 
     WaveformData {

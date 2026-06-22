@@ -126,3 +126,15 @@ int SoundPlayerSlotModel::rowForId(const QString &id) const
     }
     return -1;
 }
+
+QVariantMap SoundPlayerSlotModel::get(int row) const
+{
+    QVariantMap result;
+    if (row < 0 || row >= m_slots.size()) return result;
+    QHash<int, QByteArray> roles = roleNames();
+    QModelIndex idx = index(row, 0);
+    for (auto it = roles.begin(); it != roles.end(); ++it) {
+        result[QString::fromUtf8(it.value())] = data(idx, it.key());
+    }
+    return result;
+}

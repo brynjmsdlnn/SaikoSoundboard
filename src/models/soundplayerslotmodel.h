@@ -35,6 +35,7 @@ public:
     Q_INVOKABLE void setEnabled(int row, bool enabled);
     Q_INVOKABLE void setRouting(int row, int routing);
     Q_INVOKABLE void setClipRange(int row, qint64 startMs, qint64 endMs);
+    Q_INVOKABLE QVariantMap get(int row) const;
 
 signals:
     void slotRemoved(const QString &id);

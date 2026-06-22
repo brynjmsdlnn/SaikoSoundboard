@@ -1,4 +1,5 @@
 #include "soundboardmanager.h"
+#include <QUrl>
 #include <QDebug>
 #include <QMediaDevices>
 #include <QFuture>
@@ -70,13 +71,18 @@ void SoundboardManager::renamePlayer(const QString &id, const QString &newName)
 
 void SoundboardManager::assignAudioFile(const QString &id, const QString &filePath)
 {
+    QString localPath = filePath;
+    if (filePath.startsWith("file:")) {
+        localPath = QUrl(filePath).toLocalFile();
+    }
+
     if (SoundPlayerSlot *slot = getSlot(id)) {
-        slot->filePath = filePath;
+        slot->filePath = localPath;
         slot->startTimeMs = 0;
         slot->endTimeMs = -1;
 
         if (SoundPlayer *player = getPlayer(id)) {
-            player->load(filePath);
+            player->load(localPath);
             player->setRouting(slot->outputRouting);
             player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
             player->setDevices(m_micDevice, m_localDevice);
