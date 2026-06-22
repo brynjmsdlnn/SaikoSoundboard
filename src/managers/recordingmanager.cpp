@@ -2,6 +2,7 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
+#include <cstring>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -180,6 +181,7 @@ bool RecordingManager::saveReplay(const QString &path)
 void RecordingManager::startRecorderForPid(DWORD pid, const QString& sourceId, float volume)
 {
     WasapiRecorder *rec = new WasapiRecorder(this);
+    rec->setTargetSampleRate(m_settings->recordingSampleRate());
     m_mixer->addSource(sourceId, volume);
 
     connect(rec, &WasapiRecorder::pcmDataReady, this, [this, sourceId](const QByteArray &data){

@@ -19,6 +19,13 @@ public:
     void start(DWORD pid);
     void stop();
     bool isRunning() const { return m_running.load(); }
+
+    // Override the capture sample rate. Set before start().
+    // sampleRate: 0 = system default, or any valid rate (22050, 44100, 48000, 96000, etc.)
+    void setTargetSampleRate(int sampleRate);
+
+    // Returns the system's current mix format sample rate (e.g. 48000).
+    static int systemMixSampleRate();
     
     // Returns the audio format currently being used for capture
     WAVEFORMATEXTENSIBLE getFormat() const { return m_format; }
@@ -41,6 +48,7 @@ private:
     QFuture<void> m_future;
     qint64 m_dataChunkOffset;
     WAVEFORMATEXTENSIBLE m_format;
+    int m_targetSampleRate = 0;
 };
 
 #endif // WASAPIRECORDER_H

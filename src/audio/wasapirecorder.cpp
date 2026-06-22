@@ -141,8 +141,22 @@ static WAVEFORMATEX* GetSystemMixFormat()
     return pwfx;
 }
 
-WasapiRecorder::WasapiRecorder(QObject *parent) : QObject(parent), m_processId(0), m_running(false), m_dataChunkOffset(0) {}
+int WasapiRecorder::systemMixSampleRate()
+{
+    WAVEFORMATEX *pwfx = GetSystemMixFormat();
+    if (!pwfx) return 48000;
+    int rate = static_cast<int>(pwfx->nSamplesPerSec);
+    CoTaskMemFree(pwfx);
+    return rate;
+}
+
+WasapiRecorder::WasapiRecorder(QObject *parent) : QObject(parent), m_processId(0), m_running(false), m_dataChunkOffset(0), m_targetSampleRate(0) {}
 WasapiRecorder::~WasapiRecorder() { stop(); }
+
+void WasapiRecorder::setTargetSampleRate(int sampleRate)
+{
+    m_targetSampleRate = sampleRate;
+}
 
 void WasapiRecorder::start(const QString &fileName, DWORD pid)
 {
@@ -273,7 +287,35 @@ void WasapiRecorder::runCapture()
         memset(&m_format, 0, sizeof(WAVEFORMATEXTENSIBLE));
         memcpy(&m_format, pwfx, sizeof(WAVEFORMATEX) + pwfx->cbSize);
     }
+
+    // Override format with user-requested sample rate if set
     WAVEFORMATEX *pInitFormat = pwfx;
+    WAVEFORMATEXTENSIBLE customFormat;
+    memset(&customFormat, 0, sizeof(customFormat));
+
+    if (m_targetSampleRate > 0) {
+        // Build a custom float format at the desired sample rate.
+        // WASAPI handles sample rate conversion via AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM.
+        customFormat.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
+        customFormat.Format.nChannels = m_format.Format.nChannels;
+        customFormat.Format.nSamplesPerSec = m_targetSampleRate;
+        customFormat.Format.wBitsPerSample = 32;
+        customFormat.Format.nBlockAlign = customFormat.Format.nChannels * 4;
+        customFormat.Format.nAvgBytesPerSec = customFormat.Format.nSamplesPerSec * customFormat.Format.nBlockAlign;
+        customFormat.Format.cbSize = 22;
+        customFormat.Samples.wValidBitsPerSample = 32;
+        customFormat.dwChannelMask = m_format.dwChannelMask;
+        customFormat.SubFormat = m_format.SubFormat;
+
+        // If system mix isn't float, default to IEEE float subformat
+        if (customFormat.SubFormat.Data1 == 0) {
+            customFormat.SubFormat = {0x00000003, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
+        }
+
+        memcpy(&m_format, &customFormat, sizeof(WAVEFORMATEXTENSIBLE));
+        pInitFormat = (WAVEFORMATEX*)&m_format;
+    }
+
     REFERENCE_TIME bufDuration = 0; // Set to 0 to use engine default buffer duration and avoid alignment issues
 
     qDebug() << "WASAPI: Initializing audio client. ShareMode: Shared, Flags: 0x" << QString::number(flags, 16);

@@ -1,6 +1,7 @@
 #include "ui/qmlbackend.h"
 #include "ui/realtimewaveformitem.h"
 #include "ui/waveformitem.h"
+#include "audio/wasapirecorder.h"
 #include <QFileInfo>
 #include <QUrl>
 #include <QMediaDevices>
@@ -172,6 +173,11 @@ QVariantList QmlBackend::getAudioInputDevices() const
         result.append(map);
     }
     return result;
+}
+
+int QmlBackend::systemDefaultSampleRate() const
+{
+    return WasapiRecorder::systemMixSampleRate();
 }
 
 qint64 QmlBackend::recordingFileSize() const

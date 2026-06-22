@@ -86,6 +86,7 @@ public:
     Q_INVOKABLE QVariantList getRunningProcesses() const;
     Q_INVOKABLE QVariantList getAudioOutputDevices() const;
     Q_INVOKABLE QVariantList getAudioInputDevices() const;
+    Q_INVOKABLE int systemDefaultSampleRate() const;
     Q_INVOKABLE qint64 recordingFileSize() const;
     Q_INVOKABLE qint64 playbackPosition() const;
     Q_INVOKABLE void playFile(const QString &path);

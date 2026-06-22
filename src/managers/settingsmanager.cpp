@@ -36,6 +36,7 @@ void SettingsManager::load()
     bool localMonDevDirty = false;
     bool micPassDirty = false;
     bool voiceDevDirty = false;
+    bool sampleRateDirty = false;
 
     if (doc.isArray()) {
         QList<AudioSource> newSources;
@@ -126,6 +127,12 @@ void SettingsManager::load()
             voiceDevDirty = true;
         }
 
+        int newSampleRate = obj["recordingSampleRate"].toInt(48000);
+        if (newSampleRate != m_recordingSampleRate) {
+            m_recordingSampleRate = newSampleRate;
+            sampleRateDirty = true;
+        }
+
         QList<SoundPlayerSlot> newSlots;
         QJsonArray slotsArr = obj["soundBoardSlots"].toArray();
         for (const QJsonValue& val : std::as_const(slotsArr)) {
@@ -156,6 +163,7 @@ void SettingsManager::load()
     if (localMonDevDirty)      emit localMonitorDeviceChanged();
     if (micPassDirty)          emit enableMicPassthroughChanged();
     if (voiceDevDirty)         emit voiceInputDeviceChanged();
+    if (sampleRateDirty)       emit recordingSampleRateChanged();
 }
 
 void SettingsManager::save()
@@ -185,6 +193,7 @@ void SettingsManager::save()
     root["localMonitorDevice"] = m_localMonitorDevice;
     root["enableMicPassthrough"] = m_enableMicPassthrough;
     root["voiceInputDevice"] = m_voiceInputDevice;
+    root["recordingSampleRate"] = m_recordingSampleRate;
 
     QJsonDocument doc(root);
     QFile file(getSettingsFilePath());
@@ -327,5 +336,13 @@ void SettingsManager::setVoiceInputDevice(const QString &device)
     if (m_voiceInputDevice != device) {
         m_voiceInputDevice = device;
         emit voiceInputDeviceChanged();
+    }
+}
+
+void SettingsManager::setRecordingSampleRate(int sampleRate)
+{
+    if (m_recordingSampleRate != sampleRate) {
+        m_recordingSampleRate = sampleRate;
+        emit recordingSampleRateChanged();
     }
 }

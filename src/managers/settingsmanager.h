@@ -31,6 +31,7 @@ class SettingsManager : public QObject
     Q_PROPERTY(QString localMonitorDevice READ localMonitorDevice WRITE setLocalMonitorDevice NOTIFY localMonitorDeviceChanged)
     Q_PROPERTY(bool enableMicPassthrough READ enableMicPassthrough WRITE setEnableMicPassthrough NOTIFY enableMicPassthroughChanged)
     Q_PROPERTY(QString voiceInputDevice READ voiceInputDevice WRITE setVoiceInputDevice NOTIFY voiceInputDeviceChanged)
+    Q_PROPERTY(int recordingSampleRate READ recordingSampleRate WRITE setRecordingSampleRate NOTIFY recordingSampleRateChanged)
 public:
     explicit SettingsManager(QObject *parent = nullptr);
 
@@ -53,6 +54,7 @@ public:
     QString localMonitorDevice() const { return m_localMonitorDevice; }
     bool enableMicPassthrough() const { return m_enableMicPassthrough; }
     QString voiceInputDevice() const { return m_voiceInputDevice; }
+    int recordingSampleRate() const { return m_recordingSampleRate; }
 
     // Setters
     void setSources(const QList<AudioSource> &sources);
@@ -68,6 +70,7 @@ public:
     void setLocalMonitorDevice(const QString &device);
     void setEnableMicPassthrough(bool enabled);
     void setVoiceInputDevice(const QString &device);
+    void setRecordingSampleRate(int sampleRate);
 
 signals:
     void sourcesChanged();
@@ -85,6 +88,7 @@ signals:
     void localMonitorDeviceChanged();
     void enableMicPassthroughChanged();
     void voiceInputDeviceChanged();
+    void recordingSampleRateChanged();
 
 private:
     QString getSettingsFilePath() const;
@@ -102,6 +106,7 @@ private:
     QString m_localMonitorDevice;
     bool m_enableMicPassthrough = false;
     QString m_voiceInputDevice;
+    int m_recordingSampleRate = 48000;
 };
 
 #endif // SETTINGSMANAGER_H
