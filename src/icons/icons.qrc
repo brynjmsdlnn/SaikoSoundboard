@@ -1,0 +1,15 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/icons">
+        <file>play.svg</file>
+        <file>square.svg</file>
+        <file>trash-2.svg</file>
+        <file>headphones.svg</file>
+        <file>keyboard.svg</file>
+        <file>music.svg</file>
+        <file>check.svg</file>
+        <file>corner-down-left.svg</file>
+        <file>chevron-down.svg</file>
+        <file>save.svg</file>
+    </qresource>
+</RCC>

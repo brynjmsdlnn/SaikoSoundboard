@@ -125,6 +125,8 @@ void ActionManager::handleMakePermanent(const QString &playerId, const QString &
     QDir().mkpath(dirPath);
 
     QString targetName = customFileName.isEmpty() ? fileInfo.fileName() : customFileName;
+    if (!targetName.contains('.'))
+        targetName += "." + fileInfo.suffix();
     QString permanentPath = dirPath + "/" + targetName;
     
     if (QFile::exists(permanentPath)) {

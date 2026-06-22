@@ -17,8 +17,8 @@ if(CCACHE_PROGRAM)
     set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
 endif()
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Multimedia Concurrent Quick Qml Test)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia Concurrent Quick Qml Test)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Multimedia Concurrent Quick Qml Test Svg)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia Concurrent Quick Qml Test Svg)
 
 enable_testing()
 
@@ -44,6 +44,8 @@ set(UI_SOURCES
     src/ui/waveformitem.cpp
     src/ui/realtimewaveformitem.h
     src/ui/realtimewaveformitem.cpp
+    src/ui/colorediconprovider.h
+    src/ui/colorediconprovider.cpp
 )
 
 set(AUDIO_SOURCES
@@ -104,6 +106,7 @@ target_link_libraries(SaikoSoundboardCore PUBLIC
     Qt${QT_VERSION_MAJOR}::Concurrent
     Qt${QT_VERSION_MAJOR}::Quick
     Qt${QT_VERSION_MAJOR}::Qml
+    Qt${QT_VERSION_MAJOR}::Svg
 )
 
 if(WIN32)
@@ -114,6 +117,7 @@ endif()
 
 set(APP_SOURCES
     src/main.cpp
+    src/icons/icons.qrc
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

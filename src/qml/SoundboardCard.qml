@@ -475,7 +475,6 @@ Rectangle {
 
     function openHotkeyDialog() {
         Utils.openDialog("HotkeyDialog.qml", {
-            playerId: slotId,
             playKey: playHotkey || "",
             assignKey: assignHotkey || ""
         }, function(win) {

@@ -1,6 +1,7 @@
 #include "ui/qmlbackend.h"
 #include "ui/realtimewaveformitem.h"
 #include "ui/waveformitem.h"
+#include "ui/colorediconprovider.h"
 
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
@@ -26,6 +27,7 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
     engine.addImageProvider(QLatin1String("fileicon"), new FileIconProvider());
+    engine.addImageProvider(QLatin1String("icons"), new ColoredIconProvider());
 
     engine.load(QUrl("qrc:/qt/qml/Saiko/src/qml/Main.qml"));
 

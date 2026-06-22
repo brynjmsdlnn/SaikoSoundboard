@@ -7,10 +7,10 @@ T.ComboBox {
     id: combo
     textRole: "text"
     valueRole: "value"
-    
+
     implicitWidth: 120
     implicitHeight: 36
-    
+
     font.pixelSize: 12
     property int radius: 8
 
@@ -34,12 +34,20 @@ T.ComboBox {
         border.color: combo.isActive ? (combo.visualFocus ? Theme.accentPurple : (combo.hovered ? Theme.borderHover : Theme.borderDefault)) : Theme.borderDefault
         border.width: 1
         radius: combo.radius
-        
+
         // Lower opacity to make it look greyed out
         opacity: combo.isActive ? 1.0 : 0.6
-        
-        Behavior on color { ColorAnimation { duration: 150 } }
-        Behavior on border.color { ColorAnimation { duration: 150 } }
+
+        Behavior on color {
+            ColorAnimation {
+                duration: 150
+            }
+        }
+        Behavior on border.color {
+            ColorAnimation {
+                duration: 150
+            }
+        }
 
         Text {
             text: "▼"
@@ -48,11 +56,15 @@ T.ComboBox {
             anchors.verticalCenter: parent.verticalCenter
             font.pixelSize: combo.font.pixelSize >= 12 ? 8 : 6
             color: combo.hovered ? Theme.textPrimary : Theme.textDim
-            
+
             // Hide the dropdown icon when disabled
             visible: combo.isActive
-            
-            Behavior on color { ColorAnimation { duration: 150 } }
+
+            Behavior on color {
+                ColorAnimation {
+                    duration: 150
+                }
+            }
         }
     }
 
@@ -61,19 +73,19 @@ T.ComboBox {
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
-        
+
         // If inactive, swallow all clicks. If active, let clicks pass through to the ComboBox.
         acceptedButtons: combo.isActive ? Qt.NoButton : Qt.AllButtons
-        
+
         // Show Forbidden (danger) cursor when disabled, pointing hand when active
         cursorShape: combo.isActive ? Qt.PointingHandCursor : Qt.ForbiddenCursor
-        
+
         // Prevent scroll wheel from changing dropdown values while disabled
-        onWheel: {
+        onWheel: wheel => {
             if (!combo.isActive) {
-                wheel.accepted = true
+                wheel.accepted = true;
             } else {
-                wheel.accepted = false
+                wheel.accepted = false;
             }
         }
     }
@@ -112,7 +124,7 @@ T.ComboBox {
         implicitHeight: height
         anchors.horizontalCenter: parent ? parent.horizontalCenter : undefined
         hoverEnabled: true
-        
+
         contentItem: Text {
             text: modelData.text || modelData
             color: delegateItem.highlighted || delegateItem.hovered ? Theme.textPrimary : Theme.textSecondary
@@ -121,11 +133,15 @@ T.ComboBox {
             verticalAlignment: Text.AlignVCenter
             leftPadding: combo.font.pixelSize >= 12 ? 10 : 6
         }
-        
+
         background: Rectangle {
             color: delegateItem.highlighted || delegateItem.hovered ? Theme.borderDefault : "transparent"
             radius: combo.radius - 2
-            Behavior on color { ColorAnimation { duration: 100 } }
+            Behavior on color {
+                ColorAnimation {
+                    duration: 100
+                }
+            }
         }
     }
 }
