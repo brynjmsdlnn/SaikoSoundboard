@@ -3,7 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Dialogs
 import Saiko 1.0
-import "utils.js" as Utils
+import "../shared/utils.js" as Utils
 
 Rectangle {
     id: editor
@@ -310,17 +310,17 @@ Rectangle {
                     }
 
                     // 3. DROPDOWN MENU
-                    CardMenu {
+                    SaikoMenu {
                         id: assignMenu
                         y: parent.height + 4
                         // Align the right side of the menu to the right side of the box
                         x: sourceBox.width - width
 
-                        CardMenuItem {
+                        SaikoMenuItem {
                             text: "From file..."
                             onClicked: assignFileDialog.open()
                         }
-                        CardMenuItem {
+                        SaikoMenuItem {
                             text: "From replay buffer"
                             onClicked: {
                                 if (editor && editor.slotId)
@@ -879,7 +879,7 @@ Rectangle {
     }
 
     function openHotkeyDialog() {
-        Utils.openDialog("HotkeyDialog.qml", {
+        Utils.openDialog("../dialogs/HotkeyDialog.qml", {
             playKey: editor.playHotkey || "",
             assignKey: editor.assignHotkey || ""
         }, function (win) {

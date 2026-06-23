@@ -174,13 +174,13 @@ Rectangle {
         }
     }
 
-    CardMenu {
+    SaikoMenu {
         id: contextMenu
-        CardMenuItem {
+        SaikoMenuItem {
             text: "Assign from file..."
             onClicked: assignFileDialog.open()
         }
-        CardMenuItem {
+        SaikoMenuItem {
             text: "Assign from replay buffer"
             onClicked: {
                 if (slotId) {
@@ -188,7 +188,7 @@ Rectangle {
                 }
             }
         }
-        CardMenuItem {
+        SaikoMenuItem {
             text: "Delete slot"
             onClicked: removeConfirmDialog.open()
         }

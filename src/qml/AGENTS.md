@@ -6,10 +6,23 @@ All QML UI components for the SaikoSoundboard application. This is the presentat
 
 ## Ownership
 
-- 19 `.qml` files + 1 `utils.js`
+- 23 `.qml` files + 1 `utils.js`, organized into feature-based subdirectories
 - All files are part of the `Saiko` 1.0 QML module (declared in root CMakeLists.txt via `qt_add_qml_module`)
 - `Theme.qml` is a registered singleton (`QT_QML_SINGLETON_TYPE`)
-- The JS file `utils.js` is imported as `import "utils.js" as Utils` by files that need shared helpers
+- The JS file `utils.js` is imported as `import "../shared/utils.js" as Utils` (or `import "shared/utils.js" as Utils` from root-level files)
+
+### Directory Structure
+
+```
+src/qml/
+├── components/       # Reusable UI building blocks (SaikoButton, SaikoCheckBox, SaikoComboBox, SaikoTooltip, SaikoMenu, SaikoMenuItem)
+├── shared/           # Shared singleton and utilities (Theme.qml, utils.js)
+├── dialogs/          # Standalone windows & popups (SettingsDialog, HotkeyDialog, RoutingDialog, ProcessSelectionPopup)
+├── recording/        # Recording panel sub-components (RecordingPanel, RecordingHeader, CaptureModeBar, ReplayBufferSection, TransportControls)
+├── soundboard/       # Soundboard grid & card editor (SoundboardGridView, SoundboardGridCard, ItemEditor, HotkeyCard)
+├── sources/          # Audio source management (SourcesPanel, WaveformView)
+└── Main.qml          # Application entry point
+```
 
 ## Local Contracts
 
@@ -31,4 +44,22 @@ All QML UI components for the SaikoSoundboard application. This is the presentat
 
 ## Child DOX Index
 
-No children — all files are flat in this directory and owned by this doc.
+No children — all files organized under this directory.
+
+### `components/`
+Reusable UI primitives — SaikoButton, SaikoCheckBox, SaikoComboBox, SaikoTooltip, SaikoMenu, SaikoMenuItem. Owned by this doc.
+
+### `shared/`
+Shared singleton and utilities — Theme.qml (singleton), utils.js (JS utility functions). Owned by this doc.
+
+### `dialogs/`
+Standalone windows and popups — SettingsDialog, HotkeyDialog, RoutingDialog, ProcessSelectionPopup. Owned by this doc.
+
+### `recording/`
+Recording panel sub-components — RecordingPanel, RecordingHeader, CaptureModeBar, ReplayBufferSection, TransportControls. Owned by this doc.
+
+### `soundboard/`
+Soundboard grid and card editor — SoundboardGridView, SoundboardGridCard, ItemEditor, HotkeyCard. Owned by this doc.
+
+### `sources/`
+Audio source management — SourcesPanel, WaveformView. Owned by this doc.

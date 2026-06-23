@@ -2,7 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import Saiko 1.0
-import "utils.js" as Utils
+import "../shared/utils.js" as Utils
 
 Rectangle {
     id: root
@@ -73,7 +73,7 @@ Rectangle {
                             anchors.fill: parent
                             iconSource: "image://icons/cog?color=%23b0b0b0"
                             small: true
-                            onClicked: Utils.openDialog("RoutingDialog.qml")
+                            onClicked: Utils.openDialog("../dialogs/RoutingDialog.qml")
                         }
                         SaikoTooltip {
                             text: "Routing Settings"

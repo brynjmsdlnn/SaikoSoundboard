@@ -4,7 +4,7 @@ import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
 import QtQuick.Dialogs
 import Saiko 1.0
-import "utils.js" as Utils
+import "shared/utils.js" as Utils
 
 ApplicationWindow {
     id: app

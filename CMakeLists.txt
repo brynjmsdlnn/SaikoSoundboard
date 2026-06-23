@@ -146,36 +146,48 @@ target_include_directories(SaikoSoundboard PRIVATE src src/ui)
 qt_policy(SET QTP0001 NEW)
 qt_policy(SET QTP0004 NEW)
 
-set_source_files_properties(src/qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(src/qml/shared/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(SaikoSoundboard
     URI Saiko
     VERSION 1.0
     QML_FILES
-        src/qml/Theme.qml
-        src/qml/SaikoButton.qml
-        src/qml/RecordingPanel.qml
-        src/qml/SettingsDialog.qml
-        src/qml/HotkeyCard.qml
-        src/qml/CardMenu.qml
-        src/qml/CardMenuItem.qml
         src/qml/Main.qml
-        src/qml/HotkeyDialog.qml
-        src/qml/SourcesPanel.qml
-        src/qml/RoutingDialog.qml
-        src/qml/WaveformView.qml
-        src/qml/SaikoComboBox.qml
-        src/qml/SaikoCheckBox.qml
-        src/qml/ProcessSelectionPopup.qml
-        src/qml/SaikoTooltip.qml
-        src/qml/utils.js
-        src/qml/SoundboardGridView.qml
-        src/qml/SoundboardGridCard.qml
-        src/qml/ItemEditor.qml
-        src/qml/RecordingHeader.qml
-        src/qml/CaptureModeBar.qml
-        src/qml/ReplayBufferSection.qml
-        src/qml/TransportControls.qml
+
+        # --- Shared singletons & utilities ---
+        src/qml/shared/Theme.qml
+        src/qml/shared/utils.js
+
+        # --- Reusable UI components ---
+        src/qml/components/SaikoButton.qml
+        src/qml/components/SaikoCheckBox.qml
+        src/qml/components/SaikoComboBox.qml
+        src/qml/components/SaikoTooltip.qml
+        src/qml/components/SaikoMenu.qml
+        src/qml/components/SaikoMenuItem.qml
+
+        # --- Dialogs ---
+        src/qml/dialogs/SettingsDialog.qml
+        src/qml/dialogs/HotkeyDialog.qml
+        src/qml/dialogs/RoutingDialog.qml
+        src/qml/dialogs/ProcessSelectionPopup.qml
+
+        # --- Recording panel ---
+        src/qml/recording/RecordingPanel.qml
+        src/qml/recording/RecordingHeader.qml
+        src/qml/recording/CaptureModeBar.qml
+        src/qml/recording/ReplayBufferSection.qml
+        src/qml/recording/TransportControls.qml
+
+        # --- Soundboard ---
+        src/qml/soundboard/SoundboardGridView.qml
+        src/qml/soundboard/SoundboardGridCard.qml
+        src/qml/soundboard/ItemEditor.qml
+        src/qml/soundboard/HotkeyCard.qml
+
+        # --- Sources ---
+        src/qml/sources/SourcesPanel.qml
+        src/qml/sources/WaveformView.qml
 )
 
 target_link_libraries(SaikoSoundboard PRIVATE SaikoSoundboardCore)

@@ -2,7 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import Saiko 1.0
-import "utils.js" as Utils
+import "../shared/utils.js" as Utils
 
 Flickable {
     id: root
