@@ -70,7 +70,7 @@ Rectangle {
                 Layout.fillWidth: true
             }
 
-            CustomCheckBox {
+            SaikoCheckBox {
                 text: "Enable"
                 checked: root.replayChecked
                 onToggled: {
@@ -144,7 +144,7 @@ Rectangle {
                 }
             }
 
-            ThemedButton {
+            SaikoButton {
                 text: "Save Replay"
                 small: true
                 enabled: root.saveReplayEnabled

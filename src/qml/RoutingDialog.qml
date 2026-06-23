@@ -113,7 +113,7 @@ Window {
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 8
-                    CustomCheckBox {
+                    SaikoCheckBox {
                         id: micCb
                         text: "Enable Broadcast Output (to virtual mic)"
                         checked: Backend.soundboard.micOutputEnabled
@@ -131,7 +131,7 @@ Window {
                         Layout.preferredWidth: 130
                         Layout.alignment: Qt.AlignVCenter
                     }
-                    CustomComboBox {
+                    SaikoComboBox {
                         id: micCombo
                         Layout.fillWidth: true
                         onCurrentValueChanged: {
@@ -144,7 +144,7 @@ Window {
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 8
-                    CustomCheckBox {
+                    SaikoCheckBox {
                         id: localCb
                         text: "Enable Local Monitoring (hear soundboard)"
                         checked: Backend.soundboard.localMonitoringEnabled
@@ -162,7 +162,7 @@ Window {
                         Layout.preferredWidth: 130
                         Layout.alignment: Qt.AlignVCenter
                     }
-                    CustomComboBox {
+                    SaikoComboBox {
                         id: localCombo
                         Layout.fillWidth: true
                         onCurrentValueChanged: {
@@ -206,7 +206,7 @@ Window {
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 8
-                    CustomCheckBox {
+                    SaikoCheckBox {
                         id: feedMicCb
                         text: "Feed Voice to Broadcast (Mix Soundboard + Voice)"
                         checked: Backend.soundboard.micPassthroughEnabled
@@ -263,7 +263,7 @@ Window {
                         Layout.preferredWidth: 130
                         Layout.alignment: Qt.AlignVCenter
                     }
-                    CustomComboBox {
+                    SaikoComboBox {
                         id: voiceCombo
                         Layout.fillWidth: true
                         onCurrentValueChanged: {

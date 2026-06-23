@@ -32,7 +32,7 @@ Rectangle {
             font.bold: true
         }
 
-        CustomComboBox {
+        SaikoComboBox {
             Layout.preferredWidth: 220
             model: [
                 { text: "System Output (Global)", value: "global" },
@@ -51,7 +51,7 @@ Rectangle {
             Layout.fillWidth: true
         }
 
-        ThemedButton {
+        SaikoButton {
             iconSource: "image://icons/folder?color=%23b0b0b0"
             text: "Recordings"
             small: true
@@ -59,7 +59,7 @@ Rectangle {
             onClicked: Qt.openUrlExternally("file:///" + encodeURI(Backend.settings.recordingDirectory))
         }
 
-        ThemedButton {
+        SaikoButton {
             iconSource: "image://icons/folder?color=%23b0b0b0"
             text: "Replays"
             small: true
@@ -67,7 +67,7 @@ Rectangle {
             onClicked: Qt.openUrlExternally("file:///" + encodeURI(Backend.settings.replayDirectory))
         }
 
-        ThemedButton {
+        SaikoButton {
             iconSource: "image://icons/cog?color=%23b0b0b0"
             small: true
             implicitWidth: 28

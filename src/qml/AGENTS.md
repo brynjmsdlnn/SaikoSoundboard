@@ -16,7 +16,7 @@ All QML UI components for the SaikoSoundboard application. This is the presentat
 - All QML files must use `import QtQuick 2.15` syntax (Qt5 compat imports)
 - All files must `import Saiko 1.0` to access `Backend`, `SlotModel`, `Theme`, `WaveformData`, `RealtimeWaveform`
 - Colors and design tokens come from `Theme.xxx` — no hardcoded color literals
-- Buttons use `ThemedButton` — no custom Rectangle+MouseArea button implementations
+- Buttons use `SaikoButton` — no custom Rectangle+MouseArea button implementations
 - Card-style wrappers use `SectionCard` with `heading` property
 - New standalone components that extract inline blocks must be added to `QML_FILES` in root CMakeLists.txt
 - Components within the same `Saiko` module can reference each other without explicit file-path imports

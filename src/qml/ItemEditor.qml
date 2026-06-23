@@ -330,7 +330,7 @@ Rectangle {
                     }
                 }
 
-                CustomCheckBox {
+                SaikoCheckBox {
                     id: preserveCb
                     text: "Preserve replay buffer on assign"
                     font.pixelSize: 11
@@ -391,13 +391,13 @@ Rectangle {
                             spacing: 8
                             Layout.topMargin: 8
 
-                            ThemedButton {
+                            SaikoButton {
                                 text: "Cancel"
                                 small: true
                                 onClicked: saveFileNameDialog.close()
                             }
 
-                            ThemedButton {
+                            SaikoButton {
                                 text: "Save"
                                 small: true
                                 onClicked: saveFileNameDialog.saveAction()
@@ -551,7 +551,7 @@ Rectangle {
                             text: "OUTPUT ROUTING"
                         }
 
-                        CustomComboBox {
+                        SaikoComboBox {
                             Layout.fillWidth: true
                             implicitHeight: 34
                             model: [
@@ -706,7 +706,7 @@ Rectangle {
                                     }
                                 }
 
-                                ThemedButton {
+                                SaikoButton {
                                     text: "Rebind"
                                     small: true
                                     implicitWidth: 64

@@ -123,7 +123,7 @@ Window {
                                     ToolTip { text: parent.text; visible: parent.truncated; delay: 600 }
                                 }
                             }
-                            ThemedButton {
+                            SaikoButton {
                                 text: "Change\u2026"
                                 implicitHeight: 36
                                 onClicked: root.changeBaseRequested()
@@ -174,12 +174,12 @@ Window {
                                     ToolTip { text: parent.text; visible: parent.truncated; delay: 600 }
                                 }
                             }
-                            ThemedButton {
+                            SaikoButton {
                                 text: "Change\u2026"
                                 implicitHeight: 36
                                 onClicked: root.changeRecordingRequested()
                             }
-                            ThemedButton {
+                            SaikoButton {
                                 text: "Reset"
                                 implicitHeight: 36
                                 enabled: !!Backend.settings.recordingDirectoryOverride
@@ -231,12 +231,12 @@ Window {
                                     ToolTip { text: parent.text; visible: parent.truncated; delay: 600 }
                                 }
                             }
-                            ThemedButton {
+                            SaikoButton {
                                 text: "Change\u2026"
                                 implicitHeight: 36
                                 onClicked: root.changeReplayRequested()
                             }
-                            ThemedButton {
+                            SaikoButton {
                                 text: "Reset"
                                 implicitHeight: 36
                                 enabled: !!Backend.settings.replayDirectoryOverride
@@ -291,7 +291,7 @@ Window {
                             font.pixelSize: Theme.fontSizeNormal || 13
                             font.weight: Font.DemiBold
                         }
-                        CustomComboBox {
+                        SaikoComboBox {
                             id: sampleRateCombo
                             Layout.fillWidth: true
                             model: sampleRateModel

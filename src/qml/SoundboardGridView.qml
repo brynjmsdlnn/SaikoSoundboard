@@ -49,7 +49,7 @@ Rectangle {
                     Item {
                         width: 32
                         height: 28
-                        ThemedButton {
+                        SaikoButton {
                             id: addBtn
                             anchors.fill: parent
                             iconSource: "image://icons/plus?color=%23b0b0b0"
@@ -68,7 +68,7 @@ Rectangle {
                     Item {
                         width: 32
                         height: 28
-                        ThemedButton {
+                        SaikoButton {
                             id: routingBtn
                             anchors.fill: parent
                             iconSource: "image://icons/cog?color=%23b0b0b0"

@@ -153,7 +153,7 @@ qt_add_qml_module(SaikoSoundboard
     VERSION 1.0
     QML_FILES
         src/qml/Theme.qml
-        src/qml/ThemedButton.qml
+        src/qml/SaikoButton.qml
         src/qml/RecordingPanel.qml
         src/qml/SettingsDialog.qml
         src/qml/HotkeyCard.qml
@@ -164,8 +164,8 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/SourcesPanel.qml
         src/qml/RoutingDialog.qml
         src/qml/WaveformView.qml
-        src/qml/CustomComboBox.qml
-        src/qml/CustomCheckBox.qml
+        src/qml/SaikoComboBox.qml
+        src/qml/SaikoCheckBox.qml
         src/qml/ProcessSelectionPopup.qml
         src/qml/SaikoTooltip.qml
         src/qml/utils.js

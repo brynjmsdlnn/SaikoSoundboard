@@ -110,7 +110,7 @@ Rectangle {
             Layout.fillWidth: true
             spacing: 10
 
-            ThemedButton {
+            SaikoButton {
                 id: addBtn
                 text: "+ Add Source"
                 Layout.fillWidth: true
@@ -118,7 +118,7 @@ Rectangle {
                 onClicked: processPopup.open()
             }
 
-            ThemedButton {
+            SaikoButton {
                 id: removeBtn
                 text: "- Remove"
                 Layout.fillWidth: true

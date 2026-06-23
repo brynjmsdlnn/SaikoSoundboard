@@ -71,13 +71,13 @@ Window {
             Layout.fillWidth: true
             spacing: 10
 
-            ThemedButton {
+            SaikoButton {
                 text: "Cancel"
                 Layout.fillWidth: true
                 onClicked: root.rejected()
             }
 
-            ThemedButton {
+            SaikoButton {
                 text: "Save bindings"
                 Layout.fillWidth: true
                 accentColor: Theme.accentPurple

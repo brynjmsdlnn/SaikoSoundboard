@@ -192,14 +192,14 @@ Popup {
                 Layout.fillWidth: true
                 spacing: 10
 
-                ThemedButton {
+                SaikoButton {
                     id: popupCancel
                     text: "Cancel"
                     Layout.fillWidth: true
                     onClicked: root.close()
                 }
 
-                ThemedButton {
+                SaikoButton {
                     id: popupAdd
                     text: "Add"
                     Layout.fillWidth: true
