@@ -49,22 +49,16 @@ T.ComboBox {
             }
         }
 
-        Text {
-            text: "▼"
+        Image {
+            source: "image://icons/chevron-down?color=%23" + (combo.hovered ? "b0b0b0" : "888888")
             anchors.right: parent.right
             anchors.rightMargin: combo.font.pixelSize >= 12 ? 12 : 6
             anchors.verticalCenter: parent.verticalCenter
-            font.pixelSize: combo.font.pixelSize >= 12 ? 8 : 6
-            color: combo.hovered ? Theme.textPrimary : Theme.textDim
+            width: 8
+            height: 8
 
             // Hide the dropdown icon when disabled
             visible: combo.isActive
-
-            Behavior on color {
-                ColorAnimation {
-                    duration: 150
-                }
-            }
         }
     }
 

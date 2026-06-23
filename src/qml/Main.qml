@@ -28,55 +28,53 @@ ApplicationWindow {
     readonly property int stateRecordingAndReplay: 3
 
     function startRecording() {
-        var fmt = Utils.formatTimestamp(new Date())
-        lastRecordingPath = Backend.settings.recordingDirectory + "/Recording_" + fmt + ".wav"
+        var fmt = Utils.formatTimestamp(new Date());
+        lastRecordingPath = Backend.settings.recordingDirectory + "/Recording_" + fmt + ".wav";
 
         if (!Backend.recording.isEngineRunning)
-            Backend.recording.startEngine(captureMode)
+            Backend.recording.startEngine(captureMode);
 
         if (!Backend.recording.startRecording(lastRecordingPath))
-            return
-
-        recordingPanel.notifyRecordingStarted()
+            return;
+        recordingPanel.notifyRecordingStarted();
     }
 
     function stopRecording() {
-        recordingPanel.notifyRecordingStopped()
-        Backend.recording.stopRecording()
+        recordingPanel.notifyRecordingStopped();
+        Backend.recording.stopRecording();
 
-        var fileSize = Backend.recordingFileSize()
+        var fileSize = Backend.recordingFileSize();
         if (fileSize > 100) {
-            renameDialog.open()
+            renameDialog.open();
         } else {
-            recordingPanel.setStatusText("Recording failed or was empty")
-            resetAfterStop()
+            recordingPanel.setStatusText("Recording failed or was empty");
+            resetAfterStop();
         }
     }
 
     function finishRename(newName) {
-        var dir = lastRecordingPath.substring(0, lastRecordingPath.lastIndexOf("/"))
-        var currentFilename = lastRecordingPath.substring(lastRecordingPath.lastIndexOf("/") + 1)
-        var dot = currentFilename.lastIndexOf(".")
-        var currentName = dot > 0 ? currentFilename.substring(0, dot) : currentFilename
+        var dir = lastRecordingPath.substring(0, lastRecordingPath.lastIndexOf("/"));
+        var currentFilename = lastRecordingPath.substring(lastRecordingPath.lastIndexOf("/") + 1);
+        var dot = currentFilename.lastIndexOf(".");
+        var currentName = dot > 0 ? currentFilename.substring(0, dot) : currentFilename;
 
         if (newName === currentName) {
-            recordingPanel.setStatusText("Saved: " + currentFilename)
-            recordingPanel.setPlayEnabled(true)
-            resetAfterStop()
-            return
+            recordingPanel.setStatusText("Saved: " + currentFilename);
+            recordingPanel.setPlayEnabled(true);
+            resetAfterStop();
+            return;
         }
 
-        var finalPath = Backend.renameRecordingFile(lastRecordingPath, dir, newName)
-        lastRecordingPath = finalPath
-        recordingPanel.setStatusText("Saved: " + lastRecordingPath.substring(lastRecordingPath.lastIndexOf("/") + 1))
-        recordingPanel.setPlayEnabled(true)
-        resetAfterStop()
+        var finalPath = Backend.renameRecordingFile(lastRecordingPath, dir, newName);
+        lastRecordingPath = finalPath;
+        recordingPanel.setStatusText("Saved: " + lastRecordingPath.substring(lastRecordingPath.lastIndexOf("/") + 1));
+        recordingPanel.setPlayEnabled(true);
+        resetAfterStop();
     }
 
     function resetAfterStop() {
-        recordingPanel.resetUI()
+        recordingPanel.resetUI();
     }
-
 
     Dialog {
         id: renameDialog
@@ -109,7 +107,11 @@ ApplicationWindow {
                 radius: Theme.borderRadius
                 border.color: renameInput.activeFocus ? Theme.accentPurple : Theme.borderDefault
                 border.width: 1
-                Behavior on border.color { ColorAnimation { duration: Theme.animDuration } }
+                Behavior on border.color {
+                    ColorAnimation {
+                        duration: Theme.animDuration
+                    }
+                }
                 TextInput {
                     id: renameInput
                     anchors.fill: parent
@@ -125,18 +127,18 @@ ApplicationWindow {
         }
 
         onAccepted: {
-            var name = renameInput.text.trim()
-            finishRename(name.length > 0 ? name : "Recording")
+            var name = renameInput.text.trim();
+            finishRename(name.length > 0 ? name : "Recording");
         }
         onRejected: {
-            resetAfterStop()
+            resetAfterStop();
         }
         onVisibleChanged: {
             if (visible) {
-                var parts = lastRecordingPath.split("/")
-                var filename = parts[parts.length - 1] || ""
-                var dot = filename.lastIndexOf(".")
-                renameInput.text = dot > 0 ? filename.substring(0, dot) : filename
+                var parts = lastRecordingPath.split("/");
+                var filename = parts[parts.length - 1] || "";
+                var dot = filename.lastIndexOf(".");
+                renameInput.text = dot > 0 ? filename.substring(0, dot) : filename;
             }
         }
     }
@@ -152,7 +154,11 @@ ApplicationWindow {
         handle: Rectangle {
             implicitHeight: 4
             color: SplitHandle.pressed ? Theme.accentPurple : (SplitHandle.hovered ? Theme.borderHover : Theme.borderDefault)
-            Behavior on color { ColorAnimation { duration: 120 } }
+            Behavior on color {
+                ColorAnimation {
+                    duration: 120
+                }
+            }
         }
 
         SplitView {
@@ -164,12 +170,17 @@ ApplicationWindow {
             handle: Rectangle {
                 implicitWidth: 4
                 color: SplitHandle.pressed ? Theme.accentPurple : (SplitHandle.hovered ? Theme.borderHover : Theme.borderDefault)
-                Behavior on color { ColorAnimation { duration: 120 } }
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 120
+                    }
+                }
             }
 
             // ---------------- LEFT PANEL ----------------
             RecordingPanel {
                 id: recordingPanel
+
                 SplitView.preferredWidth: Backend.settings.leftPanelWidth > 0 ? Backend.settings.leftPanelWidth : 800
                 SplitView.minimumWidth: sourcesDock.visible ? horizontalSplit.width - 500 - 4 : 300
                 captureMode: app.captureMode
@@ -177,18 +188,18 @@ ApplicationWindow {
 
                 onWidthChanged: {
                     if (width > 0) {
-                        Backend.settings.leftPanelWidth = width
-                        Backend.settings.save()
+                        Backend.settings.leftPanelWidth = width;
+                        Backend.settings.save();
                     }
                 }
 
                 onStartRequested: app.startRecording()
                 onStopRequested: app.stopRecording()
-                onCaptureModeSelected: function(newMode) {
-                    sourcesDock.visible = (newMode === "multi")
+                onCaptureModeSelected: function (newMode) {
+                    sourcesDock.visible = (newMode === "multi");
                 }
-                onReplaySaved: function(path) {
-                    app.lastRecordingPath = path
+                onReplaySaved: function (path) {
+                    app.lastRecordingPath = path;
                 }
                 onSettingsRequested: settingsDialog.show()
             }
@@ -203,8 +214,8 @@ ApplicationWindow {
 
                 onWidthChanged: {
                     if (width > 0 && visible) {
-                        Backend.settings.sourcesDockWidth = Math.min(width, 500)
-                        Backend.settings.save()
+                        Backend.settings.sourcesDockWidth = Math.min(width, 500);
+                        Backend.settings.save();
                     }
                 }
 
@@ -215,11 +226,11 @@ ApplicationWindow {
                     sourceModel: Backend.sourceModel
                     locked: false
 
-                    onSourceAdded: function(name, executableName, executablePath) {
-                        Backend.sourceModel.addSource(name, executableName, executablePath)
+                    onSourceAdded: function (name, executableName, executablePath) {
+                        Backend.sourceModel.addSource(name, executableName, executablePath);
                     }
-                    onSourceRemoved: function(sourceId) {
-                        Backend.sourceModel.removeSource(sourceId)
+                    onSourceRemoved: function (sourceId) {
+                        Backend.sourceModel.removeSource(sourceId);
                     }
                 }
             }
@@ -236,8 +247,8 @@ ApplicationWindow {
 
             onHeightChanged: {
                 if (height > 0) {
-                    Backend.settings.soundboardDockHeight = height
-                    Backend.settings.save()
+                    Backend.settings.soundboardDockHeight = height;
+                    Backend.settings.save();
                 }
             }
 
@@ -269,78 +280,84 @@ ApplicationWindow {
             let folderUrl = selectedFolder.toString();
             let path = folderUrl.replace(/^(file:\/{2,3})/, "");
             switch (folderPickerTarget) {
-            case 0: Backend.settings.recordingDirectoryOverride = path; break
-            case 1: Backend.settings.replayDirectoryOverride = path; break
-            case 2: Backend.settings.baseDirectory = path; break
+            case 0:
+                Backend.settings.recordingDirectoryOverride = path;
+                break;
+            case 1:
+                Backend.settings.replayDirectoryOverride = path;
+                break;
+            case 2:
+                Backend.settings.baseDirectory = path;
+                break;
             }
-            Backend.settings.save()
+            Backend.settings.save();
         }
     }
 
     function openFolderPicker(initialPath) {
-        let url = initialPath
+        let url = initialPath;
         if (url && !url.startsWith("file://")) {
-            url = "file:///" + url
+            url = "file:///" + url;
         }
-        folderDialog.currentFolder = url
-        folderDialog.open()
+        folderDialog.currentFolder = url;
+        folderDialog.open();
     }
 
     SettingsDialog {
         id: settingsDialog
         onChangeBaseRequested: {
-            folderPickerTarget = 2
-            openFolderPicker(Backend.settings.baseDirectory)
+            folderPickerTarget = 2;
+            openFolderPicker(Backend.settings.baseDirectory);
         }
         onChangeRecordingRequested: {
-            folderPickerTarget = 0
-            openFolderPicker(Backend.settings.recordingDirectory)
+            folderPickerTarget = 0;
+            openFolderPicker(Backend.settings.recordingDirectory);
         }
         onChangeReplayRequested: {
-            folderPickerTarget = 1
-            openFolderPicker(Backend.settings.replayDirectory)
+            folderPickerTarget = 1;
+            openFolderPicker(Backend.settings.replayDirectory);
         }
         onResetRecordingRequested: {
-            Backend.settings.recordingDirectoryOverride = ""
-            Backend.settings.save()
+            Backend.settings.recordingDirectoryOverride = "";
+            Backend.settings.save();
         }
         onResetReplayRequested: {
-            Backend.settings.replayDirectoryOverride = ""
-            Backend.settings.save()
+            Backend.settings.replayDirectoryOverride = "";
+            Backend.settings.save();
         }
     }
 
     Connections {
         target: Backend
         function onCaptureStateChanged(state) {
-            var isReplay = (state === app.stateReplay || state === app.stateRecordingAndReplay)
+            var isReplay = (state === app.stateReplay || state === app.stateRecordingAndReplay);
 
-            recordingPanel.setModeEnabled(state === app.stateIdle)
-            sourcesPanel.locked = (state !== app.stateIdle)
+            recordingPanel.setModeEnabled(state === app.stateIdle);
+            sourcesPanel.locked = (state !== app.stateIdle);
 
-            recordingPanel.setSaveReplayEnabled(isReplay)
-            recordingPanel.setReplayChecked(isReplay)
+            recordingPanel.setSaveReplayEnabled(isReplay);
+            recordingPanel.setReplayChecked(isReplay);
 
             switch (state) {
             case app.stateIdle:
-                recordingPanel.setStatusText("Ready")
-                break
+                recordingPanel.setStatusText("Ready");
+                break;
             case app.stateReplay:
-                recordingPanel.setStatusText("Background replay active...")
-                break
+                recordingPanel.setStatusText("Background replay active...");
+                break;
             case app.stateRecording:
-                recordingPanel.setStatusText("Manual recording active...")
-                break
+                recordingPanel.setStatusText("Manual recording active...");
+                break;
             case app.stateRecordingAndReplay:
-                recordingPanel.setStatusText("Recording + replay active...")
-                break
+                recordingPanel.setStatusText("Recording + replay active...");
+                break;
             }
         }
         function onPlaybackStateChanged() {
             if (!Backend.isPlaying) {
-                recordingPanel.setStatusText("Ready")
-                recordingPanel.setStartEnabled(true)
-                recordingPanel.setPlayEnabled(app.lastRecordingPath.length > 0)
+                recordingPanel.setStatusText("Ready");
+                recordingPanel.setStartEnabled(true);
+                recordingPanel.setPlayEnabled(app.lastRecordingPath.length > 0);
             }
         }
     }

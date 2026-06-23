@@ -11,5 +11,11 @@
         <file>corner-down-left.svg</file>
         <file>chevron-down.svg</file>
         <file>save.svg</file>
+        <file>sliders-horizontal.svg</file>
+        <file>folder.svg</file>
+        <file>cog.svg</file>
+        <file>triangle-alert.svg</file>
+        <file>circle.svg</file>
+        <file>plus.svg</file>
     </qresource>
 </RCC>

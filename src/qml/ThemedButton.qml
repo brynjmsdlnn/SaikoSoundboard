@@ -5,6 +5,7 @@ Rectangle {
     id: btn
     property string text: ""
     property string iconText: ""
+    property string iconSource: ""
     property color accentColor: Theme.accentPurple
     property bool filled: false
     property bool small: false
@@ -27,7 +28,13 @@ Rectangle {
 
     Row {
         anchors.centerIn: parent
-        spacing: iconText ? 6 : 0
+        spacing: (iconText || iconSource) ? 6 : 0
+        Image {
+            source: btn.iconSource
+            width: 14
+            height: 14
+            visible: iconSource !== ""
+        }
         Text {
             text: btn.iconText
             color: Theme.textPrimary

@@ -151,7 +151,6 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/Theme.qml
         src/qml/ThemedButton.qml
         src/qml/RecordingPanel.qml
-        src/qml/SectionCard.qml
         src/qml/SettingsDialog.qml
         src/qml/HotkeyCard.qml
         src/qml/CardMenu.qml
@@ -161,16 +160,18 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/SourcesPanel.qml
         src/qml/RoutingDialog.qml
         src/qml/WaveformView.qml
-        src/qml/SoundboardCard.qml
-        src/qml/SoundboardPanel.qml
         src/qml/CustomComboBox.qml
         src/qml/CustomCheckBox.qml
         src/qml/ProcessSelectionPopup.qml
-        src/qml/ClipRangeEditor.qml
+        src/qml/SaikoTooltip.qml
         src/qml/utils.js
         src/qml/SoundboardGridView.qml
         src/qml/SoundboardGridCard.qml
         src/qml/ItemEditor.qml
+        src/qml/RecordingHeader.qml
+        src/qml/CaptureModeBar.qml
+        src/qml/ReplayBufferSection.qml
+        src/qml/TransportControls.qml
 )
 
 target_link_libraries(SaikoSoundboard PRIVATE SaikoSoundboardCore)

@@ -42,9 +42,10 @@ Rectangle {
         visible: !editor.hasSlot
         spacing: 16
 
-        Text {
-            text: "🎛️"
-            font.pixelSize: 48
+        Image {
+            source: "image://icons/sliders-horizontal?color=%23b0b0b0"
+            width: 48
+            height: 48
             Layout.alignment: Qt.AlignHCenter
         }
         Text {

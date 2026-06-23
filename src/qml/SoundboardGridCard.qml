@@ -103,11 +103,11 @@ Rectangle {
                 border.width: 1
                 Behavior on color { ColorAnimation { duration: 100 } }
 
-                Text {
+                Image {
                     anchors.centerIn: parent
-                    text: "▶"
-                    color: playMouse.containsMouse ? Theme.appBackground : Theme.textDim
-                    font.pixelSize: 8
+                    source: "image://icons/play?color=%23" + (playMouse.containsMouse ? "1e1e1e" : "b0b0b0")
+                    width: 10
+                    height: 10
                 }
 
                 MouseArea {

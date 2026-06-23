@@ -89,7 +89,7 @@ Default section order:
 ## Child DOX Index
 
 ### `src/qml/`
-QML UI layer — 18 QML files + 1 JS utility. All part of the `Saiko 1.0` module. Uses `Theme` singleton, `ThemedButton`, `SectionCard`, `utils.js`. See `src/qml/AGENTS.md` for conventions.
+QML UI layer — 19 QML files + 1 JS utility. All part of the `Saiko 1.0` module. Uses `Theme` singleton, `ThemedButton`, `utils.js`. See `src/qml/AGENTS.md` for conventions.
 
 ### `src/core/`
 Core layer — pure business logic in `domain/` (no Qt, no platform deps) and platform adapters in `adapters/` (Windows API). See `src/core/AGENTS.md` for purity rules.

@@ -28,11 +28,10 @@ T.CheckBox {
         Behavior on color { ColorAnimation { duration: 150 } }
         Behavior on border.color { ColorAnimation { duration: 150 } }
 
-        Text {
-            text: "✓"
-            color: "black"
-            font.pixelSize: cb.font.pixelSize >= 12 ? 11 : 9
-            font.weight: Font.Bold
+        Image {
+            source: "image://icons/check?color=%23000000"
+            width: 10
+            height: 10
             anchors.centerIn: parent
             visible: cb.checked
         }

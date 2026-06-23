@@ -46,21 +46,41 @@ Rectangle {
                     }
 
                     // Add button
-                    ThemedButton {
-                        id: addBtn
-                        text: "+"
-                        small: true
-                        implicitWidth: 32
-                        onClicked: Backend.soundboard.addPlayer()
+                    Item {
+                        width: 32
+                        height: 28
+                        ThemedButton {
+                            id: addBtn
+                            anchors.fill: parent
+                            iconSource: "image://icons/plus?color=%23b0b0b0"
+                            small: true
+                            onClicked: Backend.soundboard.addPlayer()
+                        }
+                        SaikoTooltip {
+                            text: "Add Slot"
+                            hovered: addBtn.hovered
+                            direction: "top"
+                            z: 999
+                        }
                     }
 
                     // Settings/Routing button
-                    ThemedButton {
-                        id: routingBtn
-                        text: "\u2699"
-                        small: true
-                        implicitWidth: 32
-                        onClicked: Utils.openDialog("RoutingDialog.qml")
+                    Item {
+                        width: 32
+                        height: 28
+                        ThemedButton {
+                            id: routingBtn
+                            anchors.fill: parent
+                            iconSource: "image://icons/cog?color=%23b0b0b0"
+                            small: true
+                            onClicked: Utils.openDialog("RoutingDialog.qml")
+                        }
+                        SaikoTooltip {
+                            text: "Routing Settings"
+                            hovered: routingBtn.hovered
+                            direction: "top"
+                            z: 999
+                        }
                     }
                 }
             }

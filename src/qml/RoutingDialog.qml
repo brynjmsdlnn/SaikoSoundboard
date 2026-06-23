@@ -235,10 +235,10 @@ Window {
                         anchors.margins: 12
                         spacing: 10
 
-                        Text {
-                            text: "⚠️"
-                            font.pixelSize: 14
-                            color: Theme.accentRed || "#FF5252"
+                        Image {
+                            source: "image://icons/triangle-alert?color=%23e35d5d"
+                            width: 14
+                            height: 14
                             Layout.alignment: Qt.AlignTop
                         }
                         Text {
