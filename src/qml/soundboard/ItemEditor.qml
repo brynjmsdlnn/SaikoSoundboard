@@ -21,6 +21,7 @@ Rectangle {
     property string slotName: ""
     property string filePath: ""
     property bool isTemporary: false
+    property bool locked: false
     property int startTimeMs: 0
     property int endTimeMs: 0
     property real durationSec: 0.0
@@ -34,6 +35,7 @@ Rectangle {
     readonly property bool hasSlot: slotIndex >= 0 && slotId !== ""
     // Safely evaluate to a boolean to prevent "Unable to assign [undefined] to bool"
     readonly property bool isTemp: !!(editor && editor.isTemporary)
+    readonly property bool isLocked: !!(editor && editor.locked)
 
     // ── Empty state ───────────────────────────────────────────────────────────
     ColumnLayout {
@@ -65,6 +67,59 @@ Rectangle {
         }
     }
 
+    // ── Locked overlay ────────────────────────────────────────────────────────
+    Rectangle {
+        z: 10
+        anchors.fill: parent
+        visible: editor.hasSlot && editor.isLocked
+        color: "#00000000"
+
+        Rectangle {
+            anchors {
+                top: parent.top
+                right: parent.right
+                topMargin: 8
+                rightMargin: 8
+            }
+            width: 28
+            height: 28
+            radius: 6
+            color: lockBtnArea.containsMouse ? "#3a2a0a" : "#1a1008"
+            border.color: lockBtnArea.containsMouse ? "#d99a3d" : "#b8860b"
+            border.width: 1
+
+            Image {
+                anchors.centerIn: parent
+                source: "image://icons/lock?color=%23d99a3d"
+                sourceSize: Qt.size(14, 14)
+            }
+
+            ToolTip {
+                visible: lockBtnArea.containsMouse
+                text: "Unlock this slot to enable editing"
+                delay: 400
+            }
+
+            MouseArea {
+                id: lockBtnArea
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                hoverEnabled: true
+                onClicked: {
+                    if (editor.slotId)
+                        Backend.soundboard.setSlotLocked(editor.slotId, false)
+                }
+            }
+        }
+
+        // Click-through blocker for locked state
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: false
+            // Only blocks clicks on editable areas, play buttons are above
+        }
+    }
+
     // ── Main content ──────────────────────────────────────────────────────────
     ScrollView {
         id: scroll
@@ -83,11 +138,54 @@ Rectangle {
             spacing: 20
 
             // Title
-            Text {
-                text: "Slot Details"
-                color: Theme.textPrimary
-                font.pixelSize: 18
-                font.weight: Font.Bold
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                Text {
+                    text: "Slot Details"
+                    color: Theme.textPrimary
+                    font.pixelSize: 18
+                    font.weight: Font.Bold
+                    Layout.fillWidth: true
+                }
+
+                // Lock toggle button in header
+                Rectangle {
+                    id: lockToggle
+                    implicitWidth: 32
+                    implicitHeight: 28
+                    radius: 6
+                    color: lockToggleArea.containsMouse ? (editor.isLocked ? "#3a2a0a" : "#1a1a24") : "transparent"
+                    border.color: lockToggleArea.containsMouse ? (editor.isLocked ? "#d99a3d" : Theme.accentPurple) : "transparent"
+                    border.width: 1
+                    visible: editor.hasSlot
+
+                    Image {
+                        anchors.centerIn: parent
+                        source: editor.isLocked
+                            ? "image://icons/lock?color=%23d99a3d"
+                            : "image://icons/unlock?color=%23888888"
+                        sourceSize: Qt.size(14, 14)
+                    }
+
+                    ToolTip {
+                        visible: lockToggleArea.containsMouse
+                        text: editor.isLocked ? "Unlock slot" : "Lock slot"
+                        delay: 400
+                    }
+
+                    MouseArea {
+                        id: lockToggleArea
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        hoverEnabled: true
+                        onClicked: {
+                            if (editor.slotId)
+                                Backend.soundboard.setSlotLocked(editor.slotId, !editor.isLocked)
+                        }
+                    }
+                }
             }
 
             // ── Slot name ──────────────────────────────────────────────────
@@ -143,6 +241,8 @@ Rectangle {
                             }
                         }
                     }
+
+                    enabled: !editor.isLocked
 
                     // 1. "Press Enter" Hint Icon (Shows only when there are unsaved edits)
                     Image {
@@ -221,9 +321,11 @@ Rectangle {
                     MouseArea {
                         id: assignBtnArea
                         anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        hoverEnabled: true
-                        onClicked: assignMenu.open()
+                        cursorShape: editor.isLocked ? Qt.ArrowCursor : Qt.PointingHandCursor
+                        hoverEnabled: !editor.isLocked
+                        onClicked: {
+                            if (!editor.isLocked) assignMenu.open()
+                        }
                     }
 
                     // 2. VISUAL CONTENT
@@ -270,15 +372,36 @@ Rectangle {
                             font.italic: !(editor && editor.filePath)
                         }
 
+                        // Locked Badge
+                        Rectangle {
+                            visible: editor.isLocked
+                            implicitWidth: lockText.implicitWidth + 12
+                            implicitHeight: 20
+                            radius: 4
+                            color: "#2a1a08"
+                            border.color: "#b8860b"
+                            border.width: 1
+
+                            Text {
+                                id: lockText
+                                anchors.centerIn: parent
+                                text: "LOCKED"
+                                color: "#d99a3d"
+                                font.pixelSize: 10
+                                font.bold: true
+                            }
+                        }
+
                         // Dropdown Indicator (Chevron fixed to explicitly use gray so it's visible)
                         Image {
                             source: "image://icons/chevron-down?color=%23888888"
                             sourceSize: Qt.size(16, 16)
+                            visible: !editor.isLocked
                         }
 
                         // Make Permanent Button
                         Rectangle {
-                            visible: isTemp
+                            visible: isTemp && !editor.isLocked
                             implicitWidth: 26
                             implicitHeight: 26
                             radius: 4
@@ -447,13 +570,14 @@ Rectangle {
                         startMs: editor.startTimeMs
                         endMs: editor.endTimeMs
                         waveformData: editor.waveformData
+                        readOnly: editor.isLocked
 
                         onTrimRangeChanged: (s, e) => {
-                            if (editor.slotIndex >= 0)
+                            if (!editor.isLocked && editor.slotIndex >= 0)
                                 editor.slotModel.setClipRange(editor.slotIndex, s, e);
                         }
                         onTrimRangeCommit: (s, e) => {
-                            if (editor.slotIndex >= 0)
+                            if (!editor.isLocked && editor.slotIndex >= 0)
                                 editor.slotModel.setClipRange(editor.slotIndex, s, e);
                         }
                     }
@@ -479,6 +603,7 @@ Rectangle {
                         id: volSlider
                         orientation: Qt.Vertical
                         Layout.fillHeight: true
+                        enabled: !editor.isLocked
                         Layout.alignment: Qt.AlignHCenter
                         from: 0
                         to: 100
@@ -547,6 +672,7 @@ Rectangle {
                         SaikoComboBox {
                             Layout.fillWidth: true
                             implicitHeight: 34
+                            enabled: !editor.isLocked
                             model: [
                                 {
                                     text: "Broadcast & monitor",
@@ -704,6 +830,7 @@ Rectangle {
                                     small: true
                                     implicitWidth: 64
                                     implicitHeight: 28
+                                    enabled: !editor.isLocked
                                     onClicked: openHotkeyDialog()
                                 }
                             }
@@ -724,6 +851,7 @@ Rectangle {
                                     color: "4caf50",
                                     accentProp: "accentGreen",
                                     hoverBg: "",
+                                    alwaysEnabled: true,
                                     action: () => {
                                         if (editor.slotId)
                                             Backend.soundboard.playPlayer(editor.slotId);
@@ -735,6 +863,7 @@ Rectangle {
                                     color: "03DAC6",
                                     accentProp: "accentTeal",
                                     hoverBg: "",
+                                    alwaysEnabled: true,
                                     action: () => {
                                         if (editor.slotId)
                                             Backend.soundboard.playPlayerPreview(editor.slotId);
@@ -746,6 +875,7 @@ Rectangle {
                                     color: "e35d5d",
                                     accentProp: "accentRed",
                                     hoverBg: "",
+                                    alwaysEnabled: true,
                                     action: () => {
                                         if (editor.slotId)
                                             Backend.soundboard.stopPlayer(editor.slotId);
@@ -757,6 +887,7 @@ Rectangle {
                                     color: "888888",
                                     accentProp: "accentRed",
                                     hoverBg: "#2a1a1a",
+                                    alwaysEnabled: false,
                                     action: () => removeConfirmDialog.open()
                                 }
                             ]
@@ -764,18 +895,20 @@ Rectangle {
                             delegate: Button {
                                 implicitWidth: 80
                                 implicitHeight: 76
+                                enabled: modelData.alwaysEnabled || !editor.isLocked
 
                                 // Expose hover state cleanly
                                 property bool isDelete: modelData.label === "Delete"
 
                                 background: Rectangle {
-                                    color: parent.hovered ? (isDelete ? modelData.hoverBg : Theme.inputBackground) : Theme.recessedBackground
+                                    color: parent.enabled && parent.hovered ? (isDelete ? modelData.hoverBg : Theme.inputBackground) : Theme.recessedBackground
                                     radius: 8
-                                    border.color: parent.hovered ? Theme[modelData.accentProp] : Theme.borderDefault
+                                    border.color: parent.enabled && parent.hovered ? Theme[modelData.accentProp] : Theme.borderDefault
                                     border.width: 1
                                 }
 
                                 contentItem: ColumnLayout {
+                                    opacity: parent.enabled ? 1.0 : 0.4
                                     spacing: 6
 
                                     Image {
@@ -888,6 +1021,7 @@ Rectangle {
             editor.slotName = "";
             editor.filePath = "";
             editor.isTemporary = false;
+            editor.locked = false;
             editor.startTimeMs = 0;
             editor.endTimeMs = 0;
             editor.durationSec = 0;
@@ -902,6 +1036,7 @@ Rectangle {
         editor.slotName = d.slotName ?? "";
         editor.filePath = d.filePath ?? "";
         editor.isTemporary = d.isTemporary ?? false;
+        editor.locked = d.locked ?? false;
         editor.startTimeMs = d.startTimeMs ?? 0;
         editor.endTimeMs = d.endTimeMs ?? 0;
         editor.durationSec = d.durationSec ?? 0;

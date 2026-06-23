@@ -33,8 +33,9 @@ public:
     Q_INVOKABLE void assignAudioFile(const QString &id, const QString &filePath);
     Q_INVOKABLE void promoteTempFile(const QString &id, const QString &newPath);
     Q_INVOKABLE void setVolume(const QString &id, float volume);
-    Q_INVOKABLE void setEnabled(const QString &id, bool enabled);
     Q_INVOKABLE void setHotkeys(const QString &id, const QString &playHotkey, const QString &assignHotkey);
+    Q_INVOKABLE void setSlotLocked(const QString &id, bool locked);
+    Q_INVOKABLE bool isSlotLocked(const QString &id) const;
 
     // Playback Control
     Q_INVOKABLE void playPlayer(const QString &id);

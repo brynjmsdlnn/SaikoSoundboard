@@ -28,7 +28,7 @@ QVariant SoundPlayerSlotModel::data(const QModelIndex &index, int role) const
     case PlayHotkeyRole:    return slot.playHotkey;
     case AssignHotkeyRole:  return slot.assignHotkey;
     case VolumeRole:        return slot.volume;
-    case EnabledRole:       return slot.enabled;
+
     case OutputRoutingRole: return static_cast<int>(slot.outputRouting);
     case StartTimeMsRole:   return slot.startTimeMs;
     case EndTimeMsRole:     return slot.endTimeMs;
@@ -38,6 +38,7 @@ QVariant SoundPlayerSlotModel::data(const QModelIndex &index, int role) const
         WaveformData wf = m_manager->getWaveformData(slot.id);
         return wf.isValid ? (static_cast<double>(wf.durationMs) / 1000.0) : 0.0;
     }
+    case LockedRole:    return slot.locked;
     default: return {};
     }
 }
@@ -57,6 +58,7 @@ QHash<int, QByteArray> SoundPlayerSlotModel::roleNames() const
         {EndTimeMsRole,     "endTimeMs"},
         {IsTemporaryRole,   "isTemporary"},
         {DurationSecRole,   "durationSec"},
+        {LockedRole,        "locked"},
     };
 }
 
@@ -68,16 +70,6 @@ void SoundPlayerSlotModel::setVolume(int row, float volume)
     m_manager->setVolume(m_slots[row].id, volume);
     m_updating = false;
     emit dataChanged(index(row, 0), index(row, 0), {VolumeRole});
-}
-
-void SoundPlayerSlotModel::setEnabled(int row, bool enabled)
-{
-    if (row < 0 || row >= m_slots.size()) return;
-    m_updating = true;
-    m_slots[row].enabled = enabled;
-    m_manager->setEnabled(m_slots[row].id, enabled);
-    m_updating = false;
-    emit dataChanged(index(row, 0), index(row, 0), {EnabledRole});
 }
 
 void SoundPlayerSlotModel::setRouting(int row, int routing)

@@ -52,7 +52,7 @@ void ActionManager::handleAssignReplayToPlayer(const QString &playerId)
     if (!m_rec || !m_sb || !m_settings) return;
 
     SoundPlayerSlot* slot = m_sb->getSlot(playerId);
-    if (!slot) return;
+    if (!slot || slot->locked) return;
 
     QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss_zzz");
     QString path = QDir::tempPath() + QString("/SaikoReplay_%1.wav").arg(timestamp);
@@ -108,7 +108,7 @@ void ActionManager::handleMakePermanent(const QString &playerId, const QString &
     if (!m_sb || !m_settings) return;
 
     SoundPlayerSlot* slot = m_sb->getSlot(playerId);
-    if (!slot || slot->filePath.isEmpty()) return;
+    if (!slot || slot->locked || slot->filePath.isEmpty()) return;
 
     // Check if it's currently in the temp path
     if (!slot->filePath.startsWith(QDir::tempPath())) return;

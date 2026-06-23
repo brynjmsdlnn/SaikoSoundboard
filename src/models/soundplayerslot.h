@@ -43,10 +43,10 @@ struct SoundPlayerSlot {
     Q_PROPERTY(QString playHotkey MEMBER playHotkey CONSTANT)
     Q_PROPERTY(QString assignHotkey MEMBER assignHotkey CONSTANT)
     Q_PROPERTY(float volume MEMBER volume CONSTANT)
-    Q_PROPERTY(bool enabled MEMBER enabled CONSTANT)
     Q_PROPERTY(OutputRouting outputRouting MEMBER outputRouting CONSTANT)
     Q_PROPERTY(qint64 startTimeMs MEMBER startTimeMs CONSTANT)
     Q_PROPERTY(qint64 endTimeMs MEMBER endTimeMs CONSTANT)
+    Q_PROPERTY(bool locked MEMBER locked CONSTANT)
 
 public:
     QString id;
@@ -55,7 +55,7 @@ public:
     QString playHotkey;
     QString assignHotkey;
     float volume = 1.0f;
-    bool enabled = true;
+    bool locked = false;
     OutputRouting outputRouting = OutputRouting::Both;
     qint64 startTimeMs = 0;
     qint64 endTimeMs = -1;
@@ -67,7 +67,7 @@ public:
     bool operator==(const SoundPlayerSlot &other) const {
         return id == other.id && name == other.name && filePath == other.filePath
             && playHotkey == other.playHotkey && assignHotkey == other.assignHotkey
-            && qFuzzyCompare(volume, other.volume) && enabled == other.enabled
+            && qFuzzyCompare(volume, other.volume) && locked == other.locked
             && outputRouting == other.outputRouting && startTimeMs == other.startTimeMs
             && endTimeMs == other.endTimeMs;
     }
@@ -80,10 +80,10 @@ public:
         obj["playHotkey"] = playHotkey;
         obj["assignHotkey"] = assignHotkey;
         obj["volume"] = static_cast<double>(volume);
-        obj["enabled"] = enabled;
         obj["outputRouting"] = outputRoutingToString(outputRouting);
         obj["startTimeMs"] = startTimeMs;
         obj["endTimeMs"] = endTimeMs;
+        obj["locked"] = locked;
         return obj;
     }
 
@@ -95,13 +95,13 @@ public:
         slot.playHotkey = obj["playHotkey"].toString();
         slot.assignHotkey = obj["assignHotkey"].toString();
         slot.volume = static_cast<float>(obj["volume"].toDouble(1.0));
-        slot.enabled = obj["enabled"].toBool(true);
         slot.outputRouting = stringToOutputRouting(obj["outputRouting"].toString("Both"));
         slot.startTimeMs = obj["startTimeMs"].toVariant().toLongLong();
         slot.endTimeMs = obj["endTimeMs"].toVariant().toLongLong();
         if (obj.contains("endTimeMs") == false) {
             slot.endTimeMs = -1;
         }
+        slot.locked = obj["locked"].toBool(false);
         return slot;
     }
 };

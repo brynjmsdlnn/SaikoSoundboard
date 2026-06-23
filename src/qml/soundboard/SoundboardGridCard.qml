@@ -23,6 +23,7 @@ Rectangle {
     property int outputRouting
     property string slotId
     property string filePath
+    property bool locked: false
 
     property var waveformData: null
 
@@ -57,6 +58,16 @@ Rectangle {
                 font.pixelSize: Theme.fontSizeSmall
             }
             Item { Layout.fillWidth: true }
+
+            // Lock icon overlay
+            Image {
+                visible: card.locked
+                source: "image://icons/lock?color=%23d99a3d"
+                sourceSize: Qt.size(12, 12)
+                Layout.alignment: Qt.AlignVCenter
+                Layout.rightMargin: 4
+            }
+
             Text {
                 text: durationSec ? durationSec.toFixed(1) + "s" : "0.0s"
                 color: Theme.textDim
@@ -177,11 +188,20 @@ Rectangle {
     SaikoMenu {
         id: contextMenu
         SaikoMenuItem {
+            text: card.locked ? "Unlock Slot" : "Lock Slot"
+            onClicked: {
+                if (slotId)
+                    Backend.soundboard.setSlotLocked(slotId, !card.locked)
+            }
+        }
+        SaikoMenuItem {
             text: "Assign from file..."
+            enabled: !card.locked
             onClicked: assignFileDialog.open()
         }
         SaikoMenuItem {
             text: "Assign from replay buffer"
+            enabled: !card.locked
             onClicked: {
                 if (slotId) {
                     Backend.actions.dispatchAssignReplay(slotId)
@@ -190,6 +210,7 @@ Rectangle {
         }
         SaikoMenuItem {
             text: "Delete slot"
+            enabled: !card.locked
             onClicked: removeConfirmDialog.open()
         }
     }

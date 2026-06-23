@@ -49,6 +49,9 @@ QString SoundboardManager::addPlayer(const QString &name)
 
 void SoundboardManager::removePlayer(const QString &id)
 {
+    if (SoundPlayerSlot *slot = getSlot(id)) {
+        if (slot->locked) return;
+    }
     for (int i = 0; i < m_slots.size(); ++i) {
         if (m_slots[i].id == id) {
             m_slots.removeAt(i);
@@ -64,6 +67,7 @@ void SoundboardManager::removePlayer(const QString &id)
 void SoundboardManager::renamePlayer(const QString &id, const QString &newName)
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
+        if (slot->locked) return;
         slot->name = newName;
         emit slotsChanged();
     }
@@ -77,6 +81,7 @@ void SoundboardManager::assignAudioFile(const QString &id, const QString &filePa
     }
 
     if (SoundPlayerSlot *slot = getSlot(id)) {
+        if (slot->locked) return;
         slot->filePath = localPath;
         slot->startTimeMs = 0;
         slot->endTimeMs = -1;
@@ -98,6 +103,7 @@ void SoundboardManager::assignAudioFile(const QString &id, const QString &filePa
 void SoundboardManager::promoteTempFile(const QString &id, const QString &newPath)
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
+        if (slot->locked) return;
         slot->filePath = newPath;
 
         if (SoundPlayer *player = getPlayer(id)) {
@@ -118,6 +124,7 @@ void SoundboardManager::promoteTempFile(const QString &id, const QString &newPat
 void SoundboardManager::setVolume(const QString &id, float volume)
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
+        if (slot->locked) return;
         slot->volume = volume;
         if (SoundPlayer *player = getPlayer(id)) {
             player->setVolume(volume);
@@ -125,17 +132,27 @@ void SoundboardManager::setVolume(const QString &id, float volume)
     }
 }
 
-void SoundboardManager::setEnabled(const QString &id, bool enabled)
+void SoundboardManager::setSlotLocked(const QString &id, bool locked)
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
-        slot->enabled = enabled;
+        slot->locked = locked;
         emit slotsChanged();
+        saveToSettings();
     }
+}
+
+bool SoundboardManager::isSlotLocked(const QString &id) const
+{
+    for (const auto &slot : m_slots) {
+        if (slot.id == id) return slot.locked;
+    }
+    return false;
 }
 
 void SoundboardManager::setHotkeys(const QString &id, const QString &playHotkey, const QString &assignHotkey)
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
+        if (slot->locked) return;
         slot->playHotkey = playHotkey;
         slot->assignHotkey = assignHotkey;
         emit slotsChanged();
@@ -145,7 +162,6 @@ void SoundboardManager::setHotkeys(const QString &id, const QString &playHotkey,
 void SoundboardManager::playPlayer(const QString &id)
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
-        if (!slot->enabled) return;
         if (SoundPlayer *player = getPlayer(id)) {
             player->setRouting(slot->outputRouting);
             player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
@@ -159,7 +175,6 @@ void SoundboardManager::playPlayer(const QString &id)
 void SoundboardManager::playPlayerPreview(const QString &id)
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
-        if (!slot->enabled) return;
         if (SoundPlayer *player = getPlayer(id)) {
             player->setRouting(slot->outputRouting);
             player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
@@ -285,6 +300,7 @@ void SoundboardManager::setLocalMonitorDevice(const QString &description)
 void SoundboardManager::setPlayerRouting(const QString &id, OutputRouting routing)
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
+        if (slot->locked) return;
         slot->outputRouting = routing;
         if (SoundPlayer *player = getPlayer(id)) {
             player->setRouting(routing);
@@ -296,6 +312,7 @@ void SoundboardManager::setPlayerRouting(const QString &id, OutputRouting routin
 void SoundboardManager::setPlayerClipRange(const QString &id, qint64 startMs, qint64 endMs)
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
+        if (slot->locked) return;
         slot->startTimeMs = startMs;
         slot->endTimeMs = endMs;
         if (SoundPlayer *player = getPlayer(id)) {

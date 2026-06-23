@@ -120,6 +120,7 @@ Rectangle {
                     outputRouting: model.outputRouting
                     slotId: model.slotId
                     filePath: model.filePath
+                    locked: model.locked
                 }
             }
         }
