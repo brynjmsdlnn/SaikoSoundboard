@@ -10,13 +10,21 @@ Rectangle {
     border.color: isSelected ? Theme.accentPurple : (cardHover.hovered ? Theme.borderHover : Theme.borderDefault)
     border.width: isSelected ? 2 : 1
 
-    Behavior on color { ColorAnimation { duration: Theme.animDuration } }
-    Behavior on border.color { ColorAnimation { duration: Theme.animDuration } }
+    Behavior on color {
+        ColorAnimation {
+            duration: Theme.animDuration
+        }
+    }
+    Behavior on border.color {
+        ColorAnimation {
+            duration: Theme.animDuration
+        }
+    }
 
     property var slotModel
     property int slotIndex: -1
     property bool isSelected: false
-    signal clicked()
+    signal clicked
 
     property string slotName
     property real durationSec
@@ -36,70 +44,91 @@ Rectangle {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton
-        onClicked: (mouse) => {
+        onClicked: mouse => {
             if (mouse.button === Qt.RightButton) {
-                contextMenu.popup()
+                contextMenu.popup();
             } else {
-                card.clicked()
+                card.clicked();
+            }
+        }
+    }
+
+    Item {
+        z: 50
+        anchors.fill: parent
+        clip: true
+        visible: card.locked
+
+        Rectangle {
+            x: parent.width - 20 - width / 2
+            y: 20 - height / 2
+            width: 70
+            height: 14
+            color: "#d99a3d"
+            rotation: 45
+            transformOrigin: Item.Center
+
+            Text {
+                anchors.centerIn: parent
+                text: "LOCKED"
+                color: "#1a1008"
+                font.pixelSize: 8
+                font.bold: true
+                font.letterSpacing: 1
             }
         }
     }
 
     ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: 8
-        spacing: 4
+            anchors.fill: parent
+            anchors.margins: 8
+            spacing: 4
 
-        RowLayout {
-            Layout.fillWidth: true
-            Text {
-                text: "#" + ("00" + (slotIndex + 1)).slice(-2)
-                color: Theme.textDim
-                font.pixelSize: Theme.fontSizeSmall
-            }
-            Item { Layout.fillWidth: true }
+            RowLayout {
+                Layout.fillWidth: true
+                Text {
+                    text: "#" + ("00" + (slotIndex + 1)).slice(-2)
+                    color: Theme.textDim
+                    font.pixelSize: Theme.fontSizeSmall
+                }
+                Item { Layout.fillWidth: true }
 
-            // Lock icon overlay
-            Image {
-                visible: card.locked
-                source: "image://icons/lock?color=%23d99a3d"
-                sourceSize: Qt.size(12, 12)
-                Layout.alignment: Qt.AlignVCenter
-                Layout.rightMargin: 4
+                Text {
+                    text: durationSec ? durationSec.toFixed(1) + "s" : "0.0s"
+                    color: card.locked ? "#555555" : Theme.textDim
+                    font.pixelSize: Theme.fontSizeSmall
+                }
             }
 
             Text {
-                text: durationSec ? durationSec.toFixed(1) + "s" : "0.0s"
-                color: Theme.textDim
-                font.pixelSize: Theme.fontSizeSmall
+                text: slotName || "Empty Slot"
+                // Grays out the text heavily if locked
+                color: card.locked ? "#555555" : (slotName ? Theme.textPrimary : Theme.textDim)
+                font.pixelSize: Theme.fontSizeNormal
+                font.weight: Font.Medium
+                elide: Text.ElideRight
+                Layout.fillWidth: true
             }
-        }
 
-        Text {
-            text: slotName || "Empty Slot"
-            color: slotName ? Theme.textPrimary : Theme.textDim
-            font.pixelSize: Theme.fontSizeNormal
-            font.weight: Font.Medium
-            elide: Text.ElideRight
-            Layout.fillWidth: true
-        }
+            // mini waveform
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 40
+                color: "transparent"
+                clip: true
 
-        // mini waveform
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 40
-            color: "transparent"
-            clip: true
+                WaveformView {
+                    id: miniWaveform
+                    anchors.fill: parent
+                    readOnly: true
+                    startMs: 0
+                    endMs: durationSec * 1000
+                    waveformData: card.waveformData
 
-            WaveformView {
-                id: miniWaveform
-                anchors.fill: parent
-                readOnly: true
-                startMs: 0
-                endMs: durationSec * 1000
-                waveformData: card.waveformData
+                    // Almost completely ghost the waveform
+                    opacity: card.locked ? 0.15 : 1.0
+                }
             }
-        }
 
         RowLayout {
             spacing: 8
@@ -112,7 +141,11 @@ Rectangle {
                 color: playMouse.containsMouse ? Theme.accentPurple : Theme.inputBackground
                 border.color: playMouse.containsMouse ? Theme.accentPurple : Theme.borderDefault
                 border.width: 1
-                Behavior on color { ColorAnimation { duration: 100 } }
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 100
+                    }
+                }
 
                 Image {
                     anchors.centerIn: parent
@@ -127,21 +160,26 @@ Rectangle {
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
-                        if (slotId) Backend.soundboard.playPlayer(slotId)
+                        if (slotId)
+                            Backend.soundboard.playPlayer(slotId);
                     }
                 }
             }
 
             Text {
                 text: {
-                    if (outputRouting === 0) return "Broadcast & Monitor"
-                    if (outputRouting === 1) return "Broadcast only"
-                    return "Monitor only"
+                    if (outputRouting === 0)
+                        return "Broadcast & Monitor";
+                    if (outputRouting === 1)
+                        return "Broadcast only";
+                    return "Monitor only";
                 }
                 color: {
-                    if (outputRouting === 0) return Theme.accentPurple
-                    if (outputRouting === 1) return Theme.accentTeal
-                    return Theme.accentGreen
+                    if (outputRouting === 0)
+                        return Theme.accentPurple;
+                    if (outputRouting === 1)
+                        return Theme.accentTeal;
+                    return Theme.accentGreen;
                 }
                 font.pixelSize: 9
                 elide: Text.ElideRight
@@ -154,34 +192,34 @@ Rectangle {
         target: Backend.soundboard
         function onWaveformGenerated(playerId, data) {
             if (playerId === slotId && data.isValid) {
-                card.waveformData = data
+                card.waveformData = data;
             }
         }
         function onPlayerPositionChanged(playerId, position) {
             if (playerId === slotId) {
-                miniWaveform.playPositionMs = position
+                miniWaveform.playPositionMs = position;
             }
         }
     }
 
     onFilePathChanged: {
-        loadWaveform()
+        loadWaveform();
     }
 
     Component.onCompleted: {
-        loadWaveform()
+        loadWaveform();
     }
 
     function loadWaveform() {
         if (filePath && filePath !== "") {
-            var wfData = Backend.soundboard.getWaveformData(slotId)
+            var wfData = Backend.soundboard.getWaveformData(slotId);
             if (wfData && wfData.isValid) {
-                card.waveformData = wfData
+                card.waveformData = wfData;
             } else {
-                Backend.soundboard.loadWaveformData(slotId, filePath)
+                Backend.soundboard.loadWaveformData(slotId, filePath);
             }
         } else {
-            card.waveformData = null
+            card.waveformData = null;
         }
     }
 
@@ -191,7 +229,7 @@ Rectangle {
             text: card.locked ? "Unlock Slot" : "Lock Slot"
             onClicked: {
                 if (slotId)
-                    Backend.soundboard.setSlotLocked(slotId, !card.locked)
+                    Backend.soundboard.setSlotLocked(slotId, !card.locked);
             }
         }
         SaikoMenuItem {
@@ -204,7 +242,7 @@ Rectangle {
             enabled: !card.locked
             onClicked: {
                 if (slotId) {
-                    Backend.actions.dispatchAssignReplay(slotId)
+                    Backend.actions.dispatchAssignReplay(slotId);
                 }
             }
         }
@@ -221,7 +259,7 @@ Rectangle {
         nameFilters: ["Audio files (*.wav *.mp3 *.ogg)"]
         onAccepted: {
             if (selectedFile && slotId) {
-                Backend.soundboard.assignAudioFile(slotId, selectedFile)
+                Backend.soundboard.assignAudioFile(slotId, selectedFile);
             }
         }
     }
@@ -230,12 +268,11 @@ Rectangle {
         id: removeConfirmDialog
         title: "Confirm delete"
         text: "Are you sure you want to delete this player?"
-        informativeText: (filePath && filePath !== "") ?
-            "It has an assigned audio file." : ""
+        informativeText: (filePath && filePath !== "") ? "It has an assigned audio file." : ""
         buttons: MessageDialog.Yes | MessageDialog.No
         onAccepted: {
             if (slotId) {
-                Backend.soundboard.removePlayer(slotId)
+                Backend.soundboard.removePlayer(slotId);
             }
         }
     }

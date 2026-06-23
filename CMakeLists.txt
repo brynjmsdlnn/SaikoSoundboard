@@ -182,8 +182,17 @@ qt_add_qml_module(SaikoSoundboard
         # --- Soundboard ---
         src/qml/soundboard/SoundboardGridView.qml
         src/qml/soundboard/SoundboardGridCard.qml
-        src/qml/soundboard/ItemEditor.qml
+        src/qml/soundboard/SlotEditor.qml
         src/qml/soundboard/HotkeyCard.qml
+        src/qml/soundboard/editor/SectionLabel.qml
+        src/qml/soundboard/editor/EditorHeader.qml
+        src/qml/soundboard/editor/SlotNameEditor.qml
+        src/qml/soundboard/editor/AudioSourceSelector.qml
+        src/qml/soundboard/editor/TrimEditor.qml
+        src/qml/soundboard/editor/VolumeSlider.qml
+        src/qml/soundboard/editor/RoutingSelector.qml
+        src/qml/soundboard/editor/HotkeyDisplay.qml
+        src/qml/soundboard/editor/ActionButtons.qml
 
         # --- Sources ---
         src/qml/sources/SourcesPanel.qml

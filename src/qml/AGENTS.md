@@ -59,7 +59,7 @@ Standalone windows and popups — SettingsDialog, HotkeyDialog, RoutingDialog, P
 Recording panel sub-components — RecordingPanel, RecordingHeader, CaptureModeBar, ReplayBufferSection, TransportControls. Owned by this doc.
 
 ### `soundboard/`
-Soundboard grid and card editor — SoundboardGridView, SoundboardGridCard, ItemEditor, HotkeyCard. Owned by this doc.
+Soundboard grid and card editor — SoundboardGridView, SoundboardGridCard, SlotEditor, HotkeyCard, and editor/ sub-components (SectionLabel, EditorHeader, SlotNameEditor, AudioSourceSelector, TrimEditor, VolumeSlider, RoutingSelector, HotkeyDisplay, ActionButtons). Owned by this doc.
 
 ### `sources/`
 Audio source management — SourcesPanel, WaveformView. Owned by this doc.

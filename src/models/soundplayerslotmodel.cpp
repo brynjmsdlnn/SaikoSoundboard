@@ -52,7 +52,6 @@ QHash<int, QByteArray> SoundPlayerSlotModel::roleNames() const
         {PlayHotkeyRole,    "playHotkey"},
         {AssignHotkeyRole,  "assignHotkey"},
         {VolumeRole,        "volume"},
-        {EnabledRole,       "enabled"},
         {OutputRoutingRole, "outputRouting"},
         {StartTimeMsRole,   "startTimeMs"},
         {EndTimeMsRole,     "endTimeMs"},

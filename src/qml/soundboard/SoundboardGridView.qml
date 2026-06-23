@@ -126,7 +126,7 @@ Rectangle {
         }
 
         // RIGHT COLUMN
-        ItemEditor {
+        SlotEditor {
             id: rightEditor
             Layout.preferredWidth: 500
             Layout.minimumWidth: 480
