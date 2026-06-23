@@ -184,7 +184,7 @@ Rectangle {
             text: "Assign from replay buffer"
             onClicked: {
                 if (slotId) {
-                    Backend.actions.dispatchAssignReplay(slotId, false)
+                    Backend.actions.dispatchAssignReplay(slotId)
                 }
             }
         }

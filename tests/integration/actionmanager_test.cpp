@@ -39,12 +39,11 @@ private slots:
         QCOMPARE(a.parameters.value("playerId").toString(), testPlayerId);
 
         // Test Assign Replay
-        actionManager.dispatch(Action::createAssignReplay(testPlayerId, true));
+        actionManager.dispatch(Action::createAssignReplay(testPlayerId));
         QCOMPARE(spy.count(), 1);
         a = spy.takeFirst().at(0).value<Action>();
         QCOMPARE(a.type, ActionType::AssignReplayToPlayer);
         QCOMPARE(a.parameters.value("playerId").toString(), testPlayerId);
-        QCOMPARE(a.parameters.value("preserveExisting").toBool(), true);
 
         // Test Save Replay
         actionManager.dispatch(Action::createSaveReplay());
@@ -99,16 +98,13 @@ private slots:
         // but we verify the command is sent without crashing.
         // If multimedia is available, playback state would change.
         
-        // 3. Verify preserveExisting works
+        // 3. Verify subsequent assignment overwrites previous
         QString firstPath = slot->filePath;
         
-        // Push new data
+        // Push new data and reassign
         rec.replayBuffer()->pushPcmChunk(QByteArray(1024, '\1'));
-        actionManager.dispatch(Action::createAssignReplay(playerId, true)); // preserve=true
-        QCOMPARE(slot->filePath, firstPath); // Should not change
-        
-        actionManager.dispatch(Action::createAssignReplay(playerId, false)); // preserve=false
-        QVERIFY(slot->filePath != firstPath); // Should change
+        actionManager.dispatch(Action::createAssignReplay(playerId));
+        QVERIFY(slot->filePath != firstPath); // Should overwrite
         
         // 4. Verify replay assignment works during active recording.
         QString tempRecordPath = QDir::tempPath() + "/test_record.wav";
@@ -116,7 +112,7 @@ private slots:
         QVERIFY(rec.isRecording());
         
         rec.replayBuffer()->pushPcmChunk(QByteArray(1024, '\2'));
-        actionManager.dispatch(Action::createAssignReplay(playerId, false));
+        actionManager.dispatch(Action::createAssignReplay(playerId));
         QVERIFY(QFile::exists(slot->filePath));
         
         rec.wavWriter()->close();

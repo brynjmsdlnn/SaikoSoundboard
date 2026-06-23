@@ -36,8 +36,8 @@ struct Action {
     static Action createStop(const QString &playerId) {
         return { ActionType::StopPlayer, {{"playerId", playerId}} };
     }
-    static Action createAssignReplay(const QString &playerId, bool preserveExisting = false) {
-        return { ActionType::AssignReplayToPlayer, {{"playerId", playerId}, {"preserveExisting", preserveExisting}} };
+    static Action createAssignReplay(const QString &playerId) {
+        return { ActionType::AssignReplayToPlayer, {{"playerId", playerId}} };
     }
     static Action createSaveReplay() {
         return { ActionType::SaveReplay, {} };
@@ -60,7 +60,7 @@ public:
     // Q_INVOKABLE convenience methods — QML can't easily construct Action structs
     Q_INVOKABLE void dispatchPlay(const QString &playerId);
     Q_INVOKABLE void dispatchStop(const QString &playerId);
-    Q_INVOKABLE void dispatchAssignReplay(const QString &playerId, bool preserveExisting = false);
+    Q_INVOKABLE void dispatchAssignReplay(const QString &playerId);
     Q_INVOKABLE void dispatchSaveReplay();
     Q_INVOKABLE void dispatchMakePermanent(const QString &playerId, const QString &customFileName = "");
 
@@ -74,7 +74,7 @@ private:
 
     void handlePlayPlayer(const QString &playerId);
     void handleStopPlayer(const QString &playerId);
-    void handleAssignReplayToPlayer(const QString &playerId, bool preserveExisting);
+    void handleAssignReplayToPlayer(const QString &playerId);
     void handleSaveReplay();
     void handleMakePermanent(const QString &playerId, const QString &customFileName);
 };

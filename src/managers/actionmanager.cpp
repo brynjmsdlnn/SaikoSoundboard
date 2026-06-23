@@ -21,7 +21,7 @@ void ActionManager::dispatch(const Action &action)
         handleStopPlayer(action.parameters.value("playerId").toString());
         break;
     case ActionType::AssignReplayToPlayer:
-        handleAssignReplayToPlayer(action.parameters.value("playerId").toString(), action.parameters.value("preserveExisting").toBool());
+        handleAssignReplayToPlayer(action.parameters.value("playerId").toString());
         break;
     case ActionType::SaveReplay:
         handleSaveReplay();
@@ -47,17 +47,12 @@ void ActionManager::handleStopPlayer(const QString &playerId)
     }
 }
 
-void ActionManager::handleAssignReplayToPlayer(const QString &playerId, bool preserveExisting)
+void ActionManager::handleAssignReplayToPlayer(const QString &playerId)
 {
     if (!m_rec || !m_sb || !m_settings) return;
 
     SoundPlayerSlot* slot = m_sb->getSlot(playerId);
     if (!slot) return;
-
-    if (preserveExisting && !slot->filePath.isEmpty()) {
-        qDebug() << "ActionManager: Slot already has an assigned sound, preserving it.";
-        return;
-    }
 
     QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss_zzz");
     QString path = QDir::tempPath() + QString("/SaikoReplay_%1.wav").arg(timestamp);
@@ -93,9 +88,9 @@ void ActionManager::dispatchStop(const QString &playerId)
     dispatch(Action::createStop(playerId));
 }
 
-void ActionManager::dispatchAssignReplay(const QString &playerId, bool preserveExisting)
+void ActionManager::dispatchAssignReplay(const QString &playerId)
 {
-    dispatch(Action::createAssignReplay(playerId, preserveExisting));
+    dispatch(Action::createAssignReplay(playerId));
 }
 
 void ActionManager::dispatchSaveReplay()

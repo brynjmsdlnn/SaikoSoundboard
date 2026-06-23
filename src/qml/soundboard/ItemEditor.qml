@@ -324,17 +324,10 @@ Rectangle {
                             text: "From replay buffer"
                             onClicked: {
                                 if (editor && editor.slotId)
-                                    Backend.actions.dispatchAssignReplay(editor.slotId, preserveCb.checked);
+                                    Backend.actions.dispatchAssignReplay(editor.slotId);
                             }
                         }
                     }
-                }
-
-                SaikoCheckBox {
-                    id: preserveCb
-                    text: "Preserve replay buffer on assign"
-                    font.pixelSize: 11
-                    checked: true
                 }
 
                 // 4. SAVE FILE NAME DIALOG
