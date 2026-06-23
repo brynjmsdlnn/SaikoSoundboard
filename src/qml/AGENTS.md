@@ -21,7 +21,7 @@ All QML UI components for the SaikoSoundboard application. This is the presentat
 - New standalone components that extract inline blocks must be added to `QML_FILES` in root CMakeLists.txt
 - Components within the same `Saiko` module can reference each other without explicit file-path imports
 - `utils.js` is the only JS file — add shared utility functions here, not in individual QML files
-- When adding a `qrc:/icons/` or `image://icons/` reference in QML, verify the SVG exists in `src/icons/` and is registered in `src/icons/icons.qrc`. If missing, download it from Lucide (`https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/<name>.svg`) and register it
+- When adding a `qrc:/icons/` or `image://icons/` reference in QML, verify the SVG exists in `resources/icons/` and is registered in `resources/icons/icons.qrc`. If missing, download it from Lucide (`https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/<name>.svg`) and register it
 
 ## Verification
 

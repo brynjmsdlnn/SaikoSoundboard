@@ -113,11 +113,15 @@ if(WIN32)
     target_link_libraries(SaikoSoundboardCore PUBLIC ole32 mmdevapi shell32)
 endif()
 
+# --- Resource files ---
+
+set(ICONS_RESOURCE resources/icons/icons.qrc)
+
 # --- Application Target ---
 
 set(APP_SOURCES
     src/main.cpp
-    src/icons/icons.qrc
+    ${ICONS_RESOURCE}
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
