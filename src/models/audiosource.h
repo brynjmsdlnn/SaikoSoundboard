@@ -14,6 +14,7 @@ struct AudioSource {
     Q_PROPERTY(QString executablePath MEMBER executablePath CONSTANT)
     Q_PROPERTY(bool enabled MEMBER enabled CONSTANT)
     Q_PROPERTY(float volume MEMBER volume CONSTANT)
+    Q_PROPERTY(bool solo MEMBER solo CONSTANT)
 
 public:
     QString id;
@@ -22,6 +23,7 @@ public:
     QString executablePath;
     bool enabled = true;
     float volume = 1.0f;
+    bool solo = false;
 
     AudioSource() {
         id = QUuid::createUuid().toString();
@@ -30,7 +32,7 @@ public:
     bool operator==(const AudioSource &other) const {
         return id == other.id && name == other.name && executableName == other.executableName
             && executablePath == other.executablePath && enabled == other.enabled
-            && qFuzzyCompare(volume, other.volume);
+            && qFuzzyCompare(volume, other.volume) && solo == other.solo;
     }
 
     QJsonObject toJson() const {
@@ -41,6 +43,7 @@ public:
         obj["executablePath"] = executablePath;
         obj["enabled"] = enabled;
         obj["volume"] = volume;
+        obj["solo"] = solo;
         return obj;
     }
 
@@ -52,6 +55,7 @@ public:
         src.executablePath = obj["executablePath"].toString();
         src.enabled = obj["enabled"].toBool(true);
         src.volume = obj["volume"].toDouble(1.0);
+        src.solo = obj["solo"].toBool(false);
         return src;
     }
 };

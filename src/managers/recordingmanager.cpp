@@ -10,6 +10,8 @@
 #endif
 
 #include "core/adapters/WindowsProcessFinder.h"
+#include "core/adapters/WindowsAudioSessionController.h"
+#include <QAudioDevice>
 
 RecordingManager::RecordingManager(SettingsManager *settings, QObject *parent)
     : QObject(parent)
@@ -74,6 +76,11 @@ void RecordingManager::updateState()
 void RecordingManager::stopEngine()
 {
     m_mixer->stop();
+    
+    // Restore system volumes for all tracked PIDs
+    Saiko::Adapters::WindowsAudioSessionController::setAbsoluteMuteExcept({}, false);
+    m_sourcePids.clear();
+    
     for (auto rec : std::as_const(m_activeRecorders)) {
         rec->stop();
     }
@@ -96,6 +103,15 @@ void RecordingManager::startEngine(const QString &mode)
     memset(&format, 0, sizeof(format));
     m_mixer->setOutputFormat(format);
     m_mixer->start();
+
+    m_soloedSources.clear();
+    m_sourcePids.clear();
+    QList<AudioSource> sources = m_settings->sources();
+    for (const auto &src : std::as_const(sources)) {
+        if (src.enabled && src.solo) {
+            m_soloedSources.insert(src.id);
+        }
+    }
 
     if (mode == "global") {
         startRecorderForPid(0, "global", 1.0f);
@@ -205,4 +221,35 @@ void RecordingManager::startRecorderForPid(DWORD pid, const QString& sourceId, f
 
     rec->start(pid);
     m_activeRecorders.append(rec);
+
+    m_sourcePids.insert(sourceId, pid);
+    updateMuteStates();
+}
+
+void RecordingManager::updateMuteStates()
+{
+    QSet<QString> exemptExes;
+    QList<AudioSource> sources = m_settings->sources();
+    for (const auto &srcId : std::as_const(m_soloedSources)) {
+        for (const auto &src : std::as_const(sources)) {
+            if (src.id == srcId) {
+                exemptExes.insert(src.executableName);
+                break;
+            }
+        }
+    }
+
+    bool muteActive = !m_soloedSources.isEmpty();
+    Saiko::Adapters::WindowsAudioSessionController::setAbsoluteMuteExcept(exemptExes, muteActive);
+}
+
+void RecordingManager::setSourceSolo(const QString &sourceId, bool solo)
+{
+    if (solo) {
+        m_soloedSources.insert(sourceId);
+    } else {
+        m_soloedSources.remove(sourceId);
+    }
+    updateMuteStates();
+    emit soloChanged(sourceId, solo);
 }

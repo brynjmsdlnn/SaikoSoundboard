@@ -35,6 +35,8 @@ set(CORE_ADAPTERS_SOURCES
     src/core/adapters/WindowsHotkeyBackend.cpp
     src/core/adapters/WindowsProcessFinder.h
     src/core/adapters/WindowsProcessFinder.cpp
+    src/core/adapters/WindowsAudioSessionController.h
+    src/core/adapters/WindowsAudioSessionController.cpp
 )
 
 set(UI_SOURCES

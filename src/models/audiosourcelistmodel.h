@@ -15,7 +15,8 @@ public:
         ExecutableNameRole,
         ExecutablePathRole,
         EnabledRole,
-        VolumeRole
+        VolumeRole,
+        SoloRole
     };
 
     explicit AudioSourceListModel(SettingsManager *settings, QObject *parent = nullptr);
@@ -28,6 +29,7 @@ public:
     Q_INVOKABLE void removeSource(const QString &sourceId);
     Q_INVOKABLE QString getSourceId(int row) const;
     Q_INVOKABLE bool hasExecutable(const QString &executableName) const;
+    Q_INVOKABLE bool setSolo(const QString &sourceId, bool solo);
 
 private slots:
     void onSourcesChanged();

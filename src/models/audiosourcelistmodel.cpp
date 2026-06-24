@@ -28,6 +28,7 @@ QVariant AudioSourceListModel::data(const QModelIndex &index, int role) const
     case ExecutablePathRole: return src.executablePath;
     case EnabledRole:        return src.enabled;
     case VolumeRole:         return src.volume;
+    case SoloRole:           return src.solo;
     default: return {};
     }
 }
@@ -41,6 +42,7 @@ QHash<int, QByteArray> AudioSourceListModel::roleNames() const
         {ExecutablePathRole, "executablePath"},
         {EnabledRole,        "enabled"},
         {VolumeRole,         "volume"},
+        {SoloRole,           "solo"},
     };
 }
 
@@ -91,6 +93,27 @@ QString AudioSourceListModel::getSourceId(int row) const
     if (row < 0 || row >= m_sources.size())
         return {};
     return m_sources[row].id;
+}
+
+bool AudioSourceListModel::setSolo(const QString &sourceId, bool solo)
+{
+    for (int i = 0; i < m_sources.size(); ++i) {
+        if (m_sources[i].id == sourceId) {
+            m_sources[i].solo = solo;
+            auto sources = m_settings->sources();
+            for (int j = 0; j < sources.size(); ++j) {
+                if (sources[j].id == sourceId) {
+                    sources[j].solo = solo;
+                    break;
+                }
+            }
+            m_settings->setSources(sources);
+            m_settings->save();
+            emit dataChanged(index(i), index(i), {SoloRole});
+            return true;
+        }
+    }
+    return false;
 }
 
 void AudioSourceListModel::onSourcesChanged()

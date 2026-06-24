@@ -4,6 +4,11 @@
 #include <QObject>
 #include <QList>
 #include <QFile>
+#include <QMap>
+#include <QSet>
+#include <QAudioSink>
+#include <QIODevice>
+#include <QMediaDevices>
 #include "audio/wasapirecorder.h"
 #include "audio/audiomixer.h"
 #include "audio/replaybuffer.h"
@@ -27,6 +32,9 @@ public:
     Q_INVOKABLE void startEngine(const QString &mode);
     Q_INVOKABLE void stopEngine();
     bool isEngineRunning() const { return !m_activeRecorders.isEmpty(); }
+
+    // Solo Monitor
+    Q_INVOKABLE void setSourceSolo(const QString &sourceId, bool solo);
 
     // Recording Control
     Q_INVOKABLE bool startRecording(const QString &path);
@@ -55,9 +63,11 @@ signals:
     void stateChanged(CaptureState newState);
     void replayActiveChanged();
     void errorOccurred(const QString &msg);
+    void soloChanged(const QString &sourceId, bool solo);
 
 private:
     void startRecorderForPid(DWORD pid, const QString& sourceId, float volume);
+    void updateMuteStates();
     void updateState();
 
     SettingsManager *m_settings;
@@ -65,6 +75,8 @@ private:
     ReplayBuffer *m_replayBuffer;
     WavWriter *m_wavWriter;
     QList<WasapiRecorder*> m_activeRecorders;
+    QMap<QString, DWORD> m_sourcePids;
+    QSet<QString> m_soloedSources;
     bool m_replayEnabled;
     CaptureState m_state;
 };

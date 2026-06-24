@@ -87,14 +87,37 @@ Rectangle {
                         }
                     }
 
-                    // Indicator dot if selected
+                    // Solo monitor toggle
                     Rectangle {
-                        width: 6
-                        height: 6
-                        radius: 3
-                        color: Theme.accentPurple
-                        visible: listView.currentIndex === index
+                        width: 28
+                        height: 22
+                        radius: 4
+                        color: solo ? Theme.accentTeal : "transparent"
+                        border.color: solo ? Theme.accentTeal : (soloMouse.containsMouse ? Theme.borderHover : "transparent")
+                        border.width: 1
+                        visible: !root.locked
                         Layout.alignment: Qt.AlignVCenter
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "S"
+                            color: solo ? "#ffffff" : Theme.textDim
+                            font.pixelSize: 11
+                            font.weight: Font.Bold
+                        }
+
+                        MouseArea {
+                            id: soloMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                var newSolo = !solo
+                                var sourceId = root.sourceModel.getSourceId(index)
+                                root.sourceModel.setSolo(sourceId, newSolo)
+                                Backend.recording.setSourceSolo(sourceId, newSolo)
+                            }
+                        }
                     }
                 }
             }
@@ -128,7 +151,10 @@ Rectangle {
                     var idx = listView.currentIndex
                     if (idx >= 0) {
                         var id = root.sourceModel.getSourceId(idx)
-                        if (id) root.sourceRemoved(id)
+                        if (id) {
+                            Backend.recording.setSourceSolo(id, false)
+                            root.sourceRemoved(id)
+                        }
                         listView.currentIndex = -1
                     }
                 }
