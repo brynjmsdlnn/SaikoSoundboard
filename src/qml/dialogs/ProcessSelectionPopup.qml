@@ -35,6 +35,10 @@ Popup {
             return a.name.toLowerCase().localeCompare(b.name.toLowerCase())
         })
         allProcesses = deduped
+        refreshButton.text = "Refreshed!"
+        refreshButton.accentColor = Theme.accentTeal
+        buttonTextResetTimer.restart()
+        listFadeAnim.restart()
     }
 
     function acceptProcess() {
@@ -78,8 +82,10 @@ Popup {
                 }
 
                 SaikoButton {
+                    id: refreshButton
                     text: "Refresh"
                     small: true
+                    enabled: !buttonTextResetTimer.running
                     Layout.alignment: Qt.AlignVCenter
                     onClicked: root.refresh()
                 }
@@ -341,7 +347,30 @@ Popup {
         audioUpdateTimer.start()
     }
 
+    NumberAnimation {
+        id: listFadeAnim
+        target: processList
+        property: "opacity"
+        from: 0.4
+        to: 1.0
+        duration: 200
+        easing.type: Easing.OutQuad
+    }
+
+    Timer {
+        id: buttonTextResetTimer
+        interval: 1000
+        repeat: false
+        onTriggered: {
+            refreshButton.text = "Refresh"
+            refreshButton.accentColor = Theme.accentPurple
+        }
+    }
+
     onClosed: {
         audioUpdateTimer.stop()
+        buttonTextResetTimer.stop()
+        refreshButton.text = "Refresh"
+        refreshButton.accentColor = Theme.accentPurple
     }
 }

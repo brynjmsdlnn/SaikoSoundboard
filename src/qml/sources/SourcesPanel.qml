@@ -68,7 +68,7 @@ Rectangle {
                         visible: executablePath !== ""
                     }
 
-                    // Process Details
+                    // Process Details (Takes up all available remaining space)
                     ColumnLayout {
                         Layout.fillWidth: true
                         spacing: 2
@@ -87,36 +87,33 @@ Rectangle {
                         }
                     }
 
-                    // Solo monitor toggle
-                    Rectangle {
+                    // Solo monitor toggle - now pushed to the far right
+                    Item {
                         width: 28
                         height: 22
-                        radius: 4
-                        color: solo ? Theme.accentTeal : "transparent"
-                        border.color: solo ? Theme.accentTeal : (soloMouse.containsMouse ? Theme.borderHover : "transparent")
-                        border.width: 1
                         visible: !root.locked
-                        Layout.alignment: Qt.AlignVCenter
+                        Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
 
-                        Text {
-                            anchors.centerIn: parent
-                            text: "S"
-                            color: solo ? "#ffffff" : Theme.textDim
-                            font.pixelSize: 11
-                            font.weight: Font.Bold
-                        }
-
-                        MouseArea {
-                            id: soloMouse
+                        SaikoButton {
+                            id: soloBtn
                             anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
+                            iconSource: "image://icons/headphones"
+                            small: true
+                            filled: solo
+                            accentColor: Theme.accentTeal
                             onClicked: {
                                 var newSolo = !solo
                                 var sourceId = root.sourceModel.getSourceId(index)
                                 root.sourceModel.setSolo(sourceId, newSolo)
                                 Backend.recording.setSourceSolo(sourceId, newSolo)
                             }
+                        }
+
+                        SaikoTooltip {
+                            text: "Solo Monitor — hear only this source"
+                            hovered: soloBtn.hovered
+                            direction: "left"
+                            z: 999
                         }
                     }
                 }
@@ -128,14 +125,15 @@ Rectangle {
             }
         }
 
-        // Custom Styled Action Buttons
+        // Custom Styled Action Buttons with Icons added
         RowLayout {
             Layout.fillWidth: true
             spacing: 10
 
             SaikoButton {
                 id: addBtn
-                text: "+ Add Source"
+                text: "Add Source"
+                iconSource: "image://icons/plus"
                 Layout.fillWidth: true
                 enabled: !root.locked
                 onClicked: processPopup.open()
@@ -143,7 +141,8 @@ Rectangle {
 
             SaikoButton {
                 id: removeBtn
-                text: "- Remove"
+                text: "Remove"
+                iconSource: "image://icons/trash-2"
                 Layout.fillWidth: true
                 accentColor: Theme.destructiveRed
                 enabled: !root.locked && listView.currentIndex >= 0
