@@ -12,6 +12,7 @@ SettingsManager::SettingsManager(QObject *parent)
     , m_replayEnabled(false)
     , m_replayDuration(30)
     , m_baseDirectory(defaultBaseDir())
+    , m_hotkeysEnabled(true)
 {
 }
 
@@ -37,6 +38,7 @@ void SettingsManager::load()
     bool micPassDirty = false;
     bool voiceDevDirty = false;
     bool sampleRateDirty = false;
+    bool hotkeysEnabledDirty = false;
 
     if (doc.isArray()) {
         QList<AudioSource> newSources;
@@ -133,6 +135,12 @@ void SettingsManager::load()
             sampleRateDirty = true;
         }
 
+        bool newHotkeysEnabled = obj["hotkeysEnabled"].toBool(true);
+        if (newHotkeysEnabled != m_hotkeysEnabled) {
+            m_hotkeysEnabled = newHotkeysEnabled;
+            hotkeysEnabledDirty = true;
+        }
+
         QList<SoundPlayerSlot> newSlots;
         QJsonArray slotsArr = obj["soundBoardSlots"].toArray();
         for (const QJsonValue& val : std::as_const(slotsArr)) {
@@ -164,6 +172,7 @@ void SettingsManager::load()
     if (micPassDirty)          emit enableMicPassthroughChanged();
     if (voiceDevDirty)         emit voiceInputDeviceChanged();
     if (sampleRateDirty)       emit recordingSampleRateChanged();
+    if (hotkeysEnabledDirty)   emit hotkeysEnabledChanged();
 }
 
 void SettingsManager::save()
@@ -194,6 +203,7 @@ void SettingsManager::save()
     root["enableMicPassthrough"] = m_enableMicPassthrough;
     root["voiceInputDevice"] = m_voiceInputDevice;
     root["recordingSampleRate"] = m_recordingSampleRate;
+    root["hotkeysEnabled"] = m_hotkeysEnabled;
 
     QJsonDocument doc(root);
     QFile file(getSettingsFilePath());
@@ -344,5 +354,13 @@ void SettingsManager::setRecordingSampleRate(int sampleRate)
     if (m_recordingSampleRate != sampleRate) {
         m_recordingSampleRate = sampleRate;
         emit recordingSampleRateChanged();
+    }
+}
+
+void SettingsManager::setHotkeysEnabled(bool enabled)
+{
+    if (m_hotkeysEnabled != enabled) {
+        m_hotkeysEnabled = enabled;
+        emit hotkeysEnabledChanged();
     }
 }

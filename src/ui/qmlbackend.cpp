@@ -28,16 +28,21 @@ QmlBackend::QmlBackend(QObject *parent)
     m_slotModel = new SoundPlayerSlotModel(m_soundboardManager, this);
     m_sourceModel = new AudioSourceListModel(m_settings, this);
 
-    connect(m_soundboardManager, &SoundboardManager::slotsChanged, this, [this]() {
+    auto updateActiveHotkeys = [this]() {
         QMap<QString, Action> hotkeyMap;
-        for (const auto &slot : m_soundboardManager->getSlots()) {
-            if (!slot.playHotkey.isEmpty())
-                hotkeyMap[slot.playHotkey] = Action::createPlay(slot.id);
-            if (!slot.assignHotkey.isEmpty())
-                hotkeyMap[slot.assignHotkey] = Action::createAssignReplay(slot.id);
+        if (m_settings->hotkeysEnabled()) {
+            for (const auto &slot : m_soundboardManager->getSlots()) {
+                if (!slot.playHotkey.isEmpty())
+                    hotkeyMap[slot.playHotkey] = Action::createPlay(slot.id);
+                if (!slot.assignHotkey.isEmpty())
+                    hotkeyMap[slot.assignHotkey] = Action::createAssignReplay(slot.id);
+            }
         }
         m_hotkeyManager->updateHotkeys(hotkeyMap);
-    });
+    };
+
+    connect(m_soundboardManager, &SoundboardManager::slotsChanged, this, updateActiveHotkeys);
+    connect(m_settings, &SettingsManager::hotkeysEnabledChanged, this, updateActiveHotkeys);
 
     m_soundboardManager->loadFromSettings();
 

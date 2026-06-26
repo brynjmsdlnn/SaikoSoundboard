@@ -32,6 +32,7 @@ class SettingsManager : public QObject
     Q_PROPERTY(bool enableMicPassthrough READ enableMicPassthrough WRITE setEnableMicPassthrough NOTIFY enableMicPassthroughChanged)
     Q_PROPERTY(QString voiceInputDevice READ voiceInputDevice WRITE setVoiceInputDevice NOTIFY voiceInputDeviceChanged)
     Q_PROPERTY(int recordingSampleRate READ recordingSampleRate WRITE setRecordingSampleRate NOTIFY recordingSampleRateChanged)
+    Q_PROPERTY(bool hotkeysEnabled READ hotkeysEnabled WRITE setHotkeysEnabled NOTIFY hotkeysEnabledChanged)
 public:
     explicit SettingsManager(QObject *parent = nullptr);
 
@@ -55,6 +56,7 @@ public:
     bool enableMicPassthrough() const { return m_enableMicPassthrough; }
     QString voiceInputDevice() const { return m_voiceInputDevice; }
     int recordingSampleRate() const { return m_recordingSampleRate; }
+    bool hotkeysEnabled() const { return m_hotkeysEnabled; }
 
     // Setters
     void setSources(const QList<AudioSource> &sources);
@@ -71,6 +73,7 @@ public:
     void setEnableMicPassthrough(bool enabled);
     void setVoiceInputDevice(const QString &device);
     void setRecordingSampleRate(int sampleRate);
+    void setHotkeysEnabled(bool enabled);
 
 signals:
     void sourcesChanged();
@@ -89,6 +92,7 @@ signals:
     void enableMicPassthroughChanged();
     void voiceInputDeviceChanged();
     void recordingSampleRateChanged();
+    void hotkeysEnabledChanged();
 
 private:
     QString getSettingsFilePath() const;
@@ -107,6 +111,7 @@ private:
     bool m_enableMicPassthrough = false;
     QString m_voiceInputDevice;
     int m_recordingSampleRate = 48000;
+    bool m_hotkeysEnabled = true;
 };
 
 #endif // SETTINGSMANAGER_H

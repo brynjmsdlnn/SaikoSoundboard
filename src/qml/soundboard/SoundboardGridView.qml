@@ -45,6 +45,29 @@ Rectangle {
                         Layout.fillWidth: true
                     }
 
+                    // Hotkey toggle button
+                    Item {
+                        width: 32
+                        height: 28
+                        SaikoButton {
+                            id: hotkeyToggleBtn
+                            anchors.fill: parent
+                            iconSource: "image://icons/keyboard?color=" + (Backend.settings.hotkeysEnabled ? encodeURIComponent(Theme.accentPurple) : encodeURIComponent(Theme.textDim))
+                            accentColor: Backend.settings.hotkeysEnabled ? Theme.accentPurple : Theme.borderDefault
+                            small: true
+                            onClicked: {
+                                Backend.settings.hotkeysEnabled = !Backend.settings.hotkeysEnabled;
+                                Backend.settings.save();
+                            }
+                        }
+                        SaikoTooltip {
+                            text: Backend.settings.hotkeysEnabled ? "Disable Global Hotkeys" : "Enable Global Hotkeys"
+                            hovered: hotkeyToggleBtn.hovered
+                            direction: "top"
+                            z: 999
+                        }
+                    }
+
                     // Add button
                     Item {
                         width: 32
