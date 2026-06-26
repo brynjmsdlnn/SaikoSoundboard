@@ -30,6 +30,8 @@ Popup {
             }
         }
         deduped.sort(function(a, b) {
+            if (a.isProducingSound && !b.isProducingSound) return -1;
+            if (!a.isProducingSound && b.isProducingSound) return 1;
             return a.name.toLowerCase().localeCompare(b.name.toLowerCase())
         })
         allProcesses = deduped
@@ -62,11 +64,25 @@ Popup {
             anchors.margins: 16
             spacing: 12
 
-            Text {
-                text: "Select Process"
-                color: Theme.textPrimary
-                font.pixelSize: 16
-                font.weight: Font.Bold
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                Text {
+                    text: "Select Process"
+                    color: Theme.textPrimary
+                    font.pixelSize: 16
+                    font.weight: Font.Bold
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignVCenter
+                }
+
+                SaikoButton {
+                    text: "Refresh"
+                    small: true
+                    Layout.alignment: Qt.AlignVCenter
+                    onClicked: root.refresh()
+                }
             }
 
             Rectangle {
@@ -179,6 +195,51 @@ Popup {
                                 Layout.fillWidth: true
                             }
                         }
+
+                        Row {
+                            id: audioIndicator
+                            visible: !!modelData.isProducingSound
+                            spacing: 2
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.rightMargin: 6
+
+                            Rectangle {
+                                width: 3
+                                height: 8
+                                color: Theme.accentTeal
+                                radius: 1.5
+                                SequentialAnimation on height {
+                                    loops: Animation.Infinite
+                                    PropertyAnimation { to: 14; duration: 400; easing.type: Easing.InOutQuad }
+                                    PropertyAnimation { to: 6; duration: 350; easing.type: Easing.InOutQuad }
+                                    PropertyAnimation { to: 10; duration: 450; easing.type: Easing.InOutQuad }
+                                }
+                            }
+                            Rectangle {
+                                width: 3
+                                height: 12
+                                color: Theme.accentTeal
+                                radius: 1.5
+                                SequentialAnimation on height {
+                                    loops: Animation.Infinite
+                                    PropertyAnimation { to: 6; duration: 300; easing.type: Easing.InOutQuad }
+                                    PropertyAnimation { to: 15; duration: 450; easing.type: Easing.InOutQuad }
+                                    PropertyAnimation { to: 8; duration: 350; easing.type: Easing.InOutQuad }
+                                }
+                            }
+                            Rectangle {
+                                width: 3
+                                height: 6
+                                color: Theme.accentTeal
+                                radius: 1.5
+                                SequentialAnimation on height {
+                                    loops: Animation.Infinite
+                                    PropertyAnimation { to: 12; duration: 350; easing.type: Easing.InOutQuad }
+                                    PropertyAnimation { to: 5; duration: 400; easing.type: Easing.InOutQuad }
+                                    PropertyAnimation { to: 14; duration: 300; easing.type: Easing.InOutQuad }
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -211,10 +272,76 @@ Popup {
         }
     }
 
+    function updateAudioStatus() {
+        var activeExes = Backend.getProcessesProducingSound()
+        var activeSet = {}
+        var hasMissingExe = false
+        
+        for (var i = 0; i < activeExes.length; i++) {
+            var exe = activeExes[i]
+            activeSet[exe] = true
+            
+            // Check if this active audio exe is present in our list
+            var found = false
+            for (var k = 0; k < allProcesses.length; k++) {
+                if (allProcesses[k].name.toLowerCase() === exe) {
+                    found = true
+                    break;
+                }
+            }
+            if (!found) {
+                hasMissingExe = true
+            }
+        }
+
+        if (hasMissingExe) {
+            // A process started producing sound that isn't in our loaded processes list.
+            // Trigger a full refresh (which will reload and sort).
+            refresh()
+            return
+        }
+
+        var changed = false
+        var updatedList = []
+        for (var j = 0; j < allProcesses.length; j++) {
+            var proc = allProcesses[j]
+            var nameLower = proc.name.toLowerCase()
+            var nowProducing = !!activeSet[nameLower]
+            if (proc.isProducingSound !== nowProducing) {
+                proc.isProducingSound = nowProducing
+                changed = true
+            }
+            updatedList.push(proc)
+        }
+
+        if (changed) {
+            // Re-sort so that currently playing processes move to the top
+            updatedList.sort(function(a, b) {
+                if (a.isProducingSound && !b.isProducingSound) return -1;
+                if (!a.isProducingSound && b.isProducingSound) return 1;
+                return a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+            })
+            allProcesses = updatedList
+        }
+    }
+
+    Timer {
+        id: audioUpdateTimer
+        interval: 1000
+        repeat: true
+        running: false
+        onTriggered: root.updateAudioStatus()
+    }
+
     onOpened: {
         refresh()
         searchField.text = ""
         processList.currentIndex = -1
         searchField.forceActiveFocus()
+        audioUpdateTimer.start()
+    }
+
+    onClosed: {
+        audioUpdateTimer.stop()
     }
 }

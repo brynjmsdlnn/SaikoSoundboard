@@ -84,6 +84,7 @@ public:
     qint64 playbackDuration() const { return m_playbackDuration; }
 
     Q_INVOKABLE QVariantList getRunningProcesses() const;
+    Q_INVOKABLE QStringList getProcessesProducingSound() const;
     Q_INVOKABLE QVariantList getAudioOutputDevices() const;
     Q_INVOKABLE QVariantList getAudioInputDevices() const;
     Q_INVOKABLE int systemDefaultSampleRate() const;

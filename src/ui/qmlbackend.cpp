@@ -134,11 +134,23 @@ QVariantList QmlBackend::getRunningProcesses() const
 {
     QVariantList result;
     auto processes = Saiko::Adapters::WindowsProcessFinder::getRunningProcesses();
+    auto activeSoundExes = Saiko::Adapters::WindowsProcessFinder::getProcessesProducingSound();
     for (const auto &proc : std::as_const(processes)) {
         QVariantMap map;
         map["name"] = proc.first;
         map["fullPath"] = proc.second;
+        map["isProducingSound"] = activeSoundExes.contains(proc.first.toLower());
         result.append(map);
+    }
+    return result;
+}
+
+QStringList QmlBackend::getProcessesProducingSound() const
+{
+    QStringList result;
+    auto activeSoundExes = Saiko::Adapters::WindowsProcessFinder::getProcessesProducingSound();
+    for (const auto &name : activeSoundExes) {
+        result.append(name);
     }
     return result;
 }
