@@ -8,6 +8,7 @@ Rectangle {
     radius: 8
     color: isSelected ? "#19141f" : (cardHover.hovered ? "#161616" : Theme.cardBackground)
     border.color: {
+        if (card.locked) return "#d99a3d";
         if (!fileExists && filePath !== "") return Theme.accentRed;
         return isSelected ? Theme.accentPurple : (cardHover.hovered ? Theme.borderHover : Theme.borderDefault);
     }
@@ -36,6 +37,8 @@ Rectangle {
     property string filePath
     property bool locked: false
     property bool fileExists: true
+    property int startTimeMs: 0
+    property int endTimeMs: -1
 
     property var waveformData: null
 
@@ -143,8 +146,8 @@ Rectangle {
                     id: miniWaveform
                     anchors.fill: parent
                     readOnly: true
-                    startMs: 0
-                    endMs: durationSec * 1000
+                    startMs: card.startTimeMs
+                    endMs: card.endTimeMs
                     waveformData: card.waveformData
                     filePath: card.filePath
                     fileExists: card.fileExists

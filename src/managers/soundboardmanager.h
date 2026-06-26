@@ -67,7 +67,7 @@ public:
     Q_INVOKABLE void setPlayerRouting(const QString &id, OutputRouting routing);
 
     // Clipping and Waveforms
-    Q_INVOKABLE void setPlayerClipRange(const QString &id, qint64 startMs, qint64 endMs);
+    Q_INVOKABLE void setPlayerClipRange(const QString &id, qint64 startMs, qint64 endMs, bool save = false);
     Q_INVOKABLE void loadWaveformData(const QString &playerId, const QString &filePath);
     Q_INVOKABLE WaveformData getWaveformData(const QString &playerId);
 

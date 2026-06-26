@@ -31,6 +31,8 @@ Rectangle {
     property string assignHotkey: ""
     property var waveformData: null
     property bool fileExists: true
+    property string lastLoadedSlotId: ""
+    property string lastLoadedFilePath: ""
 
     // ── Helpers ───────────────────────────────────────────────────────────────
     readonly property bool hasSlot: slotIndex >= 0 && slotId !== ""
@@ -352,13 +354,22 @@ Rectangle {
     function loadWaveform() {
         if (!editor.filePath || !editor.fileExists) {
             editor.waveformData = null;
+            editor.lastLoadedSlotId = "";
+            editor.lastLoadedFilePath = "";
+            return;
+        }
+        if (editor.waveformData && editor.lastLoadedSlotId === editor.slotId && editor.lastLoadedFilePath === editor.filePath) {
             return;
         }
         const cached = Backend.soundboard.getWaveformData(editor.slotId);
         if (cached?.isValid) {
             editor.waveformData = cached;
+            editor.lastLoadedSlotId = editor.slotId;
+            editor.lastLoadedFilePath = editor.filePath;
         } else {
             editor.waveformData = null; // Clear old waveform while loading
+            editor.lastLoadedSlotId = "";
+            editor.lastLoadedFilePath = "";
             Backend.soundboard.loadWaveformData(editor.slotId, editor.filePath);
         }
     }
@@ -389,6 +400,9 @@ Rectangle {
             editor.outputRouting = 0;
             editor.playHotkey = "";
             editor.assignHotkey = "";
+            editor.waveformData = null;
+            editor.lastLoadedSlotId = "";
+            editor.lastLoadedFilePath = "";
             return;
         }
         const d = SlotModel.get(editor.slotIndex);

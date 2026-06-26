@@ -86,13 +86,13 @@ void SoundPlayerSlotModel::setRouting(int row, int routing)
     emit dataChanged(index(row, 0), index(row, 0), {OutputRoutingRole});
 }
 
-void SoundPlayerSlotModel::setClipRange(int row, qint64 startMs, qint64 endMs)
+void SoundPlayerSlotModel::setClipRange(int row, qint64 startMs, qint64 endMs, bool save)
 {
     if (row < 0 || row >= m_slots.size()) return;
     m_updating = true;
     m_slots[row].startTimeMs = startMs;
     m_slots[row].endTimeMs = endMs;
-    m_manager->setPlayerClipRange(m_slots[row].id, startMs, endMs);
+    m_manager->setPlayerClipRange(m_slots[row].id, startMs, endMs, save);
     m_updating = false;
     emit dataChanged(index(row, 0), index(row, 0), {StartTimeMsRole, EndTimeMsRole});
 }

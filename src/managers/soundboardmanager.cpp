@@ -309,7 +309,7 @@ void SoundboardManager::setPlayerRouting(const QString &id, OutputRouting routin
     }
 }
 
-void SoundboardManager::setPlayerClipRange(const QString &id, qint64 startMs, qint64 endMs)
+void SoundboardManager::setPlayerClipRange(const QString &id, qint64 startMs, qint64 endMs, bool save)
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
         if (slot->locked) return;
@@ -318,7 +318,9 @@ void SoundboardManager::setPlayerClipRange(const QString &id, qint64 startMs, qi
         if (SoundPlayer *player = getPlayer(id)) {
             player->setClipRange(startMs, endMs);
         }
-        saveToSettings();
+        if (save) {
+            saveToSettings();
+        }
     }
 }
 

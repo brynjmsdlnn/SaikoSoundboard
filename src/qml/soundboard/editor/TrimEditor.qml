@@ -15,14 +15,71 @@ ColumnLayout {
     property int slotIndex: -1
     property var slotModel: null
 
+    property bool showSavedStatus: false
+
+    Timer {
+        id: saveTimer
+        interval: 1500
+        onTriggered: root.showSavedStatus = false
+    }
+
     signal trimRangeChanged(int startMs, int endMs)
     signal trimRangeCommit(int startMs, int endMs)
 
     Layout.fillWidth: true
     spacing: 8
 
-    SectionLabel {
-        text: "TRIM & TIMING"
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 8
+
+        SectionLabel {
+            text: "TRIM & TIMING"
+        }
+
+        Item { Layout.fillWidth: true }
+
+        Text {
+            id: resetBtn
+            text: "Reset"
+            color: resetMouse.containsMouse ? Theme.accentPurple : Theme.textDim
+            font.pixelSize: 10
+            font.bold: true
+            visible: !root.isLocked && !wf.isDragging && !root.showSavedStatus && (root.startTimeMs > 0 || root.endTimeMs !== -1)
+
+            Behavior on color { ColorAnimation { duration: 100 } }
+
+            MouseArea {
+                id: resetMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    if (root.slotIndex >= 0) {
+                        root.slotModel.setClipRange(root.slotIndex, 0, -1, true)
+                    }
+                }
+            }
+        }
+
+        Text {
+            text: wf.isDragging ? "EDITING" : "SAVED"
+            color: wf.isDragging ? Theme.accentPurple : Theme.accentGreen
+            font.pixelSize: 10
+            font.bold: true
+            visible: wf.isDragging || root.showSavedStatus
+
+            SequentialAnimation on opacity {
+                running: wf.isDragging
+                loops: Animation.Infinite
+                NumberAnimation { from: 1.0; to: 0.4; duration: 600; easing.type: Easing.InOutQuad }
+                NumberAnimation { from: 0.4; to: 1.0; duration: 600; easing.type: Easing.InOutQuad }
+            }
+
+            onVisibleChanged: {
+                if (!visible) opacity = 1.0
+            }
+        }
     }
 
     Rectangle {
@@ -30,8 +87,14 @@ ColumnLayout {
         height: 72
         color: Theme.recessedBackground
         radius: 6
-        border.color: Theme.borderDefault
+        border.color: {
+            if (wf.isDragging) return Theme.accentPurple
+            if (root.showSavedStatus) return Theme.accentGreen
+            return Theme.borderDefault
+        }
         clip: true
+
+        Behavior on border.color { ColorAnimation { duration: 150 } }
 
         WaveformView {
             id: wf
@@ -44,13 +107,23 @@ ColumnLayout {
             fileExists: root.fileExists
             emptyText: "No file assigned"
 
+            onIsDraggingChanged: {
+                if (!isDragging) {
+                    root.showSavedStatus = true
+                    saveTimer.restart()
+                } else {
+                    saveTimer.stop()
+                    root.showSavedStatus = false
+                }
+            }
+
             onTrimRangeChanged: (s, e) => {
                 if (!root.isLocked && root.slotIndex >= 0)
-                    root.slotModel.setClipRange(root.slotIndex, s, e)
+                    root.slotModel.setClipRange(root.slotIndex, s, e, false)
             }
             onTrimRangeCommit: (s, e) => {
                 if (!root.isLocked && root.slotIndex >= 0)
-                    root.slotModel.setClipRange(root.slotIndex, s, e)
+                    root.slotModel.setClipRange(root.slotIndex, s, e, true)
             }
         }
     }

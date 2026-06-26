@@ -18,6 +18,7 @@ Rectangle {
     property string emptyText: "No audio file"
 
     readonly property bool showPlaceholder: !fileExists || !dataSource.valid || !dataSource.peaks || dataSource.peaks.length === 0
+    readonly property bool isDragging: mouseArea.dragTarget !== 0
 
     property alias startMs: dataSource.startMs
     property alias endMs: dataSource.endMs
@@ -28,7 +29,7 @@ Rectangle {
     signal trimRangeCommit(double startMs, double endMs)
 
     onWaveformDataChanged: {
-        dataSource.setWaveformData(waveformData)
+        dataSource.setWaveformData(waveformData);
     }
 
     WaveformData {
@@ -43,199 +44,238 @@ Rectangle {
 
         Connections {
             target: dataSource
-            function onDataChanged() { canvas.requestPaint() }
-            function onStartMsChanged() { canvas.requestPaint() }
-            function onEndMsChanged() { canvas.requestPaint() }
-            function onPlayPositionMsChanged() { canvas.requestPaint() }
-            function onReadOnlyChanged() { canvas.requestPaint() }
+            function onDataChanged() {
+                canvas.requestPaint();
+            }
+            function onStartMsChanged() {
+                canvas.requestPaint();
+            }
+            function onEndMsChanged() {
+                canvas.requestPaint();
+            }
+            function onPlayPositionMsChanged() {
+                canvas.requestPaint();
+            }
+            function onReadOnlyChanged() {
+                canvas.requestPaint();
+            }
         }
 
         onPaint: {
-            var ctx = canvas.getContext("2d")
-            var w = canvas.width
-            var h = canvas.height
-            var labelH = 15
-            var graphH = h - labelH
-            var centerY = graphH / 2
+            var ctx = canvas.getContext("2d");
+            var w = canvas.width;
+            var h = canvas.height;
+            var labelH = 15;
+            var graphH = h - labelH;
+            var centerY = graphH / 2;
 
-            var peaks = dataSource.peaks
-            var duration = dataSource.durationMs > 0 ? dataSource.durationMs : 1
-            var currentEnd = (dataSource.endMs === -1 || dataSource.endMs === 0) ? duration : dataSource.endMs
+            var peaks = dataSource.peaks;
+            var duration = dataSource.durationMs > 0 ? dataSource.durationMs : 1;
+            var currentEnd = (dataSource.endMs === -1 || dataSource.endMs === 0) ? duration : dataSource.endMs;
 
-            ctx.clearRect(0, 0, w, h)
+            ctx.clearRect(0, 0, w, h);
 
-            ctx.fillStyle = Theme.recessedBackground
-            ctx.fillRect(0, 0, w, h)
+            ctx.fillStyle = Theme.recessedBackground;
+            ctx.fillRect(0, 0, w, h);
 
             if (!dataSource.valid || !peaks || peaks.length === 0) {
-                return
+                return;
             }
 
-            var startX = (dataSource.startMs / duration) * w
-            var endX = (currentEnd / duration) * w
+            var startX = (dataSource.startMs / duration) * w;
+            var endX = (currentEnd / duration) * w;
 
             // Center reference line
-            ctx.save()
-            ctx.strokeStyle = Theme.borderDefault
-            ctx.lineWidth = 1
-            ctx.setLineDash([4, 4])
-            ctx.beginPath()
-            ctx.moveTo(0, centerY)
-            ctx.lineTo(w, centerY)
-            ctx.stroke()
-            ctx.restore()
+            ctx.save();
+            ctx.strokeStyle = Theme.borderDefault;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(w, centerY);
+            ctx.stroke();
+            ctx.restore();
 
             // Active region highlight
-            ctx.fillStyle = "rgba(187, 134, 252, 0.08)"
-            ctx.fillRect(Math.max(0, startX), 0, Math.max(1, endX - startX), graphH)
+            ctx.fillStyle = "rgba(187, 134, 252, 0.08)";
+            ctx.fillRect(Math.max(0, startX), 0, Math.max(1, endX - startX), graphH);
 
             // Waveform peaks
-            var numPeaks = peaks.length
-            var step = w / numPeaks
-            ctx.lineWidth = 2
+            var numPeaks = peaks.length;
+            var step = w / numPeaks;
+            ctx.lineWidth = 2;
 
             for (var i = 0; i < numPeaks; i++) {
-                var x = i * step
-                var peak = peaks[i]
-                var peakH = peak * (graphH - 10) / 2
+                var x = i * step;
+                var peak = peaks[i];
+                var peakH = peak * (graphH - 10) / 2;
 
-                var inActive = dataSource.readOnly || (x >= startX && x <= endX)
-                ctx.strokeStyle = inActive ? Theme.accentPurple : Theme.borderHover
+                var inActive = (x >= startX && x <= endX);
+                ctx.strokeStyle = inActive ? Theme.accentPurple : Theme.borderHover;
 
-                ctx.beginPath()
-                ctx.moveTo(x, centerY - peakH)
-                ctx.lineTo(x, centerY + peakH)
-                ctx.stroke()
+                ctx.beginPath();
+                ctx.moveTo(x, centerY - peakH);
+                ctx.lineTo(x, centerY + peakH);
+                ctx.stroke();
             }
 
             if (!dataSource.readOnly) {
-                // Start trim marker (teal)
-                ctx.strokeStyle = Theme.accentTeal
-                ctx.lineWidth = 2
-                ctx.beginPath()
-                ctx.moveTo(startX, 0)
-                ctx.lineTo(startX, graphH)
-                ctx.stroke()
+                var drawStartX = Math.max(1, startX);
+                var drawEndX = Math.min(endX, w - 1);
 
-                ctx.fillStyle = Theme.accentTeal
-                ctx.beginPath()
-                ctx.moveTo(startX, 0)
-                ctx.lineTo(startX + 6, 0)
-                ctx.lineTo(startX, 6)
-                ctx.closePath()
-                ctx.fill()
+                // Start trim marker (teal)
+                ctx.strokeStyle = Theme.accentTeal;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(drawStartX, 0);
+                ctx.lineTo(drawStartX, graphH);
+                ctx.stroke();
+
+                ctx.fillStyle = Theme.accentTeal;
+                ctx.beginPath();
+                ctx.moveTo(drawStartX, 0);
+                ctx.lineTo(drawStartX + 6, 0);
+                ctx.lineTo(drawStartX, 6);
+                ctx.closePath();
+                ctx.fill();
 
                 // End trim marker (red)
-                ctx.strokeStyle = Theme.destructiveRed
-                ctx.lineWidth = 2
-                ctx.beginPath()
-                ctx.moveTo(endX, 0)
-                ctx.lineTo(endX, graphH)
-                ctx.stroke()
+                ctx.strokeStyle = Theme.destructiveRed;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(drawEndX, 0);
+                ctx.lineTo(drawEndX, graphH);
+                ctx.stroke();
 
-                ctx.fillStyle = Theme.destructiveRed
-                ctx.beginPath()
-                ctx.moveTo(endX, 0)
-                ctx.lineTo(endX - 6, 0)
-                ctx.lineTo(endX, 6)
-                ctx.closePath()
-                ctx.fill()
+                ctx.fillStyle = Theme.destructiveRed;
+                ctx.beginPath();
+                ctx.moveTo(drawEndX, 0);
+                ctx.lineTo(drawEndX - 6, 0);
+                ctx.lineTo(drawEndX, 6);
+                ctx.closePath();
+                ctx.fill();
             }
 
             // Playback cursor (white)
             if (dataSource.playPositionMs >= 0) {
-                var cursorX = (dataSource.playPositionMs / duration) * w
-                ctx.strokeStyle = Theme.textPrimary
-                ctx.lineWidth = 2
-                ctx.beginPath()
-                ctx.moveTo(cursorX, 0)
-                ctx.lineTo(cursorX, graphH)
-                ctx.stroke()
+                var cursorX = (dataSource.playPositionMs / duration) * w;
+                ctx.strokeStyle = Theme.textPrimary;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(cursorX, 0);
+                ctx.lineTo(cursorX, graphH);
+                ctx.stroke();
             }
 
             // Timeline labels
-            ctx.fillStyle = Theme.textDim
-            ctx.font = "9px sans-serif"
-            ctx.textBaseline = "middle"
+            ctx.fillStyle = Theme.textDim;
+            ctx.font = "9px sans-serif";
+            ctx.textBaseline = "middle";
 
             if (dataSource.readOnly) {
-                ctx.textAlign = "left"
-                ctx.fillText("0.0s", 4, graphH + labelH / 2)
-                ctx.textAlign = "right"
-                ctx.fillText((duration / 1000).toFixed(1) + "s", w - 4, graphH + labelH / 2)
+                ctx.textAlign = "left";
+                ctx.fillText("0.0s", 4, graphH + labelH / 2);
+                ctx.textAlign = "right";
+                ctx.fillText((duration / 1000).toFixed(1) + "s", w - 4, graphH + labelH / 2);
             } else {
-                var startStr = (dataSource.startMs / 1000).toFixed(1) + "s"
-                ctx.textAlign = "left"
-                ctx.fillText(startStr, 4, graphH + labelH / 2)
+                var startStr = (dataSource.startMs / 1000).toFixed(1) + "s";
+                ctx.textAlign = "left";
+                ctx.fillText(startStr, 4, graphH + labelH / 2);
 
-                ctx.textAlign = "right"
-                ctx.fillText((duration / 1000).toFixed(1) + "s", w - 4, graphH + labelH / 2)
+                ctx.textAlign = "right";
+                ctx.fillText((duration / 1000).toFixed(1) + "s", w - 4, graphH + labelH / 2);
 
-                var rangeSec = (currentEnd - dataSource.startMs) / 1000
-                ctx.textAlign = "center"
-                ctx.fillText("Crop: " + rangeSec.toFixed(1) + "s", w / 2, graphH + labelH / 2)
+                var rangeSec = (currentEnd - dataSource.startMs) / 1000;
+                ctx.textAlign = "center";
+                ctx.fillText("Crop: " + rangeSec.toFixed(1) + "s", w / 2, graphH + labelH / 2);
             }
         }
     }
 
     MouseArea {
+        id: mouseArea
         anchors.fill: parent
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton
+        preventStealing: true
 
         property int dragTarget: 0
 
-        onPressed: function(mouse) {
-            if (dataSource.readOnly || !dataSource.valid) return
-            var w = width
-            var duration = dataSource.durationMs > 0 ? dataSource.durationMs : 1
-            var currentEnd = (dataSource.endMs === -1 || dataSource.endMs === 0) ? duration : dataSource.endMs
-            var sx = (dataSource.startMs / duration) * w
-            var ex = (currentEnd / duration) * w
-            var mx = mouse.x
+        onPressed: function (mouse) {
+            if (dataSource.readOnly || !dataSource.valid)
+                return;
+            var w = width;
+            var duration = dataSource.durationMs > 0 ? dataSource.durationMs : 1;
+            var currentEnd = (dataSource.endMs === -1 || dataSource.endMs === 0) ? duration : dataSource.endMs;
+            var sx = (dataSource.startMs / duration) * w;
+            var ex = (currentEnd / duration) * w;
+            var mx = mouse.x;
 
-            var distStart = Math.abs(mx - sx)
-            var distEnd = Math.abs(mx - ex)
+            var distStart = Math.abs(mx - sx);
+            var distEnd = Math.abs(mx - ex);
 
             if (distStart < 15 && distStart <= distEnd)
-                dragTarget = 1
+                dragTarget = 1;
             else if (distEnd < 15)
-                dragTarget = 2
+                dragTarget = 2;
             else
-                dragTarget = 0
+                dragTarget = 0;
         }
 
-        onPositionChanged: function(mouse) {
-            if (dataSource.readOnly || !dataSource.valid) return
-            var w = width
-            if (w <= 0) return
-            var duration = dataSource.durationMs > 0 ? dataSource.durationMs : 1
-            var pct = Math.max(0, Math.min(1, mouse.x / w))
-            var newTimeMs = Math.round(pct * duration)
+        onPositionChanged: function (mouse) {
+            if (dataSource.readOnly || !dataSource.valid)
+                return;
+            var w = width;
+            if (w <= 0)
+                return;
+
+            // Only do safety reset if we were actually dragging
+            if (dragTarget !== 0 && !mouseArea.pressed) {
+                root.trimRangeCommit(dataSource.startMs, dataSource.endMs);
+                dragTarget = 0;
+                cursorShape = Qt.ArrowCursor;
+                return;
+            }
+
+            // Guard the rest against non-drag movement
+            if (dragTarget === 0) {
+                // cursor hover logic only
+                var duration0 = dataSource.durationMs > 0 ? dataSource.durationMs : 1;
+                var currentEnd0 = (dataSource.endMs === -1 || dataSource.endMs === 0) ? duration0 : dataSource.endMs;
+                var sx0 = (dataSource.startMs / duration0) * w;
+                var ex0 = (currentEnd0 / duration0) * w;
+                cursorShape = (Math.abs(mouse.x - sx0) < 10 || Math.abs(mouse.x - ex0) < 10) ? Qt.SplitHCursor : Qt.ArrowCursor;  // ← early return so nothing else runs
+                return;
+            }
+
+            var duration = dataSource.durationMs > 0 ? dataSource.durationMs : 1;
+            var pct = Math.max(0, Math.min(1, mouse.x / w));
+            var newTimeMs = Math.round(pct * duration);
 
             if (dragTarget === 1) {
-                var currentEnd = (dataSource.endMs === -1 || dataSource.endMs === 0) ? duration : dataSource.endMs
-                var clamped = Math.max(0, Math.min(newTimeMs, currentEnd - 50))
-                dataSource.setClipRange(clamped, dataSource.endMs)
-                root.trimRangeChanged(clamped, dataSource.endMs)
+                var currentEnd = (dataSource.endMs === -1 || dataSource.endMs === 0) ? duration : dataSource.endMs;
+                var clampedStart = Math.max(0, Math.min(newTimeMs, currentEnd - 50));
+                dataSource.setClipRange(clampedStart, dataSource.endMs);
+                root.trimRangeChanged(clampedStart, dataSource.endMs);
             } else if (dragTarget === 2) {
-                var clamped = Math.max(dataSource.startMs + 50, Math.min(newTimeMs, duration))
-                dataSource.setClipRange(dataSource.startMs, clamped)
-                root.trimRangeChanged(dataSource.startMs, clamped)
-            } else {
-                var currentEnd2 = (dataSource.endMs === -1 || dataSource.endMs === 0) ? duration : dataSource.endMs
-                var sx2 = (dataSource.startMs / duration) * w
-                var ex2 = (currentEnd2 / duration) * w
-                cursorShape = (Math.abs(mouse.x - sx2) < 10 || Math.abs(mouse.x - ex2) < 10)
-                    ? Qt.SplitHCursor : Qt.ArrowCursor
+                var clampedEnd = Math.max(dataSource.startMs + 50, Math.min(newTimeMs, duration));
+                dataSource.setClipRange(dataSource.startMs, clampedEnd);
+                root.trimRangeChanged(dataSource.startMs, clampedEnd);
             }
         }
 
-        onReleased: function(mouse) {
+        onReleased: function (mouse) {
             if (dragTarget !== 0)
-                root.trimRangeCommit(dataSource.startMs, dataSource.endMs)
-            dragTarget = 0
-            cursorShape = Qt.ArrowCursor
+                root.trimRangeCommit(dataSource.startMs, dataSource.endMs);
+            dragTarget = 0;
+            cursorShape = Qt.ArrowCursor;
+        }
+
+        onCanceled: {
+            if (dragTarget !== 0)
+                root.trimRangeCommit(dataSource.startMs, dataSource.endMs);
+            dragTarget = 0;
+            cursorShape = Qt.ArrowCursor;
         }
     }
 

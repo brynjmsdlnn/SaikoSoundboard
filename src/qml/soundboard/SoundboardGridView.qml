@@ -122,6 +122,8 @@ Rectangle {
                     filePath: model.filePath
                     locked: model.locked
                     fileExists: model.fileExists
+                    startTimeMs: model.startTimeMs
+                    endTimeMs: model.endTimeMs
                 }
             }
         }

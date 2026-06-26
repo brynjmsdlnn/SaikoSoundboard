@@ -16,10 +16,8 @@ void WaveformItem::setStartMs(qint64 ms)
 void WaveformItem::setEndMs(qint64 ms)
 {
     if (m_endMs != ms) {
-        if (m_endMs == -1 || ms != -1 || m_endMs == m_durationMs) {
-            m_endMs = ms;
-            emit endMsChanged();
-        }
+        m_endMs = ms;
+        emit endMsChanged();
     }
 }
 
