@@ -98,7 +98,7 @@ Flickable {
             modeEnabled: root.modeEnabled
             captureMode: root.captureMode
             cardPadding: root.cardPadding
-            onCaptureModeSelected: root.captureModeSelected(newMode)
+            onCaptureModeSelected: (newMode) => root.captureModeSelected(newMode)
             onSettingsRequested: root.settingsRequested()
         }
 
@@ -114,7 +114,7 @@ Flickable {
                 root.replaySaved(path);
                 root.playEnabled = true;
             }
-            onStatusMessage: root.setStatusText(text)
+            onStatusMessage: (text) => root.setStatusText(text)
         }
 
         TransportControls {

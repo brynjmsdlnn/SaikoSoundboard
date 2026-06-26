@@ -41,8 +41,8 @@ Rectangle {
             textRole: "text"
             valueRole: "value"
             isActive: root.modeEnabled
+            currentIndex: root.captureMode === "multi" ? 1 : 0
             onActivated: {
-                root.captureMode = currentValue;
                 root.captureModeSelected(currentValue);
             }
         }

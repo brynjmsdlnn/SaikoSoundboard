@@ -196,6 +196,7 @@ ApplicationWindow {
                 onStartRequested: app.startRecording()
                 onStopRequested: app.stopRecording()
                 onCaptureModeSelected: function (newMode) {
+                    app.captureMode = newMode;
                     sourcesDock.visible = (newMode === "multi");
                 }
                 onReplaySaved: function (path) {
