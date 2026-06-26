@@ -30,6 +30,7 @@ Rectangle {
     property string playHotkey: ""
     property string assignHotkey: ""
     property var waveformData: null
+    property bool fileExists: true
 
     // ── Helpers ───────────────────────────────────────────────────────────────
     readonly property bool hasSlot: slotIndex >= 0 && slotId !== ""
@@ -209,6 +210,8 @@ Rectangle {
             slotId: editor.slotId
             isLocked: false     // Keeps them visually active
             hideDelete: true    // Drops the delete button
+            filePath: editor.filePath
+            fileExists: editor.fileExists
         }
     }
 
@@ -247,16 +250,20 @@ Rectangle {
                 slotName: editor.slotName
                 isTemp: editor.isTemp
                 isLocked: editor.isLocked
+                fileExists: editor.fileExists
             }
 
             TrimEditor {
                 id: trimEditor
+                visible: editor.filePath !== "" && editor.fileExists
                 startTimeMs: editor.startTimeMs
                 endTimeMs: editor.endTimeMs
                 waveformData: editor.waveformData
                 isLocked: editor.isLocked
                 slotIndex: editor.slotIndex
                 slotModel: editor.slotModel
+                filePath: editor.filePath
+                fileExists: editor.fileExists
             }
 
             RowLayout {
@@ -293,6 +300,8 @@ Rectangle {
                         slotId: editor.slotId
                         isLocked: editor.isLocked
                         onDeleteRequested: removeConfirmDialog.open()
+                        filePath: editor.filePath
+                        fileExists: editor.fileExists
                     }
                 }
             }
@@ -341,15 +350,17 @@ Rectangle {
 
     // ── Functions ─────────────────────────────────────────────────────────────
     function loadWaveform() {
-        if (!editor.filePath) {
+        if (!editor.filePath || !editor.fileExists) {
             editor.waveformData = null;
             return;
         }
         const cached = Backend.soundboard.getWaveformData(editor.slotId);
-        if (cached?.isValid)
+        if (cached?.isValid) {
             editor.waveformData = cached;
-        else
+        } else {
+            editor.waveformData = null; // Clear old waveform while loading
             Backend.soundboard.loadWaveformData(editor.slotId, editor.filePath);
+        }
     }
 
     function openHotkeyDialog() {
@@ -370,6 +381,7 @@ Rectangle {
             editor.filePath = "";
             editor.isTemporary = false;
             editor.locked = false;
+            editor.fileExists = true;
             editor.startTimeMs = 0;
             editor.endTimeMs = 0;
             editor.durationSec = 0;
@@ -384,6 +396,7 @@ Rectangle {
         editor.slotName = d.slotName ?? "";
         editor.filePath = d.filePath ?? "";
         editor.isTemporary = d.isTemporary ?? false;
+        editor.fileExists = d.fileExists ?? true;
         editor.locked = d.locked ?? false;
         editor.startTimeMs = d.startTimeMs ?? 0;
         editor.endTimeMs = d.endTimeMs ?? 0;

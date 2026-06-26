@@ -121,6 +121,7 @@ Rectangle {
                     slotId: model.slotId
                     filePath: model.filePath
                     locked: model.locked
+                    fileExists: model.fileExists
                 }
             }
         }

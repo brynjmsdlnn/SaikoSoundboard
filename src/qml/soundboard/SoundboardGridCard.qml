@@ -7,7 +7,10 @@ Rectangle {
     id: card
     radius: 8
     color: isSelected ? "#19141f" : (cardHover.hovered ? "#161616" : Theme.cardBackground)
-    border.color: isSelected ? Theme.accentPurple : (cardHover.hovered ? Theme.borderHover : Theme.borderDefault)
+    border.color: {
+        if (!fileExists && filePath !== "") return Theme.accentRed;
+        return isSelected ? Theme.accentPurple : (cardHover.hovered ? Theme.borderHover : Theme.borderDefault);
+    }
     border.width: isSelected ? 2 : 1
 
     Behavior on color {
@@ -32,6 +35,7 @@ Rectangle {
     property string slotId
     property string filePath
     property bool locked: false
+    property bool fileExists: true
 
     property var waveformData: null
 
@@ -93,7 +97,25 @@ Rectangle {
                 }
                 Item { Layout.fillWidth: true }
 
+                RowLayout {
+                    visible: !card.fileExists && card.filePath !== ""
+                    spacing: 4
+                    Image {
+                        source: "image://icons/triangle-alert?color=" + encodeURIComponent(Theme.accentRed)
+                        sourceSize: Qt.size(12, 12)
+                        Layout.alignment: Qt.AlignVCenter
+                    }
+                    Text {
+                        text: "Missing"
+                        color: Theme.accentRed
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.bold: true
+                        Layout.alignment: Qt.AlignVCenter
+                    }
+                }
+
                 Text {
+                    visible: card.fileExists || card.filePath === ""
                     text: durationSec ? durationSec.toFixed(1) + "s" : "0.0s"
                     color: card.locked ? "#555555" : Theme.textDim
                     font.pixelSize: Theme.fontSizeSmall
@@ -124,6 +146,9 @@ Rectangle {
                     startMs: 0
                     endMs: durationSec * 1000
                     waveformData: card.waveformData
+                    filePath: card.filePath
+                    fileExists: card.fileExists
+                    emptyText: "Empty Slot"
 
                     // Almost completely ghost the waveform
                     opacity: card.locked ? 0.15 : 1.0
@@ -138,9 +163,10 @@ Rectangle {
                 width: 20
                 height: 20
                 radius: 4
-                color: playMouse.containsMouse ? Theme.accentPurple : Theme.inputBackground
-                border.color: playMouse.containsMouse ? Theme.accentPurple : Theme.borderDefault
+                color: (!card.fileExists && card.filePath !== "") ? Theme.inputBackground : (playMouse.containsMouse ? Theme.accentPurple : Theme.inputBackground)
+                border.color: (!card.fileExists && card.filePath !== "") ? Theme.borderDefault : (playMouse.containsMouse ? Theme.accentPurple : Theme.borderDefault)
                 border.width: 1
+                opacity: (!card.fileExists && card.filePath !== "") ? 0.3 : 1.0
                 Behavior on color {
                     ColorAnimation {
                         duration: 100
@@ -149,7 +175,7 @@ Rectangle {
 
                 Image {
                     anchors.centerIn: parent
-                    source: "image://icons/play?color=%23" + (playMouse.containsMouse ? "1e1e1e" : "b0b0b0")
+                    source: "image://icons/play?color=%23" + ((playMouse.containsMouse && (card.fileExists || card.filePath === "")) ? "1e1e1e" : "b0b0b0")
                     width: 10
                     height: 10
                 }
@@ -157,10 +183,10 @@ Rectangle {
                 MouseArea {
                     id: playMouse
                     anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
+                    hoverEnabled: card.fileExists || card.filePath === ""
+                    cursorShape: (!card.fileExists && card.filePath !== "") ? Qt.ArrowCursor : Qt.PointingHandCursor
                     onClicked: {
-                        if (slotId)
+                        if (slotId && (card.fileExists || card.filePath === ""))
                             Backend.soundboard.playPlayer(slotId);
                     }
                 }

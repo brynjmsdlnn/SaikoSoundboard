@@ -176,6 +176,7 @@ Rectangle {
                 anchors.margins: 4
                 waveformData: Backend.replayWaveform
                 readOnly: true
+                emptyText: "Replay buffer empty"
             }
         }
     }

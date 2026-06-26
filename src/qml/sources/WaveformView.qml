@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import QtQuick.Layouts 1.15
 import Saiko 1.0
 
 Rectangle {
@@ -11,6 +12,12 @@ Rectangle {
     clip: true
 
     property var waveformData: null
+
+    property string filePath: ""
+    property bool fileExists: true
+    property string emptyText: "No audio file"
+
+    readonly property bool showPlaceholder: !fileExists || !dataSource.valid || !dataSource.peaks || dataSource.peaks.length === 0
 
     property alias startMs: dataSource.startMs
     property alias endMs: dataSource.endMs
@@ -61,10 +68,6 @@ Rectangle {
             ctx.fillRect(0, 0, w, h)
 
             if (!dataSource.valid || !peaks || peaks.length === 0) {
-                ctx.fillStyle = Theme.textDim
-                ctx.font = "11px sans-serif"
-                ctx.textAlign = "center"
-                ctx.fillText("[No Waveform]", w / 2, centerY + 4)
                 return
             }
 
@@ -233,6 +236,64 @@ Rectangle {
                 root.trimRangeCommit(dataSource.startMs, dataSource.endMs)
             dragTarget = 0
             cursorShape = Qt.ArrowCursor
+        }
+    }
+
+    ColumnLayout {
+        anchors.centerIn: parent
+        spacing: 6
+        visible: root.showPlaceholder
+
+        // Warning state (if missing)
+        Image {
+            visible: root.filePath !== "" && !root.fileExists
+            source: "image://icons/triangle-alert?color=" + encodeURIComponent(Theme.accentRed)
+            sourceSize: Qt.size(16, 16)
+            Layout.alignment: Qt.AlignHCenter
+        }
+
+        // Empty state (if empty, showing music icon)
+        Image {
+            visible: root.filePath === "" && root.emptyText !== "Replay buffer empty"
+            source: "image://icons/music?color=%23444444"
+            sourceSize: Qt.size(16, 16)
+            Layout.alignment: Qt.AlignHCenter
+        }
+
+        // Replay buffer empty state (headphones icon)
+        Image {
+            visible: root.filePath === "" && root.emptyText === "Replay buffer empty"
+            source: "image://icons/headphones?color=%23444444"
+            sourceSize: Qt.size(16, 16)
+            Layout.alignment: Qt.AlignHCenter
+        }
+
+        // Loading text
+        Text {
+            visible: root.filePath !== "" && root.fileExists && !dataSource.valid
+            text: "Loading waveform..."
+            color: Theme.textDim
+            font.pixelSize: 10
+            Layout.alignment: Qt.AlignHCenter
+        }
+
+        // Empty text
+        Text {
+            visible: root.filePath === "" && (!dataSource.valid || !dataSource.peaks || dataSource.peaks.length === 0)
+            text: root.emptyText
+            color: Theme.textDim
+            font.pixelSize: 10
+            Layout.alignment: Qt.AlignHCenter
+        }
+
+        // Missing text
+        Text {
+            visible: root.filePath !== "" && !root.fileExists
+            text: "Audio file missing"
+            color: Theme.accentRed
+            font.pixelSize: 10
+            font.bold: true
+            Layout.alignment: Qt.AlignHCenter
         }
     }
 }

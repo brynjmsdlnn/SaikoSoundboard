@@ -1,6 +1,8 @@
 #include "audio/soundplayer.h"
 #include <QUrl>
 #include <QDebug>
+#include <QFile>
+
 
 SoundPlayer::SoundPlayer(QObject *parent)
     : QObject(parent)
@@ -40,6 +42,11 @@ SoundPlayer::~SoundPlayer()
 void SoundPlayer::load(const QString &filePath)
 {
     m_filePath = filePath;
+    if (filePath.isEmpty() || !QFile::exists(filePath)) {
+        m_micPlayer->setSource(QUrl());
+        m_localPlayer->setSource(QUrl());
+        return;
+    }
     QUrl url = QUrl::fromLocalFile(filePath);
     m_micPlayer->setSource(url);
     m_localPlayer->setSource(url);

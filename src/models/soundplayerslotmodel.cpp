@@ -1,4 +1,5 @@
 #include "soundplayerslotmodel.h"
+#include <QFile>
 
 SoundPlayerSlotModel::SoundPlayerSlotModel(SoundboardManager *manager, QObject *parent)
     : QAbstractListModel(parent)
@@ -39,6 +40,9 @@ QVariant SoundPlayerSlotModel::data(const QModelIndex &index, int role) const
         return wf.isValid ? (static_cast<double>(wf.durationMs) / 1000.0) : 0.0;
     }
     case LockedRole:    return slot.locked;
+    case FileExistsRole:
+        if (slot.filePath.isEmpty()) return true;
+        return QFile::exists(slot.filePath);
     default: return {};
     }
 }
@@ -58,6 +62,7 @@ QHash<int, QByteArray> SoundPlayerSlotModel::roleNames() const
         {IsTemporaryRole,   "isTemporary"},
         {DurationSecRole,   "durationSec"},
         {LockedRole,        "locked"},
+        {FileExistsRole,    "fileExists"},
     };
 }
 

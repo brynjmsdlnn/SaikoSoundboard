@@ -9,6 +9,8 @@ RowLayout {
     property string slotId: ""
     property bool isLocked: false
     property bool hideDelete: false
+    property string filePath: ""
+    property bool fileExists: true
 
     signal deleteRequested()
 
@@ -67,11 +69,16 @@ RowLayout {
             implicitHeight: 76
 
             property bool isDelete: modelData.label === "Delete"
+            property bool isAction: modelData.label === "Play" || modelData.label === "Preview" || modelData.label === "Stop"
 
             // Hides the button entirely if the flag is true
             visible: !(root.hideDelete && isDelete)
 
-            enabled: !root.isLocked
+            enabled: {
+                if (root.isLocked) return false
+                if (isAction && (!root.fileExists || root.filePath === "")) return false
+                return true
+            }
 
             background: Rectangle {
                 color: parent.enabled && parent.hovered ? (isDelete ? modelData.hoverBg : Theme.inputBackground) : Theme.recessedBackground
@@ -101,9 +108,9 @@ RowLayout {
 
             MouseArea {
                 anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
+                cursorShape: actionBtn.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                 acceptedButtons: Qt.NoButton
-                hoverEnabled: true
+                hoverEnabled: actionBtn.enabled
             }
             onClicked: modelData.action()
         }

@@ -30,7 +30,7 @@ ColumnLayout {
         textRole: "text"
         valueRole: "value"
         currentIndex: root.outputRouting
-        onCurrentValueChanged: {
+        onActivated: {
             if (root.slotIndex >= 0)
                 root.slotModel.setRouting(root.slotIndex, currentValue)
         }

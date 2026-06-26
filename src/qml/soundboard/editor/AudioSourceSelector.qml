@@ -12,6 +12,7 @@ ColumnLayout {
     property string slotName: ""
     property bool isTemp: false
     property bool isLocked: false
+    property bool fileExists: true
 
     Layout.fillWidth: true
     spacing: 8
@@ -27,7 +28,12 @@ ColumnLayout {
         radius: 6
         color: assignBtnArea.containsMouse ? Theme.recessedBackground : Theme.inputBackground
 
-        border.color: isTemp ? (assignBtnArea.containsMouse ? "#d99a3d" : "#b8860b") : (assignBtnArea.containsMouse ? Theme.accentPurple : Theme.borderDefault)
+        border.color: {
+            if (!root.fileExists && root.filePath !== "") {
+                return Theme.accentRed;
+            }
+            return isTemp ? (assignBtnArea.containsMouse ? "#d99a3d" : "#b8860b") : (assignBtnArea.containsMouse ? Theme.accentPurple : Theme.borderDefault);
+        }
         border.width: 1
 
         Behavior on border.color { ColorAnimation { duration: 150 } }
@@ -48,7 +54,7 @@ ColumnLayout {
             spacing: 8
 
             Image {
-                source: "image://icons/music?color=%23888888"
+                source: (!root.fileExists && root.filePath !== "") ? "image://icons/triangle-alert?color=" + encodeURIComponent(Theme.accentRed) : "image://icons/music?color=%23888888"
                 smooth: true
                 sourceSize: Qt.size(16, 16)
             }
@@ -77,7 +83,10 @@ ColumnLayout {
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
                 text: root.filePath ? root.filePath.split("/").pop() : "No file assigned"
-                color: root.filePath ? Theme.textPrimary : Theme.textSecondary
+                color: {
+                    if (!root.fileExists && root.filePath !== "") return Theme.accentRed;
+                    return root.filePath ? Theme.textPrimary : Theme.textSecondary;
+                }
                 font.pixelSize: 13
                 font.italic: !root.filePath
             }
@@ -136,6 +145,13 @@ ColumnLayout {
                     onClicked: saveFileNameDialog.open()
                 }
             }
+        }
+
+        SaikoTooltip {
+            text: "File does not exist on disk:\n" + root.filePath
+            hovered: assignBtnArea.containsMouse && !root.fileExists && root.filePath !== ""
+            direction: "top"
+            z: 999
         }
 
         SaikoMenu {

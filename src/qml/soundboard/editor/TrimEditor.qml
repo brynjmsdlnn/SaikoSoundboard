@@ -10,6 +10,8 @@ ColumnLayout {
     property int endTimeMs: 0
     property var waveformData: null
     property bool isLocked: false
+    property string filePath: ""
+    property bool fileExists: true
     property int slotIndex: -1
     property var slotModel: null
 
@@ -38,6 +40,9 @@ ColumnLayout {
             endMs: root.endTimeMs
             waveformData: root.waveformData
             readOnly: root.isLocked
+            filePath: root.filePath
+            fileExists: root.fileExists
+            emptyText: "No file assigned"
 
             onTrimRangeChanged: (s, e) => {
                 if (!root.isLocked && root.slotIndex >= 0)
