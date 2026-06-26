@@ -23,6 +23,7 @@ Rectangle {
     property bool isTemporary: false
     property bool locked: false
     property int startTimeMs: 0
+    property int playState: 0
     property int endTimeMs: 0
     property real durationSec: 0.0
     property real volume: 1.0
@@ -66,6 +67,37 @@ Rectangle {
             wrapMode: Text.WordWrap
             horizontalAlignment: Text.AlignHCenter
             Layout.fillWidth: true
+        }
+    }
+
+    // ── Play/Preview Pulsing Overlay Border ──────────────────────────────────
+    Rectangle {
+        id: playPulseOverlay
+        z: 9
+        anchors.fill: parent
+        anchors.margins: 4
+        color: "transparent"
+        border.width: 3
+        border.color: editor.playState === 1 ? Theme.accentGreen : (editor.playState === 2 ? Theme.accentTeal : "transparent")
+        radius: 4
+        visible: editor.hasSlot && editor.playState !== 0 && !editor.isLocked
+        opacity: pulseOpacity
+
+        property real pulseOpacity: 0.25
+
+        SequentialAnimation on pulseOpacity {
+            running: playPulseOverlay.visible
+            loops: Animation.Infinite
+            NumberAnimation {
+                to: 0.65
+                duration: 1000
+                easing.type: Easing.InOutQuad
+            }
+            NumberAnimation {
+                to: 0.15
+                duration: 1000
+                easing.type: Easing.InOutQuad
+            }
         }
     }
 
@@ -344,6 +376,10 @@ Rectangle {
             if (playerId === editor.slotId)
                 trimEditor.setPlayPositionMs(pos);
         }
+        function onPlayerPlayStateChanged(playerId, state) {
+            if (playerId === editor.slotId)
+                editor.playState = state;
+        }
     }
 
     // ── Signal handlers ───────────────────────────────────────────────────────
@@ -403,6 +439,7 @@ Rectangle {
             editor.waveformData = null;
             editor.lastLoadedSlotId = "";
             editor.lastLoadedFilePath = "";
+            editor.playState = 0;
             return;
         }
         const d = SlotModel.get(editor.slotIndex);
@@ -419,6 +456,7 @@ Rectangle {
         editor.outputRouting = d.outputRouting ?? 0;
         editor.playHotkey = d.playHotkey ?? "";
         editor.assignHotkey = d.assignHotkey ?? "";
+        editor.playState = d.playState ?? 0;
         loadWaveform();
     }
 }

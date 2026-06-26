@@ -23,7 +23,8 @@ public:
         IsTemporaryRole,
         DurationSecRole,
         LockedRole,
-        FileExistsRole
+        FileExistsRole,
+        PlayStateRole
     };
 
     explicit SoundPlayerSlotModel(SoundboardManager *manager, QObject *parent = nullptr);

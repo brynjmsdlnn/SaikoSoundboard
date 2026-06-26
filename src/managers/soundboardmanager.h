@@ -55,6 +55,7 @@ public:
     SoundPlayerSlot* getSlot(const QString &id);
     SoundPlayer* getPlayer(const QString &id);
     SettingsManager* settings() const { return m_settings; }
+    Q_INVOKABLE PlayState getPlayerPlayState(const QString &id) const;
 
     bool isMicOutputEnabled() const;
     bool isLocalMonitoringEnabled() const;
@@ -79,6 +80,7 @@ public:
 signals:
     void slotsChanged();
     void playerStateChanged(const QString &id, QMediaPlayer::PlaybackState state);
+    void playerPlayStateChanged(const QString &id, PlayState state);
     void playerPositionChanged(const QString &id, qint64 position);
     void playerDurationChanged(const QString &id, qint64 duration);
     void waveformGenerated(const QString &playerId, const WaveformData &data);

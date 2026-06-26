@@ -20,6 +20,21 @@ Q_ENUM_NS(OutputRouting)
 
 using SaikoOutput::OutputRouting;
 
+namespace SaikoPlayback {
+
+Q_NAMESPACE
+
+enum PlayState {
+    Stopped = 0,
+    Playing = 1,
+    Preview = 2
+};
+Q_ENUM_NS(PlayState)
+
+} // namespace SaikoPlayback
+
+using SaikoPlayback::PlayState;
+
 inline QString outputRoutingToString(OutputRouting routing) {
     switch (routing) {
         case OutputRouting::MicOnly: return "MicOnly";

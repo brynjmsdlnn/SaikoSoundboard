@@ -246,6 +246,18 @@ SoundPlayer* SoundboardManager::getPlayer(const QString &id)
     return m_players.value(id, nullptr);
 }
 
+PlayState SoundboardManager::getPlayerPlayState(const QString &id) const
+{
+    SoundPlayer *player = m_players.value(id, nullptr);
+    if (!player) return PlayState::Stopped;
+    
+    QMediaPlayer::PlaybackState state = player->playbackState();
+    if (state == QMediaPlayer::PlayingState) {
+        return player->isPreviewMode() ? PlayState::Preview : PlayState::Playing;
+    }
+    return PlayState::Stopped;
+}
+
 bool SoundboardManager::isMicOutputEnabled() const
 {
     return m_settings->enableMicOutput();
@@ -371,6 +383,7 @@ void SoundboardManager::updatePlayerEngine(const SoundPlayerSlot &slot)
         
         connect(player, &SoundPlayer::stateChanged, this, [this, id = slot.id](QMediaPlayer::PlaybackState state) {
             emit playerStateChanged(id, state);
+            emit playerPlayStateChanged(id, getPlayerPlayState(id));
         });
 
         connect(player, &SoundPlayer::positionChanged, this, [this, id = slot.id](qint64 pos) {

@@ -8,11 +8,13 @@ Rectangle {
     radius: 8
     color: isSelected ? "#19141f" : (cardHover.hovered ? "#161616" : Theme.cardBackground)
     border.color: {
+        if (playState === 1) return Qt.rgba(Theme.accentGreen.r, Theme.accentGreen.g, Theme.accentGreen.b, pulseOpacity);
+        if (playState === 2) return Qt.rgba(Theme.accentTeal.r, Theme.accentTeal.g, Theme.accentTeal.b, pulseOpacity);
         if (card.locked) return "#d99a3d";
         if (!fileExists && filePath !== "") return Theme.accentRed;
         return isSelected ? Theme.accentPurple : (cardHover.hovered ? Theme.borderHover : Theme.borderDefault);
     }
-    border.width: isSelected ? 2 : 1
+    border.width: (playState === 1 || playState === 2) ? 2 : (isSelected ? 2 : 1)
 
     Behavior on color {
         ColorAnimation {
@@ -20,8 +22,32 @@ Rectangle {
         }
     }
     Behavior on border.color {
+        enabled: playState === 0
         ColorAnimation {
             duration: Theme.animDuration
+        }
+    }
+
+    property real pulseOpacity: 1.0
+
+    onPlayStateChanged: {
+        if (playState === 0) {
+            pulseOpacity = 1.0;
+        }
+    }
+
+    SequentialAnimation on pulseOpacity {
+        running: playState !== 0
+        loops: Animation.Infinite
+        NumberAnimation {
+            to: 0.3
+            duration: 1000
+            easing.type: Easing.InOutQuad
+        }
+        NumberAnimation {
+            to: 1.0
+            duration: 1000
+            easing.type: Easing.InOutQuad
         }
     }
 
@@ -39,6 +65,7 @@ Rectangle {
     property bool fileExists: true
     property int startTimeMs: 0
     property int endTimeMs: -1
+    property int playState: 0
 
     property var waveformData: null
 
@@ -166,8 +193,8 @@ Rectangle {
                 width: 20
                 height: 20
                 radius: 4
-                color: (!card.fileExists && card.filePath !== "") ? Theme.inputBackground : (playMouse.containsMouse ? Theme.accentPurple : Theme.inputBackground)
-                border.color: (!card.fileExists && card.filePath !== "") ? Theme.borderDefault : (playMouse.containsMouse ? Theme.accentPurple : Theme.borderDefault)
+                color: (!card.fileExists && card.filePath !== "") ? Theme.inputBackground : (playMouse.containsMouse ? (playState !== 0 ? Theme.accentRed : Theme.accentPurple) : Theme.inputBackground)
+                border.color: (!card.fileExists && card.filePath !== "") ? Theme.borderDefault : (playMouse.containsMouse ? (playState !== 0 ? Theme.accentRed : Theme.accentPurple) : Theme.borderDefault)
                 border.width: 1
                 opacity: (!card.fileExists && card.filePath !== "") ? 0.3 : 1.0
                 Behavior on color {
@@ -178,7 +205,7 @@ Rectangle {
 
                 Image {
                     anchors.centerIn: parent
-                    source: "image://icons/play?color=%23" + ((playMouse.containsMouse && (card.fileExists || card.filePath === "")) ? "1e1e1e" : "b0b0b0")
+                    source: "image://icons/" + (playState !== 0 ? "square" : "play") + "?color=%23" + ((playMouse.containsMouse && (card.fileExists || card.filePath === "")) ? "1e1e1e" : "b0b0b0")
                     width: 10
                     height: 10
                 }
@@ -189,8 +216,13 @@ Rectangle {
                     hoverEnabled: card.fileExists || card.filePath === ""
                     cursorShape: (!card.fileExists && card.filePath !== "") ? Qt.ArrowCursor : Qt.PointingHandCursor
                     onClicked: {
-                        if (slotId && (card.fileExists || card.filePath === ""))
-                            Backend.soundboard.playPlayer(slotId);
+                        if (slotId && (card.fileExists || card.filePath === "")) {
+                            if (playState !== 0) {
+                                Backend.soundboard.stopPlayer(slotId);
+                            } else {
+                                Backend.soundboard.playPlayer(slotId);
+                            }
+                        }
                     }
                 }
             }

@@ -124,6 +124,7 @@ Rectangle {
                     fileExists: model.fileExists
                     startTimeMs: model.startTimeMs
                     endTimeMs: model.endTimeMs
+                    playState: model.playState
                 }
             }
         }

@@ -7,6 +7,13 @@ SoundPlayerSlotModel::SoundPlayerSlotModel(SoundboardManager *manager, QObject *
 {
     m_slots = m_manager->getSlots();
     connect(m_manager, &SoundboardManager::slotsChanged, this, &SoundPlayerSlotModel::onSlotsChanged);
+    connect(m_manager, &SoundboardManager::playerPlayStateChanged, this, [this](const QString &id, PlayState state) {
+        Q_UNUSED(state);
+        int row = rowForId(id);
+        if (row != -1) {
+            emit dataChanged(index(row, 0), index(row, 0), {PlayStateRole});
+        }
+    });
 }
 
 int SoundPlayerSlotModel::rowCount(const QModelIndex &parent) const
@@ -43,6 +50,8 @@ QVariant SoundPlayerSlotModel::data(const QModelIndex &index, int role) const
     case FileExistsRole:
         if (slot.filePath.isEmpty()) return true;
         return QFile::exists(slot.filePath);
+    case PlayStateRole:
+        return static_cast<int>(m_manager->getPlayerPlayState(slot.id));
     default: return {};
     }
 }
@@ -63,6 +72,7 @@ QHash<int, QByteArray> SoundPlayerSlotModel::roleNames() const
         {DurationSecRole,   "durationSec"},
         {LockedRole,        "locked"},
         {FileExistsRole,    "fileExists"},
+        {PlayStateRole,     "playState"},
     };
 }
 
