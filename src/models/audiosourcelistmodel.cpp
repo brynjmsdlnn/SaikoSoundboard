@@ -116,6 +116,48 @@ bool AudioSourceListModel::setSolo(const QString &sourceId, bool solo)
     return false;
 }
 
+bool AudioSourceListModel::setEnabled(const QString &sourceId, bool enabled)
+{
+    for (int i = 0; i < m_sources.size(); ++i) {
+        if (m_sources[i].id == sourceId) {
+            m_sources[i].enabled = enabled;
+            auto sources = m_settings->sources();
+            for (int j = 0; j < sources.size(); ++j) {
+                if (sources[j].id == sourceId) {
+                    sources[j].enabled = enabled;
+                    break;
+                }
+            }
+            m_settings->setSources(sources);
+            m_settings->save();
+            emit dataChanged(index(i), index(i), {EnabledRole});
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AudioSourceListModel::setVolume(const QString &sourceId, float volume)
+{
+    for (int i = 0; i < m_sources.size(); ++i) {
+        if (m_sources[i].id == sourceId) {
+            m_sources[i].volume = volume;
+            auto sources = m_settings->sources();
+            for (int j = 0; j < sources.size(); ++j) {
+                if (sources[j].id == sourceId) {
+                    sources[j].volume = volume;
+                    break;
+                }
+            }
+            m_settings->setSources(sources);
+            m_settings->save();
+            emit dataChanged(index(i), index(i), {VolumeRole});
+            return true;
+        }
+    }
+    return false;
+}
+
 void AudioSourceListModel::onSourcesChanged()
 {
     beginResetModel();

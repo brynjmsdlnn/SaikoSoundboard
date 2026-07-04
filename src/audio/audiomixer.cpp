@@ -20,13 +20,13 @@ void AudioMixer::addSource(const QString &sourceId, float volume)
     QMutexLocker lock(&m_mutex);
     m_sourceQueues[sourceId] = QByteArray();
     m_sourceVolumes[sourceId] = volume;
+    m_sourceMuted[sourceId] = false;
 }
 
-void AudioMixer::removeSource(const QString &sourceId)
+void AudioMixer::setSourceMuted(const QString &sourceId, bool muted)
 {
     QMutexLocker lock(&m_mutex);
-    m_sourceQueues.remove(sourceId);
-    m_sourceVolumes.remove(sourceId);
+    m_sourceMuted[sourceId] = muted;
 }
 
 void AudioMixer::updateVolume(const QString &sourceId, float volume)
@@ -102,6 +102,9 @@ void AudioMixer::onMixTimer()
             const QString &id = it.key();
             QByteArray &queue = it.value();
             float vol = m_sourceVolumes[id];
+            if (m_sourceMuted.value(id, false)) {
+                vol = 0.0f;
+            }
 
             int bytesToPull = std::min((int)queue.size(), bytesNeeded);
             if (bytesToPull > 0) {
@@ -129,6 +132,9 @@ void AudioMixer::onMixTimer()
             const QString &id = it.key();
             QByteArray &queue = it.value();
             float vol = m_sourceVolumes[id];
+            if (m_sourceMuted.value(id, false)) {
+                vol = 0.0f;
+            }
 
             int bytesToPull = std::min((int)queue.size(), bytesNeeded);
             if (bytesToPull > 0) {

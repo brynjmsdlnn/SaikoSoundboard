@@ -18,7 +18,7 @@ public:
     ~AudioMixer();
 
     void addSource(const QString &sourceId, float volume = 1.0f);
-    void removeSource(const QString &sourceId);
+    void setSourceMuted(const QString &sourceId, bool muted);
     void updateVolume(const QString &sourceId, float volume);
     
     void pushPcmData(const QString &sourceId, const QByteArray &data);
@@ -39,6 +39,7 @@ private:
     WAVEFORMATEXTENSIBLE m_outputFormat;
     QMap<QString, QByteArray> m_sourceQueues;
     QMap<QString, float> m_sourceVolumes;
+    QMap<QString, bool> m_sourceMuted;
     QTimer *m_mixTimer;
     QMutex m_mutex;
     

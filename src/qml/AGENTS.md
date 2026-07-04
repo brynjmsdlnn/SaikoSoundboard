@@ -62,4 +62,4 @@ Recording panel sub-components — RecordingPanel, RecordingHeader, CaptureModeB
 Soundboard grid and card editor — SoundboardGridView, SoundboardGridCard, SlotEditor, HotkeyCard, and editor/ sub-components (SectionLabel, EditorHeader, SlotNameEditor, AudioSourceSelector, TrimEditor, VolumeSlider, RoutingSelector, HotkeyDisplay, ActionButtons). Owned by this doc.
 
 ### `sources/`
-Audio source management — SourcesPanel (add/remove + solo monitor toggle per source), WaveformView. Owned by this doc.
+Audio source management — SourcesPanel (expandable card with live volume slider, mute/unmute toggle, solo monitor, responsive text elision), WaveformView. Owned by this doc.

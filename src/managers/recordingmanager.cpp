@@ -118,11 +118,10 @@ void RecordingManager::startEngine(const QString &mode)
     } else {
         QList<AudioSource> sources = m_settings->sources();
         for (const auto& src : std::as_const(sources)) {
-            if (!src.enabled) continue;
-
             DWORD pid = Saiko::Adapters::WindowsProcessFinder::findProcessId(src.executableName);
             if (pid != 0) {
                 startRecorderForPid(pid, src.id, src.volume);
+                m_mixer->setSourceMuted(src.id, !src.enabled);
             }
         }
     }
@@ -252,4 +251,18 @@ void RecordingManager::setSourceSolo(const QString &sourceId, bool solo)
     }
     updateMuteStates();
     emit soloChanged(sourceId, solo);
+}
+
+void RecordingManager::setSourceVolume(const QString &sourceId, float volume)
+{
+    if (m_mixer) {
+        m_mixer->updateVolume(sourceId, volume);
+    }
+}
+
+void RecordingManager::setSourceMuted(const QString &sourceId, bool muted)
+{
+    if (m_mixer) {
+        m_mixer->setSourceMuted(sourceId, muted);
+    }
 }

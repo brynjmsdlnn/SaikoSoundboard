@@ -35,6 +35,8 @@ public:
 
     // Solo Monitor
     Q_INVOKABLE void setSourceSolo(const QString &sourceId, bool solo);
+    Q_INVOKABLE void setSourceVolume(const QString &sourceId, float volume);
+    Q_INVOKABLE void setSourceMuted(const QString &sourceId, bool muted);
 
     // Recording Control
     Q_INVOKABLE bool startRecording(const QString &path);
