@@ -95,7 +95,7 @@ QML UI layer — 19 QML files + 1 JS utility. All part of the `Saiko 1.0` module
 Core layer — pure business logic in `domain/` (no Qt, no platform deps) and platform adapters in `adapters/` (Windows API). See `src/core/AGENTS.md` for purity rules.
 
 ### `src/audio/`
-Audio engine — mixer, WASAPI recorder, sound player, replay buffer, waveform generator, WAV writer. Standard C++ with Qt Multimedia. No child AGENTS.md — owned by root.
+Audio engine — mixer, WASAPI recorder, WASAPI passthrough, sound player, replay buffer, waveform generator, WAV writer. Standard C++ with Qt Multimedia and WASAPI. No child AGENTS.md — owned by root.
 
 ### `src/managers/`
 Orchestration layer — ActionManager, HotkeyManager, RecordingManager, SettingsManager, SoundboardManager. Bridges domain logic to UI. No child AGENTS.md — owned by root.

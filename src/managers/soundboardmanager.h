@@ -5,9 +5,7 @@
 #include <QList>
 #include <QMap>
 #include <QAudioDevice>
-#include <QMediaCaptureSession>
-#include <QAudioInput>
-#include <QAudioOutput>
+#include "audio/wasapipassthrough.h"
 #include "models/soundplayerslot.h"
 #include "audio/soundplayer.h"
 #include "audio/waveformgenerator.h"
@@ -98,9 +96,7 @@ private:
     QAudioDevice m_micDevice;
     QAudioDevice m_localDevice;
 
-    QMediaCaptureSession *m_passthroughSession = nullptr;
-    QAudioInput *m_passthroughInput = nullptr;
-    QAudioOutput *m_passthroughOutput = nullptr;
+    WasapiPassthrough *m_passthrough = nullptr;
 
     void updatePlayerEngine(const SoundPlayerSlot &slot);
     QAudioDevice findAudioDevice(const QString &description);

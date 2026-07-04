@@ -53,6 +53,8 @@ set(UI_SOURCES
 set(AUDIO_SOURCES
     src/audio/wasapirecorder.cpp
     src/audio/wasapirecorder.h
+    src/audio/wasapipassthrough.cpp
+    src/audio/wasapipassthrough.h
     src/audio/audiomixer.cpp
     src/audio/audiomixer.h
     src/audio/replaybuffer.cpp

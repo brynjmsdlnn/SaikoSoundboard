@@ -14,14 +14,6 @@ SoundboardManager::SoundboardManager(SettingsManager *settings, QObject *parent)
     m_micDevice = findAudioDevice(m_settings->micOutputDevice());
     m_localDevice = findAudioDevice(m_settings->localMonitorDevice());
 
-    // Create passthrough loopback session
-    m_passthroughSession = new QMediaCaptureSession(this);
-    m_passthroughInput = new QAudioInput(this);
-    m_passthroughOutput = new QAudioOutput(this);
-
-    m_passthroughSession->setAudioInput(m_passthroughInput);
-    m_passthroughSession->setAudioOutput(m_passthroughOutput);
-
     connect(m_settings, &SettingsManager::enableMicOutputChanged, this, &SoundboardManager::micOutputEnabledChanged);
     connect(m_settings, &SettingsManager::enableLocalMonitoringChanged, this, &SoundboardManager::localMonitoringEnabledChanged);
     connect(m_settings, &SettingsManager::enableMicPassthroughChanged, this, &SoundboardManager::micPassthroughEnabledChanged);
@@ -448,20 +440,21 @@ QAudioDevice SoundboardManager::findAudioInputDevice(const QString &description)
 
 void SoundboardManager::updatePassthroughEngine()
 {
-    bool enabled = m_settings->enableMicPassthrough();
-    QString voiceDevName = m_settings->voiceInputDevice();
-
-    if (enabled) {
-        QAudioDevice inputDev = findAudioInputDevice(voiceDevName);
-        QAudioDevice outputDev = m_micDevice;
-
-        m_passthroughInput->setDevice(inputDev);
-        m_passthroughOutput->setDevice(outputDev);
-
-        m_passthroughInput->setMuted(false);
-        m_passthroughOutput->setVolume(1.0);
-    } else {
-        m_passthroughInput->setMuted(true);
-        m_passthroughOutput->setVolume(0.0);
+    if (m_passthrough) {
+        m_passthrough->stop();
+        delete m_passthrough;
+        m_passthrough = nullptr;
     }
+
+    bool enabled = m_settings->enableMicPassthrough();
+    if (!enabled) return;
+
+    QString voiceDevName = m_settings->voiceInputDevice();
+    QString outputDevName = m_settings->micOutputDevice();
+
+    m_passthrough = new WasapiPassthrough(this);
+    connect(m_passthrough, &WasapiPassthrough::error, this, [](const QString &msg) {
+        qWarning() << "Passthrough:" << msg;
+    });
+    m_passthrough->start(voiceDevName, outputDevName);
 }
