@@ -20,7 +20,6 @@ public:
     void load(const QString &filePath);
     QMediaPlayer::PlaybackState playbackState() const;
     bool isPreviewMode() const { return m_isPreviewMode; }
-    QString filePath() const { return m_filePath; }
 
     // Routing configuration
     void setRouting(OutputRouting routing);

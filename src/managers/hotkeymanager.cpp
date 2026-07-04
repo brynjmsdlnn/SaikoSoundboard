@@ -54,7 +54,7 @@ bool HotkeyManager::unregisterHotkey(const QString &keySequence)
 {
     int id = m_store.getId(keySequence.toStdString());
     if (id != -1) {
-        m_store.removeBindingById(id);
+        m_store.removeBindingBySequence(keySequence.toStdString());
         m_idToAction.remove(id);
         if (m_backend) {
             m_backend->unregisterHotkey(id);

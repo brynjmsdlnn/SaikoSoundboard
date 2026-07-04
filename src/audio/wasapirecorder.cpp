@@ -158,15 +158,6 @@ void WasapiRecorder::setTargetSampleRate(int sampleRate)
     m_targetSampleRate = sampleRate;
 }
 
-void WasapiRecorder::start(const QString &fileName, DWORD pid)
-{
-    if (m_running) return;
-    m_fileName = fileName;
-    m_processId = pid;
-    m_running = true;
-    m_future = QtConcurrent::run([this]() { runCapture(); });
-}
-
 void WasapiRecorder::start(DWORD pid)
 {
     if (m_running) return;

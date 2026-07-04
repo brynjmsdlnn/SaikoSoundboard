@@ -15,7 +15,6 @@ public:
 
     void start(const QString &inputDeviceDesc, const QString &outputDeviceDesc);
     void stop();
-    bool isRunning() const { return m_running.load(); }
 
 signals:
     void error(const QString &message);

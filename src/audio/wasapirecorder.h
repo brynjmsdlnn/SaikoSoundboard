@@ -15,10 +15,8 @@ public:
     explicit WasapiRecorder(QObject *parent = nullptr);
     ~WasapiRecorder();
 
-    void start(const QString &fileName, DWORD pid);
     void start(DWORD pid);
     void stop();
-    bool isRunning() const { return m_running.load(); }
 
     // Override the capture sample rate. Set before start().
     // sampleRate: 0 = system default, or any valid rate (22050, 44100, 48000, 96000, etc.)

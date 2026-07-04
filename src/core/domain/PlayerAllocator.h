@@ -12,10 +12,6 @@ public:
         m_counter++;
         return "player_" + std::to_string(m_counter);
     }
-    
-    void releaseId(const std::string& id) {
-        (void)id;
-    }
 
 private:
     int m_counter = 0;
