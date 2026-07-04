@@ -20,6 +20,7 @@ Flickable {
     signal startRequested
     signal stopRequested
     signal settingsRequested
+    signal aboutRequested
     signal captureModeSelected(string newMode)
     signal replaySaved(string path)
 
@@ -100,6 +101,7 @@ Flickable {
             cardPadding: root.cardPadding
             onCaptureModeSelected: (newMode) => root.captureModeSelected(newMode)
             onSettingsRequested: root.settingsRequested()
+            onAboutRequested: root.aboutRequested()
         }
 
         ReplayBufferSection {

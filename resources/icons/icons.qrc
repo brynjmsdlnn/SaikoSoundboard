@@ -20,5 +20,6 @@
         <file>unlock.svg</file>
         <file>volume-2.svg</file>
         <file>volume-x.svg</file>
+        <file>info.svg</file>
     </qresource>
 </RCC>

@@ -12,6 +12,7 @@ Rectangle {
 
     signal captureModeSelected(string newMode)
     signal settingsRequested
+    signal aboutRequested
 
     implicitHeight: captureContent.implicitHeight + 24
     color: Theme.appBackground
@@ -72,6 +73,13 @@ Rectangle {
             small: true
             implicitWidth: 28
             onClicked: root.settingsRequested()
+        }
+
+        SaikoButton {
+            iconSource: "image://icons/info?color=%23b0b0b0"
+            small: true
+            implicitWidth: 28
+            onClicked: root.aboutRequested()
         }
     }
 }

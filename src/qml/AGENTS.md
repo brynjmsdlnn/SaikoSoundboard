@@ -53,7 +53,7 @@ Reusable UI primitives — SaikoButton, SaikoCheckBox, SaikoComboBox, SaikoToolt
 Shared singleton and utilities — Theme.qml (singleton), utils.js (JS utility functions). Owned by this doc.
 
 ### `dialogs/`
-Standalone windows and popups — SettingsDialog, HotkeyDialog, RoutingDialog, ProcessSelectionPopup. Owned by this doc.
+Standalone windows and popups — SettingsDialog, HotkeyDialog, RoutingDialog, ProcessSelectionPopup, AboutDialog. Owned by this doc.
 
 ### `recording/`
 Recording panel sub-components — RecordingPanel, RecordingHeader, CaptureModeBar, ReplayBufferSection, TransportControls. Owned by this doc.

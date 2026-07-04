@@ -89,7 +89,7 @@ Default section order:
 ## Child DOX Index
 
 ### `src/qml/`
-QML UI layer — 19 QML files + 1 JS utility. All part of the `Saiko 1.0` module. Uses `Theme` singleton, `ThemedButton`, `utils.js`. See `src/qml/AGENTS.md` for conventions.
+QML UI layer — 20 QML files + 1 JS utility. All part of the `Saiko 1.0` module. Uses `Theme` singleton, `SaikoButton`, `utils.js`, `AboutDialog`. See `src/qml/AGENTS.md` for conventions.
 
 ### `src/core/`
 Core layer — pure business logic in `domain/` (no Qt, no platform deps) and platform adapters in `adapters/` (Windows API). See `src/core/AGENTS.md` for purity rules.
@@ -110,4 +110,7 @@ C++ UI backend — QmlBackend (singleton exposed to QML), WaveformItem (QQuickPa
 Automated test suite — unit tests in `tests/unit/`, integration tests in `tests/integration/`. CTest + Qt Test framework. See `tests/AGENTS.md` for registration conventions.
 
 ### `tools/`
-Manual verification tools — SoundPlayerVerify, ActionManagerVerify, HotkeyManagerVerify. Optional build (`BUILD_VERIFICATION_TOOLS=ON`). See `tools/AGENTS.md` for conventions.
+Manual verification tools — SoundPlayerVerify, ActionManagerVerify, HotkeyManagerVerify, plus `deploy_release.ps1` release packaging script. See `tools/AGENTS.md` for conventions.
+
+### `installer/`
+Windows installer configuration — `SaikoSoundboard.iss` Inno Setup script for building standalone setup installers. No child AGENTS.md — owned by root.

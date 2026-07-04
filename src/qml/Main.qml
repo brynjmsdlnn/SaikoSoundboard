@@ -203,6 +203,7 @@ ApplicationWindow {
                     app.lastRecordingPath = path;
                 }
                 onSettingsRequested: settingsDialog.show()
+                onAboutRequested: aboutDialog.show()
             }
 
             // ---------------- SOURCES DOCK ----------------
@@ -326,6 +327,10 @@ ApplicationWindow {
             Backend.settings.replayDirectoryOverride = "";
             Backend.settings.save();
         }
+    }
+
+    AboutDialog {
+        id: aboutDialog
     }
 
     Connections {

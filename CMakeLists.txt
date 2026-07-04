@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(SaikoSoundboard VERSION 0.1 LANGUAGES CXX)
+project(SaikoSoundboard VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -175,6 +175,7 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/dialogs/HotkeyDialog.qml
         src/qml/dialogs/RoutingDialog.qml
         src/qml/dialogs/ProcessSelectionPopup.qml
+        src/qml/dialogs/AboutDialog.qml
 
         # --- Recording panel ---
         src/qml/recording/RecordingPanel.qml
@@ -232,3 +233,23 @@ install(TARGETS SaikoSoundboard
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(SaikoSoundboard)
 endif()
+
+# --- Packaging (CPack) ---
+
+set(CPACK_PACKAGE_NAME "SaikoSoundboard")
+set(CPACK_PACKAGE_VENDOR "Saiko Interactive")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Low-Latency Windows Soundboard & WASAPI Audio Recorder")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "SaikoSoundboard")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+
+if(WIN32)
+    set(CPACK_GENERATOR "ZIP;NSIS")
+    set(CPACK_PACKAGE_EXECUTABLES "SaikoSoundboard" "SaikoSoundboard")
+endif()
+
+include(CPack)
+
