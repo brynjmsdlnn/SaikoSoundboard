@@ -10,7 +10,7 @@ Rectangle {
     border.color: {
         if (playState === 1) return Qt.rgba(Theme.accentGreen.r, Theme.accentGreen.g, Theme.accentGreen.b, pulseOpacity);
         if (playState === 2) return Qt.rgba(Theme.accentTeal.r, Theme.accentTeal.g, Theme.accentTeal.b, pulseOpacity);
-        if (card.locked) return "#d99a3d";
+        if (card.locked) return Theme.warning;
         if (!fileExists && filePath !== "") return Theme.accentRed;
         return isSelected ? Theme.accentPurple : (cardHover.hovered ? Theme.borderHover : Theme.borderDefault);
     }
@@ -98,7 +98,7 @@ Rectangle {
             y: 20 - height / 2
             width: 70
             height: 14
-            color: "#d99a3d"
+            color: Theme.warning
             rotation: 45
             transformOrigin: Item.Center
 

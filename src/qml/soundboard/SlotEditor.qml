@@ -167,7 +167,7 @@ Rectangle {
                             text: curvedText.lockText[index]
                             anchors.horizontalCenter: parent.horizontalCenter
                             y: (parent.height / 2) - curvedText.textRadius - (height / 2)
-                            color: "#d99a3d"
+                            color: Theme.warning
                             font.pixelSize: 22
                             font.bold: true
                             scale: curvedText.textScale
@@ -184,7 +184,7 @@ Rectangle {
                 width: parent.width
                 height: parent.height
                 radius: width / 2
-                color: "#d99a3d"
+                color: Theme.warning
                 visible: cautionBtnArea.containsMouse
 
                 ParallelAnimation {
@@ -213,14 +213,14 @@ Rectangle {
             Rectangle {
                 anchors.fill: parent
                 radius: width / 2
-                color: cautionBtnArea.containsMouse ? "#d99a3d" : "#1a1008"
-                border.color: "#d99a3d"
+                color: cautionBtnArea.containsMouse ? Theme.warning : "#1a1008"
+                border.color: Theme.warning
                 border.width: 2
 
                 Image {
                     anchors.centerIn: parent
                     // CHANGES HERE: Toggles icon source between 'unlock' and 'lock' dynamically
-                    source: "image://icons/" + (cautionBtnArea.containsMouse ? "unlock" : "lock") + "?color=" + (cautionBtnArea.containsMouse ? "%231a1008" : "%23d99a3d")
+                    source: "image://icons/" + (cautionBtnArea.containsMouse ? "unlock" : "lock") + "?color=" + (cautionBtnArea.containsMouse ? "%231a1008" : encodeURIComponent(Theme.warning))
                     sourceSize: Qt.size(64, 64)
                 }
 
@@ -412,6 +412,7 @@ Rectangle {
 
     function openHotkeyDialog() {
         Utils.openDialog("../dialogs/HotkeyDialog.qml", {
+            slotId: editor.slotId,
             playKey: editor.playHotkey || "",
             assignKey: editor.assignHotkey || ""
         }, function (win) {

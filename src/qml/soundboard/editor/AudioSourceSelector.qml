@@ -32,7 +32,7 @@ ColumnLayout {
             if (!root.fileExists && root.filePath !== "") {
                 return Theme.accentRed;
             }
-            return isTemp ? (assignBtnArea.containsMouse ? "#d99a3d" : "#b8860b") : (assignBtnArea.containsMouse ? Theme.accentPurple : Theme.borderDefault);
+            return isTemp ? (assignBtnArea.containsMouse ? Theme.warning : Theme.warningDark) : (assignBtnArea.containsMouse ? Theme.accentPurple : Theme.borderDefault);
         }
         border.width: 1
 
@@ -65,14 +65,14 @@ ColumnLayout {
                 implicitHeight: 20
                 radius: 4
                 color: "#33250a"
-                border.color: "#b8860b"
+                border.color: Theme.warningDark
                 border.width: 1
 
                 Text {
                     id: tempText
                     anchors.centerIn: parent
                     text: "TEMP"
-                    color: "#d99a3d"
+                    color: Theme.warning
                     font.pixelSize: 10
                     font.bold: true
                 }
@@ -97,14 +97,14 @@ ColumnLayout {
                 implicitHeight: 20
                 radius: 4
                 color: "#2a1a08"
-                border.color: "#b8860b"
+                border.color: Theme.warningDark
                 border.width: 1
 
                 Text {
                     id: lockText
                     anchors.centerIn: parent
                     text: "LOCKED"
-                    color: "#d99a3d"
+                    color: Theme.warning
                     font.pixelSize: 10
                     font.bold: true
                 }
@@ -122,7 +122,7 @@ ColumnLayout {
                 implicitHeight: 26
                 radius: 4
                 color: permanentBtnArea.containsMouse ? "#33250a" : "#1f1606"
-                border.color: permanentBtnArea.containsMouse ? "#d99a3d" : "transparent"
+                border.color: permanentBtnArea.containsMouse ? Theme.warning : "transparent"
                 border.width: 1
 
                 Image {

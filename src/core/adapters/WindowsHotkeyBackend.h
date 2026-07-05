@@ -1,9 +1,7 @@
 #ifndef WINDOWSHOTKEYBACKEND_H
 #define WINDOWSHOTKEYBACKEND_H
-
 #include <QKeySequence>
-#include <windows.h>
-#include <map>
+#include <set>
 #include <string>
 
 namespace Saiko {
@@ -16,12 +14,17 @@ public:
     void unregisterAll();
 
 private:
-    static UINT getWinModifiers(const QKeySequence &ks);
-    static UINT getWinVirtualKey(const QKeySequence &ks);
-    std::map<int, bool> m_registeredIds;
+    // Plain `unsigned int` (not the WinAPI `UINT` typedef) so this header
+    // doesn't need to include <windows.h> — that keeps Windows macros
+    // (min/max, near/far, ...) from leaking into every file that includes
+    // this one. <windows.h> is only pulled in by the .cpp, where the actual
+    // WinAPI calls live.
+    static unsigned int getWinModifiers(const QKeySequence &ks);
+    static unsigned int getWinVirtualKey(const QKeySequence &ks, bool isNumpad);
+
+    std::set<int> m_registeredIds;
 };
 
 } // namespace Adapters
 } // namespace Saiko
-
 #endif // WINDOWSHOTKEYBACKEND_H
