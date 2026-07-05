@@ -1,0 +1,25 @@
+SaikoSoundboard Permissions & Requirements
+==========================================
+
+To capture, record, mix, and trigger audio hotkeys correctly, SaikoSoundboard requires the following standard Windows permissions and system features:
+
+1. Microphone / Audio Input Access
+----------------------------------
+SaikoSoundboard uses Windows WASAPI loopback interface to record desktop and application audio streams. Windows treats loopback capture as a recording input.
+* What it's used for: Capturing system audio output and recording multi-track application streams.
+* How to enable: Ensure that "Microphone access" is enabled in Windows Settings under:
+  Privacy & security > Microphone > Allow apps to access your microphone.
+
+2. Global Keyboard Hook (Global Hotkeys)
+----------------------------------------
+To trigger soundboard slots instantly while you are inside games, voice chats (such as Discord), or other applications.
+* What it's used for: Registering and listening for global keyboard hotkeys.
+* How to enable: No special action required. Run the application normally.
+
+3. Local Disk Write Access
+--------------------------
+To save configuration settings and output high-fidelity WAV recordings.
+* What it's used for: Saving sound files in your chosen Recordings/Replays directory and storing settings in your user profile.
+* How to enable: Ensure the application has read/write permissions to your designated storage folder.
+
+By proceeding with this installation, you acknowledge these requirements.

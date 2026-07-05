@@ -67,7 +67,7 @@ Window {
                         Text {
                             id: versionText
                             anchors.centerIn: parent
-                            text: "v0.1.0 Beta"
+                            text: "v0.1.1 Beta"
                             color: Theme.accentTeal
                             font.pixelSize: 11
                             font.weight: Font.Bold

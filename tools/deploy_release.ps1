@@ -1,4 +1,4 @@
-# PowerShell Deployment Script for SaikoSoundboard Beta v0.1.0
+# PowerShell Deployment Script for SaikoSoundboard Beta v0.1.1
 
 $ErrorActionPreference = "Stop"
 
@@ -8,11 +8,11 @@ $QtBin = "$QtPrefix\bin"
 $WinDeployQt = "$QtBin\windeployqt.exe"
 $BuildDir = "$ProjectRoot\build_release"
 $DistDir = "$ProjectRoot\dist"
-$StagingDir = "$DistDir\SaikoSoundboard-v0.1.0-beta"
+$StagingDir = "$DistDir\SaikoSoundboard-v0.1.1-beta"
 $InstallerScript = "$ProjectRoot\installer\SaikoSoundboard.iss"
 
 Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host " SaikoSoundboard Release Deployment v0.1.0" -ForegroundColor Cyan
+Write-Host " SaikoSoundboard Release Deployment v0.1.1" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 
 # Terminate any running instances of SaikoSoundboard to prevent file locking
@@ -74,9 +74,64 @@ if (Test-Path $WinDeployQt) {
     windeployqt --qmldir "$ProjectRoot\src\qml" --compiler-runtime "$StagingDir\SaikoSoundboard.exe"
 }
 
+# 4.5 Optimize Deployed Folder Size (Clean unused QML styles and translations)
+Write-Host "`nOptimizing deployment size..." -ForegroundColor Yellow
+
+# Keep only English translations
+$TranslationsDir = "$StagingDir\translations"
+if (Test-Path $TranslationsDir) {
+    Get-ChildItem -Path $TranslationsDir -File | ForEach-Object {
+        if ($_.Name -ne "qt_en.qm") {
+            Remove-Item $_.FullName -Force
+        }
+    }
+}
+
+# Remove unused QML style folders
+$ControlsDir = "$StagingDir\qml\QtQuick\Controls"
+if (Test-Path $ControlsDir) {
+    $UnusedStyles = @("FluentWinUI3", "Fusion", "Imagine", "Material", "Universal", "Windows")
+    foreach ($style in $UnusedStyles) {
+        $path = Join-Path $ControlsDir $style
+        if (Test-Path $path) {
+            Remove-Item $path -Recurse -Force
+        }
+    }
+}
+
+# Remove unused style plugins and DLLs
+$UnusedDlls = @(
+    "Qt6QuickControls2FluentWinUI3StyleImpl.dll",
+    "Qt6QuickControls2FusionStyleImpl.dll",
+    "Qt6QuickControls2ImagineStyleImpl.dll",
+    "Qt6QuickControls2MaterialStyleImpl.dll",
+    "Qt6QuickControls2UniversalStyleImpl.dll",
+    "Qt6QuickControls2WindowsStyleImpl.dll",
+    "qtquickcontrols2fluentwinui3styleplugin.dll",
+    "qtquickcontrols2fluentwinui3styleimplplugin.dll",
+    "qtquickcontrols2fusionstyleplugin.dll",
+    "qtquickcontrols2fusionstyleimplplugin.dll",
+    "qtquickcontrols2imaginestyleplugin.dll",
+    "qtquickcontrols2imaginestyleimplplugin.dll",
+    "qtquickcontrols2materialstyleplugin.dll",
+    "qtquickcontrols2materialstyleimplplugin.dll",
+    "qtquickcontrols2universalstyleplugin.dll",
+    "qtquickcontrols2universalstyleimplplugin.dll",
+    "qtquickcontrols2windowsstyleplugin.dll",
+    "qtquickcontrols2windowsstyleimplplugin.dll",
+    "opengl32sw.dll"
+)
+
+foreach ($dll in $UnusedDlls) {
+    $path = Get-ChildItem -Path $StagingDir -Filter $dll -Recurse -ErrorAction SilentlyContinue
+    if ($path) {
+        $path | Remove-Item -Force
+    }
+}
+
 # 6. Create Zip Archive
 Write-Host "`n[5/5] Creating portable ZIP distribution..." -ForegroundColor Yellow
-$ZipPath = "$DistDir\SaikoSoundboard-v0.1.0-beta-portable.zip"
+$ZipPath = "$DistDir\SaikoSoundboard-v0.1.1-beta-portable.zip"
 if (Test-Path $ZipPath) { Remove-Item -Force $ZipPath }
 Compress-Archive -Path "$StagingDir\*" -DestinationPath $ZipPath
 
@@ -87,7 +142,8 @@ $Iscc = Get-Command "iscc.exe" -ErrorAction SilentlyContinue
 if (-not $Iscc) {
     $CommonInnoPaths = @(
         "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
-        "${env:ProgramFiles}\Inno Setup 6\ISCC.exe"
+        "${env:ProgramFiles}\Inno Setup 6\ISCC.exe",
+        "${env:LocalAppData}\Programs\Inno Setup 6\ISCC.exe"
     )
     foreach ($p in $CommonInnoPaths) {
         if (Test-Path $p) {
