@@ -33,6 +33,7 @@ class SettingsManager : public QObject
     Q_PROPERTY(QString voiceInputDevice READ voiceInputDevice WRITE setVoiceInputDevice NOTIFY voiceInputDeviceChanged)
     Q_PROPERTY(int recordingSampleRate READ recordingSampleRate WRITE setRecordingSampleRate NOTIFY recordingSampleRateChanged)
     Q_PROPERTY(bool hotkeysEnabled READ hotkeysEnabled WRITE setHotkeysEnabled NOTIFY hotkeysEnabledChanged)
+    Q_PROPERTY(PlaybackMode defaultPlaybackMode READ defaultPlaybackMode WRITE setDefaultPlaybackMode NOTIFY defaultPlaybackModeChanged)
 public:
     explicit SettingsManager(QObject *parent = nullptr);
 
@@ -57,6 +58,7 @@ public:
     QString voiceInputDevice() const { return m_voiceInputDevice; }
     int recordingSampleRate() const { return m_recordingSampleRate; }
     bool hotkeysEnabled() const { return m_hotkeysEnabled; }
+    PlaybackMode defaultPlaybackMode() const { return m_defaultPlaybackMode; }
 
     // Setters
     void setSources(const QList<AudioSource> &sources);
@@ -74,6 +76,7 @@ public:
     void setVoiceInputDevice(const QString &device);
     void setRecordingSampleRate(int sampleRate);
     void setHotkeysEnabled(bool enabled);
+    void setDefaultPlaybackMode(PlaybackMode mode);
 
 signals:
     void sourcesChanged();
@@ -93,6 +96,7 @@ signals:
     void voiceInputDeviceChanged();
     void recordingSampleRateChanged();
     void hotkeysEnabledChanged();
+    void defaultPlaybackModeChanged();
 
 private:
     QString getSettingsFilePath() const;
@@ -112,6 +116,7 @@ private:
     QString m_voiceInputDevice;
     int m_recordingSampleRate = 48000;
     bool m_hotkeysEnabled = true;
+    PlaybackMode m_defaultPlaybackMode = PlaybackMode::RestartRetrigger;
 };
 
 #endif // SETTINGSMANAGER_H

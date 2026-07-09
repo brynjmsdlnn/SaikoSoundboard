@@ -28,6 +28,7 @@ Rectangle {
     property real durationSec: 0.0
     property real volume: 1.0
     property int outputRouting: 0
+    property int playbackMode: 0
     property string playHotkey: ""
     property string assignHotkey: ""
     property var waveformData: null
@@ -323,6 +324,13 @@ Rectangle {
                         slotModel: editor.slotModel
                     }
 
+                    PlaybackModeSelector {
+                        playbackMode: editor.playbackMode
+                        isLocked: editor.isLocked
+                        slotIndex: editor.slotIndex
+                        slotModel: editor.slotModel
+                    }
+
                     HotkeyDisplay {
                         playHotkey: editor.playHotkey
                         assignHotkey: editor.assignHotkey
@@ -435,6 +443,7 @@ Rectangle {
             editor.durationSec = 0;
             editor.volume = 1;
             editor.outputRouting = 0;
+            editor.playbackMode = 0;
             editor.playHotkey = "";
             editor.assignHotkey = "";
             editor.waveformData = null;
@@ -455,6 +464,7 @@ Rectangle {
         editor.durationSec = d.durationSec ?? 0;
         editor.volume = d.volume ?? 1;
         editor.outputRouting = d.outputRouting ?? 0;
+        editor.playbackMode = d.playbackMode ?? 0;
         editor.playHotkey = d.playHotkey ?? "";
         editor.assignHotkey = d.assignHotkey ?? "";
         editor.playState = d.playState ?? 0;

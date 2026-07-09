@@ -24,7 +24,8 @@ public:
         DurationSecRole,
         LockedRole,
         FileExistsRole,
-        PlayStateRole
+        PlayStateRole,
+        PlaybackModeRole
     };
 
     explicit SoundPlayerSlotModel(SoundboardManager *manager, QObject *parent = nullptr);
@@ -35,6 +36,7 @@ public:
 
     Q_INVOKABLE void setVolume(int row, float volume);
     Q_INVOKABLE void setRouting(int row, int routing);
+    Q_INVOKABLE void setPlaybackMode(int row, int mode);
     Q_INVOKABLE void setClipRange(int row, qint64 startMs, qint64 endMs, bool save = false);
     Q_INVOKABLE QVariantMap get(int row) const;
 

@@ -58,12 +58,13 @@ public:
     bool isMicOutputEnabled() const;
     bool isLocalMonitoringEnabled() const;
 
-    // Mutators for Routing
+    // Mutators for Routing & Playback Mode
     Q_INVOKABLE void setMicOutputEnabled(bool enabled);
     Q_INVOKABLE void setLocalMonitoringEnabled(bool enabled);
     Q_INVOKABLE void setMicOutputDevice(const QString &description);
     Q_INVOKABLE void setLocalMonitorDevice(const QString &description);
     Q_INVOKABLE void setPlayerRouting(const QString &id, OutputRouting routing);
+    Q_INVOKABLE void setPlayerPlaybackMode(const QString &id, PlaybackMode mode);
 
     // Clipping and Waveforms
     Q_INVOKABLE void setPlayerClipRange(const QString &id, qint64 startMs, qint64 endMs, bool save = false);

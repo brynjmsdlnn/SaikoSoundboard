@@ -31,9 +31,20 @@ enum PlayState {
 };
 Q_ENUM_NS(PlayState)
 
+enum PlaybackMode {
+    Default          = 0,
+    RestartRetrigger = 1,
+    ToggleStop       = 2,
+    QueuedSequential = 3,
+    LayeredCutAll    = 4,
+    LayeredRingOut   = 5
+};
+Q_ENUM_NS(PlaybackMode)
+
 } // namespace SaikoPlayback
 
 using SaikoPlayback::PlayState;
+using SaikoPlayback::PlaybackMode;
 
 inline QString outputRoutingToString(OutputRouting routing) {
     switch (routing) {
@@ -50,6 +61,28 @@ inline OutputRouting stringToOutputRouting(const QString& str) {
     return OutputRouting::Both;
 }
 
+inline QString playbackModeToString(PlaybackMode mode) {
+    switch (mode) {
+        case PlaybackMode::RestartRetrigger: return "RestartRetrigger";
+        case PlaybackMode::ToggleStop: return "ToggleStop";
+        case PlaybackMode::QueuedSequential: return "QueuedSequential";
+        case PlaybackMode::LayeredCutAll: return "LayeredCutAll";
+        case PlaybackMode::LayeredRingOut: return "LayeredRingOut";
+        case PlaybackMode::Default:
+        default: return "Default";
+    }
+}
+
+inline PlaybackMode stringToPlaybackMode(const QString& str) {
+    if (str == "RestartRetrigger") return PlaybackMode::RestartRetrigger;
+    if (str == "ToggleStop") return PlaybackMode::ToggleStop;
+    if (str == "QueuedSequential") return PlaybackMode::QueuedSequential;
+    if (str == "LayeredCutAll") return PlaybackMode::LayeredCutAll;
+    if (str == "LayeredRingOut") return PlaybackMode::LayeredRingOut;
+    qWarning() << "Unknown PlaybackMode string:" << str << "— falling back to Default";
+    return PlaybackMode::Default;
+}
+
 struct SoundPlayerSlot {
     Q_GADGET
     Q_PROPERTY(QString id MEMBER id CONSTANT)
@@ -59,6 +92,7 @@ struct SoundPlayerSlot {
     Q_PROPERTY(QString assignHotkey MEMBER assignHotkey CONSTANT)
     Q_PROPERTY(float volume MEMBER volume CONSTANT)
     Q_PROPERTY(OutputRouting outputRouting MEMBER outputRouting CONSTANT)
+    Q_PROPERTY(PlaybackMode playbackMode MEMBER playbackMode CONSTANT)
     Q_PROPERTY(qint64 startTimeMs MEMBER startTimeMs CONSTANT)
     Q_PROPERTY(qint64 endTimeMs MEMBER endTimeMs CONSTANT)
     Q_PROPERTY(bool locked MEMBER locked CONSTANT)
@@ -72,6 +106,7 @@ public:
     float volume = 1.0f;
     bool locked = false;
     OutputRouting outputRouting = OutputRouting::Both;
+    PlaybackMode playbackMode = PlaybackMode::Default;
     qint64 startTimeMs = 0;
     qint64 endTimeMs = -1;
 
@@ -83,8 +118,8 @@ public:
         return id == other.id && name == other.name && filePath == other.filePath
             && playHotkey == other.playHotkey && assignHotkey == other.assignHotkey
             && qFuzzyCompare(volume, other.volume) && locked == other.locked
-            && outputRouting == other.outputRouting && startTimeMs == other.startTimeMs
-            && endTimeMs == other.endTimeMs;
+            && outputRouting == other.outputRouting && playbackMode == other.playbackMode
+            && startTimeMs == other.startTimeMs && endTimeMs == other.endTimeMs;
     }
 
     QJsonObject toJson() const {
@@ -96,6 +131,7 @@ public:
         obj["assignHotkey"] = assignHotkey;
         obj["volume"] = static_cast<double>(volume);
         obj["outputRouting"] = outputRoutingToString(outputRouting);
+        obj["playbackMode"] = playbackModeToString(playbackMode);
         obj["startTimeMs"] = startTimeMs;
         obj["endTimeMs"] = endTimeMs;
         obj["locked"] = locked;
@@ -109,8 +145,9 @@ public:
         slot.filePath = obj["filePath"].toString();
         slot.playHotkey = obj["playHotkey"].toString();
         slot.assignHotkey = obj["assignHotkey"].toString();
-        slot.volume = static_cast<float>(obj["volume"].toDouble(1.0));
+        slot.volume = static_float_cast_or_toDouble(obj);
         slot.outputRouting = stringToOutputRouting(obj["outputRouting"].toString("Both"));
+        slot.playbackMode = stringToPlaybackMode(obj["playbackMode"].toString("Default"));
         slot.startTimeMs = obj["startTimeMs"].toVariant().toLongLong();
         slot.endTimeMs = obj["endTimeMs"].toVariant().toLongLong();
         if (obj.contains("endTimeMs") == false) {
@@ -118,6 +155,11 @@ public:
         }
         slot.locked = obj["locked"].toBool(false);
         return slot;
+    }
+
+private:
+    static float static_float_cast_or_toDouble(const QJsonObject& obj) {
+        return static_cast<float>(obj["volume"].toDouble(1.0));
     }
 };
 

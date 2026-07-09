@@ -14,14 +14,18 @@ public:
     ~SoundPlayer();
 
     void play();
+    void play(PlaybackMode mode);
     void stop();
     void setVolume(float volume);
+    float volume() const { return m_volume; }
 
     void load(const QString &filePath);
     QMediaPlayer::PlaybackState playbackState() const;
     bool isPreviewMode() const { return m_isPreviewMode; }
 
-    // Routing configuration
+    // Routing & Mode configuration
+    void setPlaybackMode(PlaybackMode mode);
+    PlaybackMode playbackMode() const { return m_playbackMode; }
     void setRouting(OutputRouting routing);
     void setGlobalOverrides(bool micEnabled, bool localEnabled);
     void setDevices(const QAudioDevice &micDevice, const QAudioDevice &localDevice);
@@ -46,6 +50,7 @@ private slots:
 
 private:
     void applyRoutingAndOverrides();
+    void playInternal();
 
     QMediaPlayer *m_micPlayer;
     QAudioOutput *m_micOutput;
@@ -55,11 +60,20 @@ private:
 
     QString m_filePath;
     OutputRouting m_routing = OutputRouting::Both;
+    PlaybackMode m_playbackMode = PlaybackMode::RestartRetrigger;
+    float m_volume = 1.0f;
     bool m_globalMicEnabled = true;
     bool m_globalLocalEnabled = true;
     qint64 m_startTimeMs = 0;
     qint64 m_endTimeMs = -1;
     bool m_isPreviewMode = false;
+    int m_remainingLoops = 0;
+    bool m_stoppingInternal = false;
+    QMediaPlayer::PlaybackState m_lastOverallState = QMediaPlayer::StoppedState;
+
+    QAudioDevice m_micDevice;
+    QAudioDevice m_localDevice;
+    QList<SoundPlayer*> m_transientPlayers;
 };
 
 #endif // SOUNDPLAYER_H

@@ -141,6 +141,7 @@ Rectangle {
                     slotName: model.slotName
                     durationSec: model.durationSec
                     outputRouting: model.outputRouting
+                    playbackMode: model.playbackMode
                     slotId: model.slotId
                     filePath: model.filePath
                     locked: model.locked

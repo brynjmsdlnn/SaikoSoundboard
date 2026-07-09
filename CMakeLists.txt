@@ -196,6 +196,7 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/soundboard/editor/TrimEditor.qml
         src/qml/soundboard/editor/VolumeSlider.qml
         src/qml/soundboard/editor/RoutingSelector.qml
+        src/qml/soundboard/editor/PlaybackModeSelector.qml
         src/qml/soundboard/editor/HotkeyDisplay.qml
         src/qml/soundboard/editor/ActionButtons.qml
 

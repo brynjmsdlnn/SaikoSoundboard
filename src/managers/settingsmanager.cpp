@@ -39,6 +39,7 @@ void SettingsManager::load()
     bool voiceDevDirty = false;
     bool sampleRateDirty = false;
     bool hotkeysEnabledDirty = false;
+    bool defaultPlaybackModeDirty = false;
 
     if (doc.isArray()) {
         QList<AudioSource> newSources;
@@ -141,6 +142,13 @@ void SettingsManager::load()
             hotkeysEnabledDirty = true;
         }
 
+        PlaybackMode newDefaultMode = stringToPlaybackMode(obj["defaultPlaybackMode"].toString("RestartRetrigger"));
+        if (newDefaultMode == PlaybackMode::Default) newDefaultMode = PlaybackMode::RestartRetrigger;
+        if (newDefaultMode != m_defaultPlaybackMode) {
+            m_defaultPlaybackMode = newDefaultMode;
+            defaultPlaybackModeDirty = true;
+        }
+
         QList<SoundPlayerSlot> newSlots;
         QJsonArray slotsArr = obj["soundBoardSlots"].toArray();
         for (const QJsonValue& val : std::as_const(slotsArr)) {
@@ -173,6 +181,7 @@ void SettingsManager::load()
     if (voiceDevDirty)         emit voiceInputDeviceChanged();
     if (sampleRateDirty)       emit recordingSampleRateChanged();
     if (hotkeysEnabledDirty)   emit hotkeysEnabledChanged();
+    if (defaultPlaybackModeDirty) emit defaultPlaybackModeChanged();
 }
 
 void SettingsManager::save()
@@ -204,6 +213,7 @@ void SettingsManager::save()
     root["voiceInputDevice"] = m_voiceInputDevice;
     root["recordingSampleRate"] = m_recordingSampleRate;
     root["hotkeysEnabled"] = m_hotkeysEnabled;
+    root["defaultPlaybackMode"] = playbackModeToString(m_defaultPlaybackMode);
 
     QJsonDocument doc(root);
     QFile file(getSettingsFilePath());
@@ -362,5 +372,16 @@ void SettingsManager::setHotkeysEnabled(bool enabled)
     if (m_hotkeysEnabled != enabled) {
         m_hotkeysEnabled = enabled;
         emit hotkeysEnabledChanged();
+    }
+}
+
+void SettingsManager::setDefaultPlaybackMode(PlaybackMode mode)
+{
+    if (mode == PlaybackMode::Default) {
+        mode = PlaybackMode::RestartRetrigger;
+    }
+    if (m_defaultPlaybackMode != mode) {
+        m_defaultPlaybackMode = mode;
+        emit defaultPlaybackModeChanged();
     }
 }

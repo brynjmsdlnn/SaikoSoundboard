@@ -38,6 +38,7 @@ QVariant SoundPlayerSlotModel::data(const QModelIndex &index, int role) const
     case VolumeRole:        return slot.volume;
 
     case OutputRoutingRole: return static_cast<int>(slot.outputRouting);
+    case PlaybackModeRole:  return static_cast<int>(slot.playbackMode);
     case StartTimeMsRole:   return slot.startTimeMs;
     case EndTimeMsRole:     return slot.endTimeMs;
     case IsTemporaryRole:
@@ -66,6 +67,7 @@ QHash<int, QByteArray> SoundPlayerSlotModel::roleNames() const
         {AssignHotkeyRole,  "assignHotkey"},
         {VolumeRole,        "volume"},
         {OutputRoutingRole, "outputRouting"},
+        {PlaybackModeRole,  "playbackMode"},
         {StartTimeMsRole,   "startTimeMs"},
         {EndTimeMsRole,     "endTimeMs"},
         {IsTemporaryRole,   "isTemporary"},
@@ -94,6 +96,17 @@ void SoundPlayerSlotModel::setRouting(int row, int routing)
     m_manager->setPlayerRouting(m_slots[row].id, static_cast<OutputRouting>(routing));
     m_updating = false;
     emit dataChanged(index(row, 0), index(row, 0), {OutputRoutingRole});
+}
+
+void SoundPlayerSlotModel::setPlaybackMode(int row, int mode)
+{
+    if (row < 0 || row >= m_slots.size()) return;
+    m_updating = true;
+    PlaybackMode pm = static_cast<PlaybackMode>(mode);
+    m_slots[row].playbackMode = pm;
+    m_manager->setPlayerPlaybackMode(m_slots[row].id, pm);
+    m_updating = false;
+    emit dataChanged(index(row, 0), index(row, 0), {PlaybackModeRole});
 }
 
 void SoundPlayerSlotModel::setClipRange(int row, qint64 startMs, qint64 endMs, bool save)

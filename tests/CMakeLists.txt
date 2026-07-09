@@ -10,6 +10,7 @@ macro(add_saiko_unit_test NAME SOURCE)
 endmacro()
 
 add_saiko_unit_test(RingBufferUnitTest unit/ringbuffer_test.cpp)
+add_saiko_unit_test(PlaybackModeUnitTest unit/playbackmode_test.cpp)
 
 # --- Integration Tests (Automated Qt Test) ---
 

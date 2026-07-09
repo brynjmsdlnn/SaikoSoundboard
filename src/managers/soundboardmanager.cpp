@@ -159,7 +159,18 @@ void SoundboardManager::playPlayer(const QString &id)
             player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
             player->setDevices(m_micDevice, m_localDevice);
             player->setClipRange(slot->startTimeMs, slot->endTimeMs);
-            player->play();
+
+            PlaybackMode effectiveMode = slot->playbackMode;
+            if (effectiveMode == PlaybackMode::Default) {
+                effectiveMode = m_settings->defaultPlaybackMode();
+            }
+
+            qDebug().nospace() << "[SoundboardManager] playPlayer id=" << id
+                               << " name=\"" << slot->name
+                               << "\" slotMode=" << slot->playbackMode
+                               << " effectiveMode=" << effectiveMode;
+
+            player->play(effectiveMode);
         }
     }
 }
@@ -313,6 +324,21 @@ void SoundboardManager::setPlayerRouting(const QString &id, OutputRouting routin
     }
 }
 
+void SoundboardManager::setPlayerPlaybackMode(const QString &id, PlaybackMode mode)
+{
+    if (SoundPlayerSlot *slot = getSlot(id)) {
+        if (slot->locked) return;
+        qDebug().nospace() << "[SoundboardManager] setPlayerPlaybackMode id=" << id
+                           << " name=\"" << slot->name << "\" newMode=" << mode;
+        slot->playbackMode = mode;
+        if (SoundPlayer *player = getPlayer(id)) {
+            PlaybackMode effective = (mode == PlaybackMode::Default) ? m_settings->defaultPlaybackMode() : mode;
+            player->setPlaybackMode(effective);
+        }
+        saveToSettings();
+    }
+}
+
 void SoundboardManager::setPlayerClipRange(const QString &id, qint64 startMs, qint64 endMs, bool save)
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
@@ -365,6 +391,8 @@ void SoundboardManager::updatePlayerEngine(const SoundPlayerSlot &slot)
         SoundPlayer *player = new SoundPlayer(this);
         player->setVolume(slot.volume);
         player->setRouting(slot.outputRouting);
+        PlaybackMode effective = (slot.playbackMode == PlaybackMode::Default) ? m_settings->defaultPlaybackMode() : slot.playbackMode;
+        player->setPlaybackMode(effective);
         player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
         player->setDevices(m_micDevice, m_localDevice);
         player->setClipRange(slot.startTimeMs, slot.endTimeMs);

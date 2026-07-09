@@ -59,6 +59,7 @@ Rectangle {
     property string slotName
     property real durationSec
     property int outputRouting
+    property int playbackMode: 0
     property string slotId
     property string filePath
     property bool locked: false
@@ -229,11 +230,13 @@ Rectangle {
 
             Text {
                 text: {
-                    if (outputRouting === 0)
-                        return "Broadcast & Monitor";
-                    if (outputRouting === 1)
-                        return "Broadcast only";
-                    return "Monitor only";
+                    var rt = outputRouting === 0 ? "Broadcast & Monitor" : (outputRouting === 1 ? "Broadcast only" : "Monitor only");
+                    if (playbackMode === 1) return rt + " • Retrigger";
+                    if (playbackMode === 2) return rt + " • Toggle";
+                    if (playbackMode === 3) return rt + " • Sequential";
+                    if (playbackMode === 4) return rt + " • Cut All";
+                    if (playbackMode === 5) return rt + " • Ring Out";
+                    return rt;
                 }
                 color: {
                     if (outputRouting === 0)
