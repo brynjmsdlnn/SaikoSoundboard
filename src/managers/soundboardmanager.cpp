@@ -385,6 +385,26 @@ WaveformData SoundboardManager::getWaveformData(const QString &playerId)
     return WaveformData();
 }
 
+int SoundboardManager::getPlayerQueueCount(const QString &id) const
+{
+    if (SoundPlayer *player = m_players.value(id, nullptr)) {
+        return player->remainingLoops();
+    }
+    return 0;
+}
+
+QVariantList SoundboardManager::getPlayerLayerPositions(const QString &id) const
+{
+    QVariantList positions;
+    if (SoundPlayer *player = m_players.value(id, nullptr)) {
+        const QList<qint64> rawPositions = player->activeLayerPositions();
+        for (qint64 pos : rawPositions) {
+            positions.append(pos);
+        }
+    }
+    return positions;
+}
+
 void SoundboardManager::updatePlayerEngine(const SoundPlayerSlot &slot)
 {
     if (!m_players.contains(slot.id)) {
@@ -412,6 +432,14 @@ void SoundboardManager::updatePlayerEngine(const SoundPlayerSlot &slot)
 
         connect(player, &SoundPlayer::durationChanged, this, [this, id = slot.id](qint64 dur) {
             emit playerDurationChanged(id, dur);
+        });
+
+        connect(player, &SoundPlayer::remainingLoopsChanged, this, [this, id = slot.id](int count) {
+            emit playerQueueCountChanged(id, count);
+        });
+
+        connect(player, &SoundPlayer::layerPositionsChanged, this, [this, id = slot.id]() {
+            emit playerLayerPositionsChanged(id, getPlayerLayerPositions(id));
         });
         
         m_players.insert(slot.id, player);

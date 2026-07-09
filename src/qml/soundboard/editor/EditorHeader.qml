@@ -18,27 +18,33 @@ RowLayout {
     readonly property var modeList: [
         {
             icon: "sliders-horizontal",
-            label: "Default (Global setting)"
+            label: "Default (Global setting)",
+            modeColor: "#888880"
         },
         {
             icon: "refresh-cw",
-            label: "Restart (Retrigger)"
+            label: "Restart (Retrigger)",
+            modeColor: "#378ADD"
         },
         {
             icon: "toggle-left",
-            label: "Toggle Play / Stop"
+            label: "Toggle Play / Stop",
+            modeColor: "#185FA5"
         },
         {
             icon: "list-ordered",
-            label: "Queued Replay (Sequential)"
+            label: "Queued Replay (Sequential)",
+            modeColor: "#0C447C"
         },
         {
             icon: "square-stack",
-            label: "Layered Play (Cut All on Stop)"
+            label: "Layered Play (Cut All on Stop)",
+            modeColor: "#D85A30"
         },
         {
             icon: "audio-lines",
-            label: "Layered Play (Let Ring Out)"
+            label: "Layered Play (Let Ring Out)",
+            modeColor: "#993C1D"
         }
     ]
 
@@ -59,34 +65,56 @@ RowLayout {
         }
 
         // ── Display: slot name text + Inline Pencil ──────────────────
-        Row {
+        RowLayout {
             id: textDisplayRow
             anchors.left: parent.left
+            anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-
-            // Constrain the row so it never expands past the parent width
-            width: Math.min(parent.width, implicitWidth)
             spacing: 6
             visible: !root._editing
 
-            Text {
-                id: nameText
-                // Dynamically size the text block width based on content or remaining space
-                width: Math.min(implicitWidth, parent.parent.width - (inlineEditIcon.visible ? inlineEditIcon.width + parent.spacing : 0))
-                text: root.slotName || "Unnamed Slot"
-                color: root.slotName ? Theme.textPrimary : Theme.textDim
-                font.pixelSize: 18
-                font.weight: Font.Bold
-                elide: Text.ElideRight
+            Item {
+                id: textClip
+                Layout.fillWidth: true
+                implicitHeight: nameText.implicitHeight
+                clip: true
+
+                Text {
+                    id: nameText
+                    text: root.slotName || "Unnamed Slot"
+                    color: root.slotName ? Theme.textPrimary : Theme.textDim
+                    font.pixelSize: 18
+                    font.weight: Font.Bold
+                    elide: Text.ElideNone
+                    width: implicitWidth
+
+                    SequentialAnimation on x {
+                        running: nameText.implicitWidth > textClip.width && !!root.slotName
+                        loops: Animation.Infinite
+
+                        PauseAnimation { duration: 1500 }
+                        NumberAnimation {
+                            from: 0
+                            to: textClip.width - nameText.implicitWidth
+                            duration: Math.max(2000, (nameText.implicitWidth - textClip.width) * 25)
+                            easing.type: Easing.Linear
+                        }
+                        PauseAnimation { duration: 2000 }
+                        PropertyAction { value: 0 }
+                        PauseAnimation { duration: 500 }
+
+                        onRunningChanged: if (!running) nameText.x = 0
+                    }
+                }
             }
 
             Image {
                 id: inlineEditIcon
                 source: "image://icons/pencil?color=" + (nameHover.containsMouse ? "%23d99a3d" : encodeURIComponent(Theme.textDim))
                 sourceSize: Qt.size(14, 14)
-                anchors.verticalCenter: parent.verticalCenter
+                Layout.alignment: Qt.AlignVCenter
                 opacity: (itemHover.hovered && !root.locked) ? 0.7 : 0.0
-                visible: opacity > 0.0 // Don't take up spacing room when hidden
+                visible: opacity > 0.0
 
                 Behavior on opacity {
                     NumberAnimation {
@@ -213,8 +241,12 @@ RowLayout {
         isActive: !root.locked
         tooltipText: root._tooltipDisplay
         iconSource: {
-            var idx = Math.min(root.playbackMode, root.modeList.length - 1);
-            return "image://icons/" + root.modeList[idx].icon + "?color=%23888888";
+            var idx = root.playbackMode;
+            if (idx === 0)
+                idx = Backend.settings.defaultPlaybackMode;
+            idx = Math.min(idx, root.modeList.length - 1);
+            var c = root.modeList[idx].modeColor.replace("#", "");
+            return "image://icons/" + root.modeList[idx].icon + "?color=%23" + c;
         }
         onClicked: modeMenu.openRelativeTo(modeButton, root)
 

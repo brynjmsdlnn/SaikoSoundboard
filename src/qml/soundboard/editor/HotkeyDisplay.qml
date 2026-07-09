@@ -127,12 +127,10 @@ ColumnLayout {
                 }
             }
 
-            SaikoButton {
-                text: "Rebind"
-                small: true
-                implicitWidth: 64
-                implicitHeight: 28
-                enabled: !root.isLocked
+            SaikoIconButton {
+                isActive: !root.isLocked
+                tooltipText: "Rebind"
+                iconSource: "image://icons/key-round?color=%23b0b0b0"
                 onClicked: root.rebindRequested()
             }
         }

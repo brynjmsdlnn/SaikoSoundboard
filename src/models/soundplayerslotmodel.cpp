@@ -14,6 +14,12 @@ SoundPlayerSlotModel::SoundPlayerSlotModel(SoundboardManager *manager, QObject *
             emit dataChanged(index(row, 0), index(row, 0), {PlayStateRole});
         }
     });
+    connect(m_manager, &SoundboardManager::waveformGenerated, this, [this](const QString &playerId, const WaveformData &) {
+        int row = rowForId(playerId);
+        if (row != -1) {
+            emit dataChanged(index(row, 0), index(row, 0), {DurationSecRole});
+        }
+    });
 }
 
 int SoundPlayerSlotModel::rowCount(const QModelIndex &parent) const

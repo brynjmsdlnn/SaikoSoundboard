@@ -3,7 +3,6 @@
 #include <QDebug>
 #include <QFile>
 
-
 SoundPlayer::SoundPlayer(QObject *parent)
     : QObject(parent)
 {
@@ -73,15 +72,15 @@ void SoundPlayer::play(PlaybackMode mode)
             stop();
             return;
         }
-        m_remainingLoops = 0;
+        updateRemainingLoops(0);
         playInternal();
     }
     else if (m_playbackMode == PlaybackMode::QueuedSequential) {
         qDebug().nospace() << "[SoundPlayer] play mode=Continuous file=\"" << fileLeaf << "\" alreadyPlaying=" << (playbackState() == QMediaPlayer::PlayingState) << " loops=" << m_remainingLoops;
         if (playbackState() == QMediaPlayer::PlayingState) {
-            m_remainingLoops++;
+            updateRemainingLoops(m_remainingLoops + 1);
         } else {
-            m_remainingLoops = 0;
+            updateRemainingLoops(0);
             playInternal();
         }
     }
@@ -101,12 +100,17 @@ void SoundPlayer::play(PlaybackMode mode)
             m_transientPlayers.append(transient);
             qDebug().nospace() << "[SoundPlayer] overlapping spawned transient=" << transient << " totalActive=" << m_transientPlayers.size();
 
+            connect(transient, &SoundPlayer::positionChanged, this, [this]() {
+                emit layerPositionsChanged();
+            });
+
             connect(transient, &SoundPlayer::stateChanged, this, [this, transient](QMediaPlayer::PlaybackState state) {
                 qDebug().nospace() << "[SoundPlayer] overlapping transient=" << transient << " state=" << state;
                 if (state == QMediaPlayer::StoppedState) {
                     m_transientPlayers.removeOne(transient);
                     transient->deleteLater();
                     qDebug().nospace() << "[SoundPlayer] overlapping transient cleaned up remaining=" << m_transientPlayers.size();
+                    emit layerPositionsChanged();
                 }
                 handlePlayerStateChanged(state);
             });
@@ -132,13 +136,13 @@ void SoundPlayer::play(PlaybackMode mode)
             connect(transient->m_localPlayer, &QMediaPlayer::mediaStatusChanged, transient, deferredPlay);
             deferredPlay();
         } else {
-            m_remainingLoops = 0;
+            updateRemainingLoops(0);
             playInternal();
         }
     }
     else { // Mode 1 (Restart) or Default
         qDebug().nospace() << "[SoundPlayer] play mode=Restart/Default file=\"" << fileLeaf << "\" alreadyPlaying=" << (playbackState() == QMediaPlayer::PlayingState);
-        m_remainingLoops = 0;
+        updateRemainingLoops(0);
         playInternal();
     }
 }
@@ -179,7 +183,7 @@ void SoundPlayer::stop()
     QString fileLeaf = m_filePath.section('/', -1, -1, QString::SectionIncludeTrailingSep).section('\\', -1, -1);
     qDebug().nospace() << "[SoundPlayer] stop file=\"" << fileLeaf << "\" cleaningTransients=" << m_transientPlayers.size();
 
-    m_remainingLoops = 0;
+    updateRemainingLoops(0);
     m_stoppingInternal = true;
     m_micPlayer->stop();
     m_localPlayer->stop();
@@ -191,6 +195,7 @@ void SoundPlayer::stop()
     m_transientPlayers.clear();
     m_isPreviewMode = false;
     m_stoppingInternal = false;
+    emit layerPositionsChanged();
 
     QMediaPlayer::PlaybackState current = playbackState();
     if (current != m_lastOverallState) {
@@ -291,7 +296,7 @@ void SoundPlayer::handlePlayerStateChanged(QMediaPlayer::PlaybackState state)
 
     QMediaPlayer::PlaybackState current = playbackState();
     if (current == QMediaPlayer::StoppedState && m_remainingLoops > 0) {
-        m_remainingLoops--;
+        updateRemainingLoops(m_remainingLoops - 1);
         playInternal();
         return;
     }
@@ -321,7 +326,7 @@ void SoundPlayer::handlePositionChanged(qint64 position)
     // Check end boundary clipping
     if (m_endTimeMs != -1 && position >= m_endTimeMs) {
         if (m_remainingLoops > 0) {
-            m_remainingLoops--;
+            updateRemainingLoops(m_remainingLoops - 1);
             playInternal();
         } else {
             if (m_playbackMode == PlaybackMode::LayeredRingOut && !m_transientPlayers.isEmpty()) {
@@ -375,5 +380,38 @@ void SoundPlayer::applyRoutingAndOverrides()
         // If not actively playing, ensure inactive paths are stopped
         if (!playMic) m_micPlayer->stop();
         if (!playLocal) m_localPlayer->stop();
+    }
+}
+
+qint64 SoundPlayer::position() const
+{
+    if (m_localPlayer->playbackState() == QMediaPlayer::PlayingState) {
+        return m_localPlayer->position();
+    }
+    if (m_micPlayer->playbackState() == QMediaPlayer::PlayingState) {
+        return m_micPlayer->position();
+    }
+    return -1;
+}
+
+QList<qint64> SoundPlayer::activeLayerPositions() const
+{
+    QList<qint64> positions;
+    for (const SoundPlayer *tp : m_transientPlayers) {
+        if (tp->playbackState() == QMediaPlayer::PlayingState) {
+            qint64 pos = tp->position();
+            if (pos >= 0) {
+                positions.append(pos);
+            }
+        }
+    }
+    return positions;
+}
+
+void SoundPlayer::updateRemainingLoops(int count)
+{
+    if (m_remainingLoops != count) {
+        m_remainingLoops = count;
+        emit remainingLoopsChanged(m_remainingLoops);
     }
 }

@@ -68,6 +68,23 @@ Rectangle {
     property int endTimeMs: -1
     property int playState: 0
 
+    property int queueCount: 0
+    property var layerPositionsMs: []
+    property int currentPositionMs: -1
+    readonly property int effectivePlaybackMode: playbackMode === 0 ? Backend.settings.defaultPlaybackMode : playbackMode
+
+    readonly property var _modeInfoList: [
+        { icon: "sliders-horizontal", label: "Default (Global setting)",       modeColor: "#888880" },
+        { icon: "refresh-cw",         label: "Restart (Retrigger)",            modeColor: "#378ADD" },
+        { icon: "toggle-left",        label: "Toggle Play / Stop",             modeColor: "#185FA5" },
+        { icon: "list-ordered",       label: "Queued Replay (Sequential)",     modeColor: "#0C447C" },
+        { icon: "square-stack",      label: "Layered Play (Cut All on Stop)", modeColor: "#D85A30" },
+        { icon: "audio-lines",       label: "Layered Play (Let Ring Out)",    modeColor: "#993C1D" }
+    ]
+    readonly property var _currentModeInfo: card._modeInfoList[
+        Math.min(card.effectivePlaybackMode, card._modeInfoList.length - 1)
+    ]
+
     property var waveformData: null
 
     HoverHandler {
@@ -114,6 +131,146 @@ Rectangle {
         }
     }
 
+    // Mode badge — completely independent overlay filling the card width
+        Item {
+            z: 90
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.topMargin: 8 // Aligns perfectly vertically between the header elements
+            visible: !card.locked
+
+            Rectangle {
+                id: modeBadge
+                property bool hovered: false
+
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: hovered ? labelText.implicitWidth + 18 : 22
+                height: 22
+                radius: 11
+                color: "#121212"
+
+                // No border when unhovered; lights up with theme color on hover
+                border.color: hovered ? card._currentModeInfo.modeColor : "transparent"
+                border.width: hovered ? 1.5 : 0
+
+                Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                // --- SONAR PULSE EFFECT ---
+                Rectangle {
+                    id: sonarRing
+                    anchors.centerIn: parent
+                    // Matches base dimensions
+                    width: 22
+                    height: 22
+                    radius: 11
+                    // Samples current mode color with soft alpha transparency
+                    color: "transparent"
+                    border.color: card._currentModeInfo.modeColor
+                    border.width: 1
+                    opacity: 0.0
+                    scale: 1.0
+                    z: -1 // Sits cleanly behind the main badge structure
+                }
+
+                // --- MASTER ANIMATION TIMELINES ---
+                ParallelAnimation {
+                    id: idleFxAnimation
+
+                    // 1. The Eye Blink (Squash & Pop)
+                    SequentialAnimation {
+                        NumberAnimation { target: modeBadge; property: "scale"; to: 0.0; duration: 80; easing.type: Easing.InQuad }
+                        NumberAnimation { target: modeBadge; property: "scale"; to: 1.0; duration: 120; easing.type: Easing.OutQuad }
+                    }
+
+                    // 2. The Sonar Pulse Ripple
+                    SequentialAnimation {
+                        // Instant visibility reset
+                        PropertyAnimation { target: sonarRing; property: "opacity"; to: 0.6; duration: 0 }
+                        PropertyAnimation { target: sonarRing; property: "scale"; to: 1.0; duration: 0 }
+
+                        // Ripple outward and dissipate simultaneously
+                        ParallelAnimation {
+                            NumberAnimation {
+                                id: sonarScaleAnim
+                                target: sonarRing; property: "scale"
+                                to: 2.3; duration: 600 // Base speed overridden dynamically by timer
+                                easing.type: Easing.OutCubic
+                            }
+                            NumberAnimation {
+                                id: sonarOpacityAnim
+                                target: sonarRing; property: "opacity"
+                                to: 0.0; duration: 600 // Base speed overridden dynamically by timer
+                                easing.type: Easing.OutQuad
+                            }
+                        }
+                    }
+                }
+
+                // --- RANDOM INTERVAL & SPEED ENGINE ---
+                Timer {
+                    id: fxTimer
+                    running: !modeBadge.hovered // Only run when idle
+                    repeat: true
+                    triggeredOnStart: false
+                    interval: 5000 // Initial delay
+
+                    onTriggered: {
+                        // 1. Randomize Pulse Speed (e.g., fast snap ripple vs slow wave between 400ms - 900ms)
+                        var randomSpeed = Math.floor(Math.random() * 500) + 400;
+                        sonarScaleAnim.duration = randomSpeed;
+                        sonarOpacityAnim.duration = randomSpeed;
+
+                        // 2. Fire the synchronized compound effects
+                        idleFxAnimation.start();
+
+                        // 3. Randomize next idle rest interval (between 4 to 10 seconds)
+                        interval = Math.floor(Math.random() * 6000) + 4000;
+                    }
+                }
+
+                // --- CONTENT ELEMENTS ---
+                Image {
+                    anchors.centerIn: parent
+                    source: "image://icons/" + card._currentModeInfo.icon + "?color=%23" + card._currentModeInfo.modeColor.replace("#", "")
+                    sourceSize: Qt.size(12, 12)
+                    scale: modeBadge.hovered ? 0.0 : 1.0
+                    opacity: modeBadge.hovered ? 0.0 : 1.0
+                    Behavior on scale { NumberAnimation { duration: 120 } }
+                    Behavior on opacity { NumberAnimation { duration: 100 } }
+                }
+
+                Text {
+                    id: labelText
+                    anchors.centerIn: parent
+                    text: card._currentModeInfo.label
+                    color: "#FFFFFF"
+                    font.pixelSize: 10
+                    font.weight: Font.Medium
+                    scale: modeBadge.hovered ? 1.0 : 0.0
+                    opacity: modeBadge.hovered ? 1.0 : 0.0
+                    Behavior on scale { NumberAnimation { duration: 220; easing.type: Easing.OutBack } }
+                    Behavior on opacity { NumberAnimation { duration: 150 } }
+                }
+
+                MouseArea {
+                    anchors.fill: parent;
+                    hoverEnabled: true;
+                    cursorShape: Qt.PointingHandCursor;
+                    onEntered: {
+                        modeBadge.hovered = true
+                        idleFxAnimation.stop() // Hard stops current animation loop if triggered mid-way
+                        sonarRing.opacity = 0.0 // Clears hanging rings
+                    }
+                    onExited: {
+                        modeBadge.hovered = false
+                        modeBadge.scale = 1.0
+                    }
+                }
+            }
+        }
+
     ColumnLayout {
             anchors.fill: parent
             anchors.margins: 8
@@ -147,20 +304,60 @@ Rectangle {
 
                 Text {
                     visible: card.fileExists || card.filePath === ""
-                    text: durationSec ? durationSec.toFixed(1) + "s" : "0.0s"
+                    text: {
+                        if (durationSec <= 0) return "0.0s";
+                        var totalMs = durationSec * 1000;
+                        var startMs = card.startTimeMs;
+                        var endMs = card.endTimeMs === -1 ? totalMs : card.endTimeMs;
+
+                        if (card.playState === 0)
+                            return ((endMs - startMs) / 1000).toFixed(1) + "s";
+
+                        var pos = card.currentPositionMs;
+                        if ((card.effectivePlaybackMode === 4 || card.effectivePlaybackMode === 5) && card.layerPositionsMs.length > 0)
+                            pos = card.layerPositionsMs[card.layerPositionsMs.length - 1];
+
+                        if (pos < 0) return ((endMs - startMs) / 1000).toFixed(1) + "s";
+                        return (Math.max(0, endMs - pos) / 1000).toFixed(1) + "s";
+                    }
                     color: card.locked ? "#555555" : Theme.textDim
                     font.pixelSize: Theme.fontSizeSmall
                 }
             }
 
-            Text {
-                text: slotName || "Empty Slot"
-                // Grays out the text heavily if locked
-                color: card.locked ? "#555555" : (slotName ? Theme.textPrimary : Theme.textDim)
-                font.pixelSize: Theme.fontSizeNormal
-                font.weight: Font.Medium
-                elide: Text.ElideRight
+            Item {
+                id: nameClip
                 Layout.fillWidth: true
+                implicitHeight: nameText.implicitHeight
+                clip: true
+
+                Text {
+                    id: nameText
+                    text: slotName || "Empty Slot"
+                    color: card.locked ? "#555555" : (slotName ? Theme.textPrimary : Theme.textDim)
+                    font.pixelSize: Theme.fontSizeNormal
+                    font.weight: Font.Medium
+                    elide: Text.ElideNone
+                    width: implicitWidth
+
+                    SequentialAnimation on x {
+                        running: card.isSelected && nameText.implicitWidth > nameClip.width && !!slotName
+                        loops: Animation.Infinite
+
+                        PauseAnimation { duration: 1500 }
+                        NumberAnimation {
+                            from: 0
+                            to: nameClip.width - nameText.implicitWidth
+                            duration: Math.max(2000, (nameText.implicitWidth - nameClip.width) * 25)
+                            easing.type: Easing.Linear
+                        }
+                        PauseAnimation { duration: 2000 }
+                        PropertyAction { value: 0 }
+                        PauseAnimation { duration: 500 }
+
+                        onRunningChanged: if (!running) nameText.x = 0
+                    }
+                }
             }
 
             // mini waveform
@@ -180,6 +377,7 @@ Rectangle {
                     filePath: card.filePath
                     fileExists: card.fileExists
                     emptyText: "Empty Slot"
+                    layerPositionsMs: card.layerPositionsMs
 
                     // Almost completely ghost the waveform
                     opacity: card.locked ? 0.15 : 1.0
@@ -191,6 +389,7 @@ Rectangle {
             Layout.fillWidth: true
 
             Rectangle {
+                id: playButton
                 width: 20
                 height: 20
                 radius: 4
@@ -228,27 +427,51 @@ Rectangle {
                 }
             }
 
-            Text {
-                text: {
-                    var rt = outputRouting === 0 ? "Broadcast & Monitor" : (outputRouting === 1 ? "Broadcast only" : "Monitor only");
-                    if (playbackMode === 1) return rt + " • Retrigger";
-                    if (playbackMode === 2) return rt + " • Toggle";
-                    if (playbackMode === 3) return rt + " • Sequential";
-                    if (playbackMode === 4) return rt + " • Cut All";
-                    if (playbackMode === 5) return rt + " • Ring Out";
-                    return rt;
-                }
-                color: {
-                    if (outputRouting === 0)
-                        return Theme.accentPurple;
-                    if (outputRouting === 1)
-                        return Theme.accentTeal;
-                    return Theme.accentGreen;
-                }
-                font.pixelSize: 9
-                elide: Text.ElideRight
+            RowLayout {
+                spacing: 4
                 Layout.fillWidth: true
+
+                Item { Layout.fillWidth: true }
+
+                Image {
+                    source: {
+                        var icon = outputRouting === 0 ? "headset" : (outputRouting === 1 ? "mic" : "headphones");
+                        var c = outputRouting === 0 ? Theme.accentPurple : (outputRouting === 1 ? Theme.accentTeal : Theme.accentGreen);
+                        return "image://icons/" + icon + "?color=" + encodeURIComponent(c);
+                    }
+                    sourceSize: Qt.size(12, 12)
+                    Layout.alignment: Qt.AlignVCenter
+                }
+
+                Text {
+                    text: outputRouting === 0 ? "Broadcast & Monitor" : (outputRouting === 1 ? "Broadcast only" : "Monitor only")
+                    color: {
+                        if (outputRouting === 0) return Theme.accentPurple;
+                        if (outputRouting === 1) return Theme.accentTeal;
+                        return Theme.accentGreen;
+                    }
+                    font.pixelSize: 9
+                    elide: Text.ElideRight
+                    Layout.alignment: Qt.AlignVCenter
+                }
             }
+
+            Rectangle {
+                id: queueBadge
+                visible: card.effectivePlaybackMode === 3 && card.queueCount > 0
+                Layout.preferredWidth: 20
+                Layout.preferredHeight: 16
+                radius: 8
+                color: Theme.accentRed
+                Text {
+                    text: "×" + card.queueCount
+                    color: "white"
+                    font.pixelSize: 10
+                    font.weight: Font.Bold
+                    anchors.centerIn: parent
+                }
+            }
+
         }
     }
 
@@ -261,9 +484,25 @@ Rectangle {
         }
         function onPlayerPositionChanged(playerId, position) {
             if (playerId === slotId) {
+                card.currentPositionMs = position;
                 miniWaveform.playPositionMs = position;
             }
         }
+        function onPlayerQueueCountChanged(playerId, count) {
+            if (playerId === slotId) {
+                card.queueCount = count;
+            }
+        }
+        function onPlayerLayerPositionsChanged(playerId, positions) {
+            if (playerId === slotId) {
+                card.layerPositionsMs = positions;
+            }
+        }
+    }
+
+    onSlotIdChanged: {
+        loadWaveform();
+        updateQueueAndLayers();
     }
 
     onFilePathChanged: {
@@ -272,6 +511,12 @@ Rectangle {
 
     Component.onCompleted: {
         loadWaveform();
+        updateQueueAndLayers();
+    }
+
+    function updateQueueAndLayers() {
+        card.queueCount = slotId ? Backend.soundboard.getPlayerQueueCount(slotId) : 0;
+        card.layerPositionsMs = slotId ? Backend.soundboard.getPlayerLayerPositions(slotId) : [];
     }
 
     function loadWaveform() {

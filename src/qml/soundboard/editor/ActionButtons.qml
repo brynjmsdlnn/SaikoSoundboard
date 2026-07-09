@@ -12,6 +12,12 @@ RowLayout {
     property string filePath: ""
     property bool fileExists: true
 
+    property int playState: 0
+    property int playbackMode: 0
+    property int queueCount: 0
+
+    readonly property int effectivePlaybackMode: playbackMode === 0 ? Backend.settings.defaultPlaybackMode : playbackMode
+
     signal deleteRequested()
 
     Layout.alignment: Qt.AlignHCenter
@@ -26,10 +32,6 @@ RowLayout {
                 color: "4caf50",
                 accentProp: "accentGreen",
                 hoverBg: "",
-                action: () => {
-                    if (root.slotId)
-                        Backend.soundboard.playPlayer(root.slotId)
-                }
             },
             {
                 label: "Preview",
@@ -37,10 +39,6 @@ RowLayout {
                 color: "03DAC6",
                 accentProp: "accentTeal",
                 hoverBg: "",
-                action: () => {
-                    if (root.slotId)
-                        Backend.soundboard.playPlayerPreview(root.slotId)
-                }
             },
             {
                 label: "Stop",
@@ -48,10 +46,6 @@ RowLayout {
                 color: "e35d5d",
                 accentProp: "accentRed",
                 hoverBg: "",
-                action: () => {
-                    if (root.slotId)
-                        Backend.soundboard.stopPlayer(root.slotId)
-                }
             },
             {
                 label: "Delete",
@@ -59,7 +53,6 @@ RowLayout {
                 color: "888888",
                 accentProp: "accentRed",
                 hoverBg: "#2a1a1a",
-                action: () => root.deleteRequested()
             }
         ]
 
@@ -68,11 +61,15 @@ RowLayout {
             implicitWidth: 80
             implicitHeight: 76
 
-            property bool isDelete: modelData.label === "Delete"
-            property bool isAction: modelData.label === "Play" || modelData.label === "Preview" || modelData.label === "Stop"
+            readonly property bool isToggleStopPlay: index === 0 && root.effectivePlaybackMode === 2 && root.playState !== 0
+            property bool isDelete: index === 3
+            property bool isAction: index === 0 || index === 1 || index === 2
 
-            // Hides the button entirely if the flag is true
-            visible: !(root.hideDelete && isDelete)
+            visible: {
+                if (root.hideDelete && index === 3) return false;
+                if (root.effectivePlaybackMode === 2 && index === 2) return false;
+                return true;
+            }
 
             enabled: {
                 if (root.isLocked) return false
@@ -83,7 +80,7 @@ RowLayout {
             background: Rectangle {
                 color: parent.enabled && parent.hovered ? (isDelete ? modelData.hoverBg : Theme.inputBackground) : Theme.recessedBackground
                 radius: 8
-                border.color: parent.enabled && parent.hovered ? Theme[modelData.accentProp] : Theme.borderDefault
+                border.color: parent.enabled && parent.hovered ? (isToggleStopPlay ? Theme.accentRed : Theme[modelData.accentProp]) : Theme.borderDefault
                 border.width: 1
             }
 
@@ -92,17 +89,43 @@ RowLayout {
                 spacing: 6
 
                 Image {
-                    source: "image://icons/" + modelData.icon + "?color=%23" + (isDelete && parent.parent.hovered ? "e35d5d" : modelData.color)
+                    source: {
+                        var icn = isToggleStopPlay ? "square" : modelData.icon;
+                        var clr = isToggleStopPlay ? "e35d5d" : (isDelete && parent.parent.hovered ? "e35d5d" : modelData.color);
+                        return "image://icons/" + icn + "?color=%23" + clr;
+                    }
                     smooth: true
                     sourceSize: Qt.size(24, 24)
                     Layout.alignment: Qt.AlignHCenter
                 }
                 Text {
-                    text: modelData.label
+                    text: isToggleStopPlay ? "Stop" : modelData.label
                     color: isDelete && parent.parent.hovered ? Theme.accentRed : Theme.textPrimary
                     font.pixelSize: 12
                     font.weight: Font.Medium
                     Layout.alignment: Qt.AlignHCenter
+                }
+            }
+
+            // Queue count overlay pill badge
+            Rectangle {
+                visible: index === 0 && root.effectivePlaybackMode === 3 && root.queueCount > 0
+                anchors.top: parent.top
+                anchors.right: parent.right
+                anchors.topMargin: 4
+                anchors.rightMargin: 4
+                width: 20
+                height: 16
+                radius: 8
+                color: Theme.accentRed
+                z: 10
+
+                Text {
+                    text: "×" + root.queueCount
+                    color: "white"
+                    font.pixelSize: 10
+                    font.weight: Font.Bold
+                    anchors.centerIn: parent
                 }
             }
 
@@ -112,7 +135,20 @@ RowLayout {
                 acceptedButtons: Qt.NoButton
                 hoverEnabled: actionBtn.enabled
             }
-            onClicked: modelData.action()
+            onClicked: {
+                if (index === 0 && root.slotId) {
+                    if (isToggleStopPlay)
+                        Backend.soundboard.stopPlayer(root.slotId);
+                    else
+                        Backend.soundboard.playPlayer(root.slotId);
+                } else if (index === 1 && root.slotId) {
+                    Backend.soundboard.playPlayerPreview(root.slotId);
+                } else if (index === 2 && root.slotId) {
+                    Backend.soundboard.stopPlayer(root.slotId);
+                } else if (index === 3) {
+                    root.deleteRequested();
+                }
+            }
         }
     }
 }

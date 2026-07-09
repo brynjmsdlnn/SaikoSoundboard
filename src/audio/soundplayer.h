@@ -37,12 +37,17 @@ public:
     bool shouldPlayLocal() const;
     qint64 startTimeMs() const { return m_startTimeMs; }
     qint64 endTimeMs() const { return m_endTimeMs; }
+    int remainingLoops() const { return m_remainingLoops; }
+    qint64 position() const;
+    QList<qint64> activeLayerPositions() const;
 
 signals:
     void stateChanged(QMediaPlayer::PlaybackState newState);
     void errorOccurred(QMediaPlayer::Error error, const QString &errorString);
     void positionChanged(qint64 position);
     void durationChanged(qint64 duration);
+    void remainingLoopsChanged(int count);
+    void layerPositionsChanged();
 
 private slots:
     void handlePlayerStateChanged(QMediaPlayer::PlaybackState state);
@@ -51,6 +56,7 @@ private slots:
 private:
     void applyRoutingAndOverrides();
     void playInternal();
+    void updateRemainingLoops(int count);
 
     QMediaPlayer *m_micPlayer;
     QAudioOutput *m_micOutput;

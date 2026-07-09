@@ -70,6 +70,8 @@ public:
     Q_INVOKABLE void setPlayerClipRange(const QString &id, qint64 startMs, qint64 endMs, bool save = false);
     Q_INVOKABLE void loadWaveformData(const QString &playerId, const QString &filePath);
     Q_INVOKABLE WaveformData getWaveformData(const QString &playerId);
+    Q_INVOKABLE int getPlayerQueueCount(const QString &id) const;
+    Q_INVOKABLE QVariantList getPlayerLayerPositions(const QString &id) const;
 
     // Microphone Passthrough
     bool isMicPassthroughEnabled() const;
@@ -82,6 +84,8 @@ signals:
     void playerPlayStateChanged(const QString &id, PlayState state);
     void playerPositionChanged(const QString &id, qint64 position);
     void playerDurationChanged(const QString &id, qint64 duration);
+    void playerQueueCountChanged(const QString &id, int count);
+    void playerLayerPositionsChanged(const QString &id, const QVariantList &positions);
     void waveformGenerated(const QString &playerId, const WaveformData &data);
     void micOutputEnabledChanged();
     void localMonitoringEnabledChanged();

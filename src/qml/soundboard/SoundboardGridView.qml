@@ -11,16 +11,37 @@ Rectangle {
 
     // Global playback mode data (matches EditorHeader but without "Default" mode)
     readonly property var globalModeList: [
-        { icon: "refresh-cw",         label: "Restart (Retrigger)" },
-        { icon: "toggle-left",        label: "Toggle Play / Stop" },
-        { icon: "list-ordered",       label: "Queued Replay (Sequential)" },
-        { icon: "square-stack",      label: "Layered Play (Cut All on Stop)" },
-        { icon: "audio-lines",       label: "Layered Play (Let Ring Out)" }
+        {
+            icon: "refresh-cw",
+            label: "Restart (Retrigger)",
+            modeColor: "#378ADD"
+        },
+        {
+            icon: "toggle-left",
+            label: "Toggle Play / Stop",
+            modeColor: "#185FA5"
+        },
+        {
+            icon: "list-ordered",
+            label: "Queued Replay (Sequential)",
+            modeColor: "#0C447C"
+        },
+        {
+            icon: "square-stack",
+            label: "Layered Play (Cut All on Stop)",
+            modeColor: "#D85A30"
+        },
+        {
+            icon: "audio-lines",
+            label: "Layered Play (Let Ring Out)",
+            modeColor: "#993C1D"
+        }
     ]
     readonly property int _globalModeIndex: Math.max(0, Backend.settings.defaultPlaybackMode - 1)
     readonly property string _globalModeLabel: {
         var idx = root._globalModeIndex;
-        if (idx < 0 || idx >= root.globalModeList.length) return "";
+        if (idx < 0 || idx >= root.globalModeList.length)
+            return "";
         return root.globalModeList[idx].label;
     }
 
@@ -92,8 +113,10 @@ Rectangle {
                         iconSource: {
                             var idx = root._globalModeIndex;
                             var list = root.globalModeList;
-                            if (idx < 0 || idx >= list.length) idx = 0;
-                            return "image://icons/" + list[idx].icon + "?color=%23888888";
+                            if (idx < 0 || idx >= list.length)
+                                idx = 0;
+                            var c = list[idx].modeColor.replace("#", "");
+                            return "image://icons/" + list[idx].icon + "?color=%23" + c;
                         }
                         onClicked: globalModeMenu.openRelativeTo(globalModeBtn, root)
 
@@ -115,9 +138,9 @@ Rectangle {
                         id: globalModeMenu
                         model: root.globalModeList
                         currentIndex: root._globalModeIndex
-                        onActivated: function(index) {
-                            Backend.settings.defaultPlaybackMode = index + 1
-                            Backend.settings.save()
+                        onActivated: function (index) {
+                            Backend.settings.defaultPlaybackMode = index + 1;
+                            Backend.settings.save();
                         }
                     }
 
@@ -161,17 +184,23 @@ Rectangle {
                 Layout.fillHeight: true
                 clip: true
                 cellHeight: 140
+
                 leftMargin: 12
-                rightMargin: 12
+                rightMargin: 12 - cardSpacing
                 topMargin: 12
                 bottomMargin: 12
 
                 property int minCardWidth: 210
                 property int cardSpacing: 12
+
                 cellWidth: {
                     var available = width - leftMargin - rightMargin;
                     var cols = Math.max(3, Math.floor(available / (minCardWidth + cardSpacing)));
                     return Math.floor(available / cols);
+                }
+
+                TapHandler {
+                    onTapped: root.selectedIndex = -1
                 }
 
                 model: SlotModel

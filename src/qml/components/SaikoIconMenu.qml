@@ -52,6 +52,7 @@ Popup {
                 id: itemDelegate
                 required property string icon
                 required property string label
+                required property string modeColor
                 required property int index
 
                 Layout.fillWidth: true
@@ -72,9 +73,9 @@ Popup {
                     Image {
                         source: "image://icons/" + itemDelegate.icon
                                 + "?color=%23"
-                                + (itemDelegate.index === menu.currentIndex
-                                    ? "d99a3d"
-                                    : (itemArea.containsMouse ? "b0b0b0" : "888888"))
+                                + (itemArea.containsMouse
+                                    ? "b0b0b0"
+                                    : itemDelegate.modeColor.replace("#", ""))
                         sourceSize: Qt.size(14, 14)
                         Layout.alignment: Qt.AlignVCenter
                     }

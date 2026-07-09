@@ -14,6 +14,7 @@ ColumnLayout {
     property bool fileExists: true
     property int slotIndex: -1
     property var slotModel: null
+    property var layerPositionsMs: []
 
     property bool showSavedStatus: false
 
@@ -106,6 +107,7 @@ ColumnLayout {
             filePath: root.filePath
             fileExists: root.fileExists
             emptyText: "No file assigned"
+            layerPositionsMs: root.layerPositionsMs
 
             onIsDraggingChanged: {
                 if (!isDragging) {

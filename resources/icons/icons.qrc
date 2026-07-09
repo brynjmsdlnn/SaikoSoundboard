@@ -27,5 +27,8 @@
         <file>square-stack.svg</file>
         <file>refresh-cw.svg</file>
         <file>toggle-left.svg</file>
+        <file>headset.svg</file>
+        <file>mic.svg</file>
+        <file>key-round.svg</file>
     </qresource>
 </RCC>

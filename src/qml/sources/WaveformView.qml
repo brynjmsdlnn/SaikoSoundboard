@@ -25,6 +25,13 @@ Rectangle {
     property alias playPositionMs: dataSource.playPositionMs
     property alias readOnly: dataSource.readOnly
 
+    property var layerPositionsMs: []
+    property color layerColor: Theme.accentPurple
+
+    onLayerPositionsMsChanged: {
+        canvas.requestPaint();
+    }
+
     signal trimRangeChanged(double startMs, double endMs)
     signal trimRangeCommit(double startMs, double endMs)
 
@@ -156,15 +163,54 @@ Rectangle {
                 ctx.fill();
             }
 
-            // Playback cursor (white)
+            // Playback cursor (white) with triangle head
             if (dataSource.playPositionMs >= 0) {
                 var cursorX = (dataSource.playPositionMs / duration) * w;
+                
+                // Draw cursor line
                 ctx.strokeStyle = Theme.textPrimary;
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.moveTo(cursorX, 0);
+                ctx.moveTo(cursorX, 8);
                 ctx.lineTo(cursorX, graphH);
                 ctx.stroke();
+
+                // Draw cursor head triangle
+                ctx.fillStyle = Theme.textPrimary;
+                ctx.beginPath();
+                ctx.moveTo(cursorX, 0);
+                ctx.lineTo(cursorX - 5, 8);
+                ctx.lineTo(cursorX + 5, 8);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Layer playheads (translucent mode accent color)
+            if (root.layerPositionsMs && root.layerPositionsMs.length > 0) {
+                var lc = Qt.rgba(root.layerColor.r, root.layerColor.g, root.layerColor.b, 0.5);
+                ctx.lineWidth = 2;
+                for (var j = 0; j < root.layerPositionsMs.length; j++) {
+                    var posMs = root.layerPositionsMs[j];
+                    if (posMs >= 0) {
+                        var lCursorX = (posMs / duration) * w;
+                        
+                        // Draw cursor line
+                        ctx.strokeStyle = lc;
+                        ctx.beginPath();
+                        ctx.moveTo(lCursorX, 8);
+                        ctx.lineTo(lCursorX, graphH);
+                        ctx.stroke();
+
+                        // Draw cursor head triangle
+                        ctx.fillStyle = lc;
+                        ctx.beginPath();
+                        ctx.moveTo(lCursorX, 0);
+                        ctx.lineTo(lCursorX - 5, 8);
+                        ctx.lineTo(lCursorX + 5, 8);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
             }
 
             // Timeline labels

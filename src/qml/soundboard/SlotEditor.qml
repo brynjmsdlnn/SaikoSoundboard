@@ -29,6 +29,8 @@ Rectangle {
     property real volume: 1.0
     property int outputRouting: 0
     property int playbackMode: 0
+    property int queueCount: 0
+    property var layerPositionsMs: []
     property string playHotkey: ""
     property string assignHotkey: ""
     property var waveformData: null
@@ -247,6 +249,10 @@ Rectangle {
             hideDelete: true    // Drops the delete button
             filePath: editor.filePath
             fileExists: editor.fileExists
+
+            playState: editor.playState
+            playbackMode: editor.playbackMode
+            queueCount: editor.queueCount
         }
     }
 
@@ -297,6 +303,7 @@ Rectangle {
                 slotModel: editor.slotModel
                 filePath: editor.filePath
                 fileExists: editor.fileExists
+                layerPositionsMs: editor.layerPositionsMs
             }
 
             RowLayout {
@@ -335,6 +342,9 @@ Rectangle {
                         onDeleteRequested: removeConfirmDialog.open()
                         filePath: editor.filePath
                         fileExists: editor.fileExists
+                        playState: editor.playState
+                        playbackMode: editor.playbackMode
+                        queueCount: editor.queueCount
                     }
                 }
             }
@@ -378,6 +388,14 @@ Rectangle {
         function onPlayerPlayStateChanged(playerId, state) {
             if (playerId === editor.slotId)
                 editor.playState = state;
+        }
+        function onPlayerQueueCountChanged(playerId, count) {
+            if (playerId === editor.slotId)
+                editor.queueCount = count;
+        }
+        function onPlayerLayerPositionsChanged(playerId, positions) {
+            if (playerId === editor.slotId)
+                editor.layerPositionsMs = positions;
         }
     }
 
@@ -435,6 +453,8 @@ Rectangle {
             editor.volume = 1;
             editor.outputRouting = 0;
             editor.playbackMode = 0;
+            editor.queueCount = 0;
+            editor.layerPositionsMs = [];
             editor.playHotkey = "";
             editor.assignHotkey = "";
             editor.waveformData = null;
@@ -456,6 +476,8 @@ Rectangle {
         editor.volume = d.volume ?? 1;
         editor.outputRouting = d.outputRouting ?? 0;
         editor.playbackMode = d.playbackMode ?? 0;
+        editor.queueCount = editor.slotId ? Backend.soundboard.getPlayerQueueCount(editor.slotId) : 0;
+        editor.layerPositionsMs = editor.slotId ? Backend.soundboard.getPlayerLayerPositions(editor.slotId) : [];
         editor.playHotkey = d.playHotkey ?? "";
         editor.assignHotkey = d.assignHotkey ?? "";
         editor.playState = d.playState ?? 0;
