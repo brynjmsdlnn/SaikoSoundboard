@@ -9,78 +9,254 @@ RowLayout {
     property bool locked: false
     property bool hasSlot: false
     property string slotId: ""
+    property int playbackMode: 0
+    property int slotIndex: -1
+    property var slotModel: null
+    property string slotName: ""
+
+    // Playback mode data
+    readonly property var modeList: [
+        {
+            icon: "sliders-horizontal",
+            label: "Default (Global setting)"
+        },
+        {
+            icon: "refresh-cw",
+            label: "Restart (Retrigger)"
+        },
+        {
+            icon: "toggle-left",
+            label: "Toggle Play / Stop"
+        },
+        {
+            icon: "list-ordered",
+            label: "Queued Replay (Sequential)"
+        },
+        {
+            icon: "square-stack",
+            label: "Layered Play (Cut All on Stop)"
+        },
+        {
+            icon: "audio-lines",
+            label: "Layered Play (Let Ring Out)"
+        }
+    ]
 
     Layout.fillWidth: true
     spacing: 8
 
-    Text {
-        text: "Slot Details"
-        color: Theme.textPrimary
-        font.pixelSize: 18
-        font.weight: Font.Bold
+    // ── Inline editable slot name ──────────────────────────────────────
+    property bool _editing: false
+    property bool _showSuccess: false
+
+    Item {
         Layout.fillWidth: true
-    }
-
-    // Lock toggle button in header
-    Rectangle {
-        id: lockToggle
-        implicitWidth: 32
         implicitHeight: 28
-        radius: 6
+        clip: true
 
-        // Only show when there is a slot AND it is currently unlocked
-        visible: root.hasSlot && !root.locked
-
-        // Subtle gold aesthetic on hover
-        color: lockToggleArea.containsMouse ? "#1a1008" : "transparent"
-        border.color: lockToggleArea.containsMouse ? "#40d99a3d" : "transparent"
-        border.width: 1
-
-        Behavior on color {
-            ColorAnimation {
-                duration: 150
-            }
-        }
-        Behavior on border.color {
-            ColorAnimation {
-                duration: 150
-            }
+        HoverHandler {
+            id: itemHover
         }
 
-        Image {
-            anchors.centerIn: parent
-            sourceSize: Qt.size(14, 14)
+        // ── Display: slot name text + Inline Pencil ──────────────────
+        Row {
+            id: textDisplayRow
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
 
-            // Swaps the icon name ('lock' vs 'unlock') and its color on hover
-            source: lockToggleArea.containsMouse ? "image://icons/lock?color=%23d99a3d" : "image://icons/unlock?color=%23888888"
+            // Constrain the row so it never expands past the parent width
+            width: Math.min(parent.width, implicitWidth)
+            spacing: 6
+            visible: !root._editing
 
-            // Satisfying click "bounce" effect
-            scale: lockToggleArea.pressed ? 0.75 : 1.0
-            Behavior on scale {
-                NumberAnimation {
-                    duration: 150
-                    easing.type: Easing.OutBack
+            Text {
+                id: nameText
+                // Dynamically size the text block width based on content or remaining space
+                width: Math.min(implicitWidth, parent.parent.width - (inlineEditIcon.visible ? inlineEditIcon.width + parent.spacing : 0))
+                text: root.slotName || "Unnamed Slot"
+                color: root.slotName ? Theme.textPrimary : Theme.textDim
+                font.pixelSize: 18
+                font.weight: Font.Bold
+                elide: Text.ElideRight
+            }
+
+            Image {
+                id: inlineEditIcon
+                source: "image://icons/pencil?color=" + (nameHover.containsMouse ? "%23d99a3d" : encodeURIComponent(Theme.textDim))
+                sourceSize: Qt.size(14, 14)
+                anchors.verticalCenter: parent.verticalCenter
+                opacity: (itemHover.hovered && !root.locked) ? 0.7 : 0.0
+                visible: opacity > 0.0 // Don't take up spacing room when hidden
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 150
+                    }
                 }
             }
         }
 
-        // NEW: Integrated SaikoTooltip component
-        SaikoTooltip {
-            id: customTooltip
-            text: "Lock Slot"
-            hovered: lockToggleArea.containsMouse
-            direction: "top"
+        // Broad Hover / Click Area over the entire layout container
+        MouseArea {
+            id: nameHover
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: root.locked ? Qt.ArrowCursor : Qt.IBeamCursor
+            onClicked: {
+                if (!root.locked) {
+                    root._editing = true;
+                    Qt.callLater(nameField.forceActiveFocus);
+                }
+            }
         }
 
-        MouseArea {
-            id: lockToggleArea
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            hoverEnabled: true
-            onClicked: {
-                if (root.slotId)
-                    Backend.soundboard.setSlotLocked(root.slotId, true);
+        // ── Editing: TextField ─────────────────────────
+        TextField {
+            id: nameField
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root._editing
+            text: root.slotName
+            placeholderText: "Unnamed Slot"
+            color: root._showSuccess ? Theme.accentGreen : Theme.textPrimary
+
+            // Mirroring the exact presentation font style
+            font.pixelSize: 18
+            font.weight: Font.Bold
+
+            selectByMouse: true
+            rightPadding: 36
+            leftPadding: 4 // Kept identical to text element margin displacement
+
+            property bool isDirty: activeFocus && text !== root.slotName
+
+            background: Item {} // Fully transparent seamless canvas
+
+            Image {
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                source: "image://icons/corner-down-left?color=" + encodeURIComponent(Theme.accentPurple)
+                sourceSize: Qt.size(16, 16)
+                opacity: nameField.isDirty && !root._showSuccess ? 0.8 : 0.0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 150
+                    }
+                }
             }
+
+            Image {
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                source: "image://icons/check?color=" + encodeURIComponent(Theme.accentGreen)
+                sourceSize: Qt.size(18, 18)
+                opacity: root._showSuccess ? 1.0 : 0.0
+            }
+
+            onEditingFinished: {
+                if (root.slotId && text.trim() !== root.slotName) {
+                    Backend.soundboard.renamePlayer(root.slotId, text.trim());
+                    root._showSuccess = true;
+                    successTimer.restart();
+                } else if (!root._showSuccess) {
+                    root._editing = false;
+                }
+            }
+        }
+
+        Timer {
+            id: successTimer
+            interval: 1500
+            onTriggered: {
+                root._showSuccess = false;
+                root._editing = false;
+            }
+        }
+    }
+
+    // ── Tooltip cycling ────────────────────────────────────────────────────
+    property string _tooltipDisplay: "Playback Mode"
+    property bool _showingModeName: false
+
+    Timer {
+        id: tooltipTimer
+        interval: 500
+        onTriggered: {
+            if (root._showingModeName) {
+                root._tooltipDisplay = "Playback Mode";
+                root._showingModeName = false;
+                tooltipTimer.interval = 500;
+            } else {
+                var idx = Math.min(root.playbackMode, root.modeList.length - 1);
+                root._tooltipDisplay = root.modeList[idx].label;
+                root._showingModeName = true;
+                tooltipTimer.interval = 2000;
+            }
+            tooltipTimer.start();
+        }
+    }
+
+    onLockedChanged: {
+        if (root.locked) {
+            tooltipTimer.stop();
+            root._showingModeName = false;
+            root._tooltipDisplay = "Playback Mode";
+        }
+    }
+    // ── End tooltip ─────────────────────────────────────────────────────────
+
+    // Playback mode icon button
+    SaikoIconButton {
+        id: modeButton
+        visible: root.hasSlot
+        isActive: !root.locked
+        tooltipText: root._tooltipDisplay
+        iconSource: {
+            var idx = Math.min(root.playbackMode, root.modeList.length - 1);
+            return "image://icons/" + root.modeList[idx].icon + "?color=%23888888";
+        }
+        onClicked: modeMenu.openRelativeTo(modeButton, root)
+
+        // Hover-based tooltip cycling
+        onContainsMouseChanged: {
+            if (modeButton.containsMouse) {
+                root._showingModeName = false;
+                root._tooltipDisplay = "Playback Mode";
+                tooltipTimer.interval = 500;
+                tooltipTimer.start();
+            } else {
+                tooltipTimer.stop();
+                root._showingModeName = false;
+                root._tooltipDisplay = "Playback Mode";
+            }
+        }
+    }
+
+    // Playback mode popup menu
+    SaikoIconMenu {
+        id: modeMenu
+        model: root.modeList
+        currentIndex: root.playbackMode
+        onActivated: function (index) {
+            if (root.slotIndex >= 0)
+                root.slotModel.setPlaybackMode(root.slotIndex, index);
+        }
+    }
+
+    // Lock toggle button in header
+    SaikoIconButton {
+        id: lockToggle
+        visible: root.hasSlot && !root.locked
+        isActive: true
+        tooltipText: "Lock Slot"
+        iconSource: "image://icons/unlock?color=%23888888"
+        hoveredIconSource: "image://icons/lock?color=%23d99a3d"
+        hoverColor: "#1a1008"
+        hoverBorderColor: "#40d99a3d"
+        onClicked: {
+            if (root.slotId)
+                Backend.soundboard.setSlotLocked(root.slotId, true);
         }
     }
 }

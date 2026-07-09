@@ -271,12 +271,10 @@ Rectangle {
                 locked: editor.isLocked
                 hasSlot: editor.hasSlot
                 slotId: editor.slotId
-            }
-
-            SlotNameEditor {
                 slotName: editor.slotName
-                slotId: editor.slotId
-                isLocked: editor.isLocked
+                playbackMode: editor.playbackMode
+                slotIndex: editor.slotIndex
+                slotModel: editor.slotModel
             }
 
             AudioSourceSelector {
@@ -319,13 +317,6 @@ Rectangle {
 
                     RoutingSelector {
                         outputRouting: editor.outputRouting
-                        isLocked: editor.isLocked
-                        slotIndex: editor.slotIndex
-                        slotModel: editor.slotModel
-                    }
-
-                    PlaybackModeSelector {
-                        playbackMode: editor.playbackMode
                         isLocked: editor.isLocked
                         slotIndex: editor.slotIndex
                         slotModel: editor.slotModel

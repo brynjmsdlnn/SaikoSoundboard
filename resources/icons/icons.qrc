@@ -21,5 +21,11 @@
         <file>volume-2.svg</file>
         <file>volume-x.svg</file>
         <file>info.svg</file>
+        <file>audio-lines.svg</file>
+        <file>pencil.svg</file>
+        <file>list-ordered.svg</file>
+        <file>square-stack.svg</file>
+        <file>refresh-cw.svg</file>
+        <file>toggle-left.svg</file>
     </qresource>
 </RCC>

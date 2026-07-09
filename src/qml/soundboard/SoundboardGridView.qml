@@ -9,6 +9,45 @@ Rectangle {
     color: Theme.appBackground
     property int selectedIndex: 0
 
+    // Global playback mode data (matches EditorHeader but without "Default" mode)
+    readonly property var globalModeList: [
+        { icon: "refresh-cw",         label: "Restart (Retrigger)" },
+        { icon: "toggle-left",        label: "Toggle Play / Stop" },
+        { icon: "list-ordered",       label: "Queued Replay (Sequential)" },
+        { icon: "square-stack",      label: "Layered Play (Cut All on Stop)" },
+        { icon: "audio-lines",       label: "Layered Play (Let Ring Out)" }
+    ]
+    readonly property int _globalModeIndex: Math.max(0, Backend.settings.defaultPlaybackMode - 1)
+    readonly property string _globalModeLabel: {
+        var idx = root._globalModeIndex;
+        if (idx < 0 || idx >= root.globalModeList.length) return "";
+        return root.globalModeList[idx].label;
+    }
+
+    // ── Tooltip cycling ────────────────────────────────────────────────────
+    property string _tooltipDisplay: "Global Playback Mode"
+    property bool _showingModeName: false
+
+    Timer {
+        id: tooltipTimer
+        interval: 500
+        onTriggered: {
+            if (root._showingModeName) {
+                root._tooltipDisplay = "Global Playback Mode";
+                root._showingModeName = false;
+                tooltipTimer.interval = 500;
+            } else {
+                var idx = root._globalModeIndex;
+                if (idx >= 0 && idx < root.globalModeList.length) {
+                    root._tooltipDisplay = root.globalModeList[idx].label;
+                }
+                root._showingModeName = true;
+                tooltipTimer.interval = 2000;
+            }
+            tooltipTimer.start();
+        }
+    }
+
     // Outer Row Layout to split the screen into Left Column and Right Column
     RowLayout {
         anchors.fill: parent
@@ -45,65 +84,72 @@ Rectangle {
                         Layout.fillWidth: true
                     }
 
-                    // Hotkey toggle button
-                    Item {
-                        width: 32
-                        height: 28
-                        SaikoButton {
-                            id: hotkeyToggleBtn
-                            anchors.fill: parent
-                            iconSource: "image://icons/keyboard?color=" + (Backend.settings.hotkeysEnabled ? encodeURIComponent(Theme.accentPurple) : encodeURIComponent(Theme.textDim))
-                            accentColor: Backend.settings.hotkeysEnabled ? Theme.accentPurple : Theme.borderDefault
-                            small: true
-                            onClicked: {
-                                Backend.settings.hotkeysEnabled = !Backend.settings.hotkeysEnabled;
-                                Backend.settings.save();
+                    // Global playback mode button
+                    SaikoIconButton {
+                        id: globalModeBtn
+                        isActive: true
+                        tooltipText: root._tooltipDisplay
+                        iconSource: {
+                            var idx = root._globalModeIndex;
+                            var list = root.globalModeList;
+                            if (idx < 0 || idx >= list.length) idx = 0;
+                            return "image://icons/" + list[idx].icon + "?color=%23888888";
+                        }
+                        onClicked: globalModeMenu.openRelativeTo(globalModeBtn, root)
+
+                        onContainsMouseChanged: {
+                            if (globalModeBtn.containsMouse) {
+                                root._showingModeName = false;
+                                root._tooltipDisplay = "Global Playback Mode";
+                                tooltipTimer.interval = 500;
+                                tooltipTimer.start();
+                            } else {
+                                tooltipTimer.stop();
+                                root._showingModeName = false;
+                                root._tooltipDisplay = "Global Playback Mode";
                             }
                         }
-                        SaikoTooltip {
-                            text: Backend.settings.hotkeysEnabled ? "Disable Global Hotkeys" : "Enable Global Hotkeys"
-                            hovered: hotkeyToggleBtn.hovered
-                            direction: "top"
-                            z: 999
+                    }
+
+                    SaikoIconMenu {
+                        id: globalModeMenu
+                        model: root.globalModeList
+                        currentIndex: root._globalModeIndex
+                        onActivated: function(index) {
+                            Backend.settings.defaultPlaybackMode = index + 1
+                            Backend.settings.save()
+                        }
+                    }
+
+                    // Hotkey toggle button
+                    SaikoIconButton {
+                        id: hotkeyToggleBtn
+                        isActive: true
+                        tooltipText: Backend.settings.hotkeysEnabled ? "Disable Global Hotkeys" : "Enable Global Hotkeys"
+                        iconSource: "image://icons/keyboard?color=" + (Backend.settings.hotkeysEnabled ? encodeURIComponent(Theme.accentPurple) : encodeURIComponent(Theme.textDim))
+                        hoverBorderColor: Backend.settings.hotkeysEnabled ? Theme.accentPurple : Theme.borderHover
+                        onClicked: {
+                            Backend.settings.hotkeysEnabled = !Backend.settings.hotkeysEnabled;
+                            Backend.settings.save();
                         }
                     }
 
                     // Add button
-                    Item {
-                        width: 32
-                        height: 28
-                        SaikoButton {
-                            id: addBtn
-                            anchors.fill: parent
-                            iconSource: "image://icons/plus?color=%23b0b0b0"
-                            small: true
-                            onClicked: Backend.soundboard.addPlayer()
-                        }
-                        SaikoTooltip {
-                            text: "Add Slot"
-                            hovered: addBtn.hovered
-                            direction: "top"
-                            z: 999
-                        }
+                    SaikoIconButton {
+                        id: addBtn
+                        isActive: true
+                        tooltipText: "Add Slot"
+                        iconSource: "image://icons/plus?color=%23b0b0b0"
+                        onClicked: Backend.soundboard.addPlayer()
                     }
 
                     // Settings/Routing button
-                    Item {
-                        width: 32
-                        height: 28
-                        SaikoButton {
-                            id: routingBtn
-                            anchors.fill: parent
-                            iconSource: "image://icons/cog?color=%23b0b0b0"
-                            small: true
-                            onClicked: Utils.openDialog("../dialogs/RoutingDialog.qml")
-                        }
-                        SaikoTooltip {
-                            text: "Routing Settings"
-                            hovered: routingBtn.hovered
-                            direction: "top"
-                            z: 999
-                        }
+                    SaikoIconButton {
+                        id: routingBtn
+                        isActive: true
+                        tooltipText: "Routing Settings"
+                        iconSource: "image://icons/cog?color=%23b0b0b0"
+                        onClicked: Utils.openDialog("../dialogs/RoutingDialog.qml")
                     }
                 }
             }
@@ -157,7 +203,7 @@ Rectangle {
         SlotEditor {
             id: rightEditor
             Layout.preferredWidth: 500
-            Layout.minimumWidth: 480
+            Layout.minimumWidth: 500
             Layout.maximumWidth: 520
             Layout.fillHeight: true
             Layout.fillWidth: false

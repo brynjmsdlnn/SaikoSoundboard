@@ -31,14 +31,6 @@ Window {
         { text: "96,000 Hz", value: 96000 }
     ]
 
-    readonly property var playbackModeModel: [
-        { text: "Restart (Retrigger)",                value: 1 },
-        { text: "Toggle Play / Stop",                 value: 2 },
-        { text: "Queued Replay (Sequential)",         value: 3 },
-        { text: "Layered Play (Cut All on Stop)",     value: 4 },
-        { text: "Layered Play (Let Ring Out)",        value: 5 }
-    ]
-
     ColumnLayout {
         id: mainColumn
         anchors.fill: parent
@@ -311,69 +303,6 @@ Window {
                             }
                             Component.onCompleted: {
                                 var idx = indexOfValue(Backend.settings.recordingSampleRate)
-                                if (idx >= 0) currentIndex = idx
-                            }
-                        }
-                    }
-                }
-            }
-
-            // --- Default Playback Mode Card ---
-            Rectangle {
-                Layout.fillWidth: true
-                implicitHeight: modeLayout.implicitHeight + 32
-                color: Theme.cardBackground
-                radius: Theme.cardRadius || 8
-                border.color: Theme.borderDefault
-                border.width: 1
-
-                ColumnLayout {
-                    id: modeLayout
-                    anchors.fill: parent
-                    anchors.margins: 16
-                    spacing: 16
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 4
-                        Text {
-                            text: "DEFAULT PLAYBACK MODE"
-                            color: Theme.textDim
-                            font.pixelSize: Theme.fontSizeSmall || 11
-                            font.letterSpacing: 1.5
-                            font.weight: Font.Bold
-                        }
-                        Text {
-                            text: "Default playback behavior applied to all soundboard slots set to 'Default'."
-                            color: Theme.textDim
-                            font.pixelSize: Theme.fontSizeNormal || 13
-                            wrapMode: Text.WordWrap
-                            lineHeight: 1.15
-                            Layout.fillWidth: true
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 6
-                        Text {
-                            text: "Global Playback Mode"
-                            color: Theme.textSecondary
-                            font.pixelSize: Theme.fontSizeNormal || 13
-                            font.weight: Font.DemiBold
-                        }
-                        SaikoComboBox {
-                            id: playbackModeCombo
-                            Layout.fillWidth: true
-                            model: playbackModeModel
-                            textRole: "text"
-                            valueRole: "value"
-                            onActivated: function(index) {
-                                Backend.settings.defaultPlaybackMode = model[index].value
-                                Backend.settings.save()
-                            }
-                            Component.onCompleted: {
-                                var idx = indexOfValue(Backend.settings.defaultPlaybackMode)
                                 if (idx >= 0) currentIndex = idx
                             }
                         }

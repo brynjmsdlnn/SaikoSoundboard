@@ -10,7 +10,7 @@ ApplicationWindow {
     id: app
     visible: true
     width: 1100
-    height: 700
+    height: 900
     minimumWidth: 1100
     minimumHeight: 600
     title: "Saiko Soundboard"
@@ -242,7 +242,7 @@ ApplicationWindow {
         Rectangle {
             id: soundboardDock
             SplitView.preferredHeight: Backend.settings.soundboardDockHeight > 0 ? Backend.settings.soundboardDockHeight : 280
-            SplitView.minimumHeight: 500
+            SplitView.minimumHeight: 520
             color: Theme.recessedBackground
             border.color: Theme.borderDefault
             border.width: 1

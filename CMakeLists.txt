@@ -166,6 +166,8 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/components/SaikoButton.qml
         src/qml/components/SaikoCheckBox.qml
         src/qml/components/SaikoComboBox.qml
+        src/qml/components/SaikoIconButton.qml
+        src/qml/components/SaikoIconMenu.qml
         src/qml/components/SaikoTooltip.qml
         src/qml/components/SaikoMenu.qml
         src/qml/components/SaikoMenuItem.qml
@@ -191,12 +193,10 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/soundboard/HotkeyCard.qml
         src/qml/soundboard/editor/SectionLabel.qml
         src/qml/soundboard/editor/EditorHeader.qml
-        src/qml/soundboard/editor/SlotNameEditor.qml
         src/qml/soundboard/editor/AudioSourceSelector.qml
         src/qml/soundboard/editor/TrimEditor.qml
         src/qml/soundboard/editor/VolumeSlider.qml
         src/qml/soundboard/editor/RoutingSelector.qml
-        src/qml/soundboard/editor/PlaybackModeSelector.qml
         src/qml/soundboard/editor/HotkeyDisplay.qml
         src/qml/soundboard/editor/ActionButtons.qml
 
