@@ -2,6 +2,7 @@
 #include "ui/realtimewaveformitem.h"
 #include "ui/waveformitem.h"
 #include "ui/colorediconprovider.h"
+#include "ui/fileiconprovider.h"
 
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>

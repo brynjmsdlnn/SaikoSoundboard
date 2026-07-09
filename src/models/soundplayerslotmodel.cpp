@@ -1,5 +1,6 @@
 #include "soundplayerslotmodel.h"
 #include <QFile>
+#include "managers/soundboardmanager.h"
 
 SoundPlayerSlotModel::SoundPlayerSlotModel(SoundboardManager *manager, QObject *parent)
     : QAbstractListModel(parent)

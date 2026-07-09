@@ -2,6 +2,7 @@
 #include <QUrl>
 #include <QDebug>
 #include <QFile>
+#include <QAudioOutput>
 
 SoundPlayer::SoundPlayer(QObject *parent)
     : QObject(parent)

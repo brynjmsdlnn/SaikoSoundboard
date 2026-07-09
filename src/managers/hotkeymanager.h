@@ -4,9 +4,14 @@
 #include <QObject>
 #include <QAbstractNativeEventFilter>
 #include <QMap>
-#include "core/adapters/WindowsHotkeyBackend.h"
 #include "core/domain/KeyBindingStore.h"
 #include "managers/actionmanager.h"
+
+namespace Saiko {
+namespace Adapters {
+class WindowsHotkeyBackend;
+}
+}
 
 class HotkeyManager : public QObject, public QAbstractNativeEventFilter
 {

@@ -2,9 +2,10 @@
 #define SOUNDPLAYER_H
 
 #include <QMediaPlayer>
-#include <QAudioOutput>
 #include <QAudioDevice>
 #include "models/soundplayerslot.h"
+
+class QAudioOutput;
 
 class SoundPlayer : public QObject
 {

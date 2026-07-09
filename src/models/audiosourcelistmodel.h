@@ -3,7 +3,8 @@
 
 #include <QAbstractListModel>
 #include "models/audiosource.h"
-#include "managers/settingsmanager.h"
+
+class SettingsManager;
 
 class AudioSourceListModel : public QAbstractListModel
 {

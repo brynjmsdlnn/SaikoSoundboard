@@ -48,6 +48,8 @@ set(UI_SOURCES
     src/ui/realtimewaveformitem.cpp
     src/ui/colorediconprovider.h
     src/ui/colorediconprovider.cpp
+    src/ui/fileiconprovider.h
+    src/ui/fileiconprovider.cpp
 )
 
 set(AUDIO_SOURCES
@@ -90,32 +92,104 @@ set(MODEL_SOURCES
     src/models/audiosourcelistmodel.h
 )
 
-# --- Core Library ---
+# --- Layer Libraries ---
 
-add_library(SaikoSoundboardCore STATIC
-    ${CORE_DOMAIN_SOURCES}
-    ${CORE_ADAPTERS_SOURCES}
-    ${UI_SOURCES}
-    ${AUDIO_SOURCES}
+# 1. Domain (Pure C++ business logic)
+add_library(SaikoDomain STATIC ${CORE_DOMAIN_SOURCES})
+target_include_directories(SaikoDomain PUBLIC src src/core src/core/domain)
+
+# 2. Adapters (Windows specific interfaces)
+add_library(SaikoAdapters STATIC ${CORE_ADAPTERS_SOURCES})
+target_include_directories(SaikoAdapters PRIVATE src/core/adapters)
+target_link_libraries(SaikoAdapters 
+    PUBLIC 
+        SaikoDomain
+    PRIVATE
+        Qt${QT_VERSION_MAJOR}::Core
+        Qt${QT_VERSION_MAJOR}::Gui
+        ole32
+        mmdevapi
+        shell32
+)
+
+# 3. Audio Engine
+add_library(SaikoAudio STATIC ${AUDIO_SOURCES})
+target_link_libraries(SaikoAudio 
+    PUBLIC 
+        SaikoDomain
+        Qt${QT_VERSION_MAJOR}::Multimedia
+        Qt${QT_VERSION_MAJOR}::Concurrent
+)
+set_target_properties(SaikoAudio PROPERTIES UNITY_BUILD ON)
+
+# 4. Data Models (Value types only, header-only interface)
+add_library(SaikoModels INTERFACE)
+target_include_directories(SaikoModels INTERFACE src)
+target_link_libraries(SaikoModels INTERFACE 
+    SaikoDomain 
+    Qt${QT_VERSION_MAJOR}::Qml
+)
+
+# 5. Orchestration (Managers + Model QAbstractListModel classes)
+add_library(SaikoManagers STATIC 
     ${MANAGER_SOURCES}
     ${MODEL_SOURCES}
 )
+target_link_libraries(SaikoManagers 
+    PUBLIC 
+        SaikoDomain
+        SaikoAdapters
+        SaikoAudio
+        SaikoModels
+)
+set_target_properties(SaikoManagers PROPERTIES UNITY_BUILD ON)
 
-target_include_directories(SaikoSoundboardCore PUBLIC src)
-target_include_directories(SaikoSoundboardCore PUBLIC src/core)
-target_include_directories(SaikoSoundboardCore PUBLIC src/core/domain)
-target_include_directories(SaikoSoundboardCore PRIVATE src/core/adapters)
-target_link_libraries(SaikoSoundboardCore PUBLIC 
-    Qt${QT_VERSION_MAJOR}::Multimedia 
-    Qt${QT_VERSION_MAJOR}::Concurrent
-    Qt${QT_VERSION_MAJOR}::Quick
-    Qt${QT_VERSION_MAJOR}::Qml
-    Qt${QT_VERSION_MAJOR}::Svg
+# 6. UI Backend
+add_library(SaikoUI STATIC ${UI_SOURCES})
+target_link_libraries(SaikoUI 
+    PUBLIC 
+        SaikoManagers
+        SaikoModels
+        SaikoAudio
+        Qt${QT_VERSION_MAJOR}::Quick
+        Qt${QT_VERSION_MAJOR}::Qml
+        Qt${QT_VERSION_MAJOR}::Svg
+)
+
+# Umbrella Core target to maintain compatibility with tests and tools
+add_library(SaikoSoundboardCore INTERFACE)
+target_link_libraries(SaikoSoundboardCore INTERFACE
+    SaikoUI
+    SaikoManagers
+    SaikoModels
+    SaikoAudio
+    SaikoAdapters
+    SaikoDomain
+)
+
+# --- Precompiled Headers ---
+
+set(COMMON_PCH_HEADERS
+    <vector>
+    <string>
+    <memory>
+    <optional>
+    <QObject>
+    <QString>
+    <QList>
+    <QMap>
+    <QHash>
+    <QDebug>
 )
 
 if(WIN32)
-    target_link_libraries(SaikoSoundboardCore PUBLIC ole32 mmdevapi shell32)
+    list(APPEND COMMON_PCH_HEADERS <windows.h>)
 endif()
+
+target_precompile_headers(SaikoAdapters PRIVATE ${COMMON_PCH_HEADERS})
+target_precompile_headers(SaikoAudio PRIVATE ${COMMON_PCH_HEADERS})
+target_precompile_headers(SaikoManagers PRIVATE ${COMMON_PCH_HEADERS})
+target_precompile_headers(SaikoUI PRIVATE ${COMMON_PCH_HEADERS})
 
 # --- Resource files ---
 

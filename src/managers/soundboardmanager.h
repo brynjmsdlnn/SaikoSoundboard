@@ -5,12 +5,14 @@
 #include <QList>
 #include <QMap>
 #include <QAudioDevice>
-#include "audio/wasapipassthrough.h"
+#include <QMediaPlayer>
 #include "models/soundplayerslot.h"
-#include "audio/soundplayer.h"
 #include "audio/waveformgenerator.h"
 #include "domain/PlayerAllocator.h"
-#include "managers/settingsmanager.h"
+
+class WasapiPassthrough;
+class SoundPlayer;
+class SettingsManager;
 
 class SoundboardManager : public QObject
 {

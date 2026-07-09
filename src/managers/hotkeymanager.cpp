@@ -1,6 +1,7 @@
 #include "hotkeymanager.h"
 #include <QCoreApplication>
 #include <QDebug>
+#include "core/adapters/WindowsHotkeyBackend.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>

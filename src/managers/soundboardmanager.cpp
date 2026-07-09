@@ -5,6 +5,9 @@
 #include <QFuture>
 #include <QFutureWatcher>
 #include <QtConcurrent>
+#include "audio/wasapipassthrough.h"
+#include "audio/soundplayer.h"
+#include "managers/settingsmanager.h"
 
 SoundboardManager::SoundboardManager(SettingsManager *settings, QObject *parent)
     : QObject(parent)

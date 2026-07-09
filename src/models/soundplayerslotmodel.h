@@ -4,7 +4,8 @@
 #include <QAbstractListModel>
 #include <QDir>
 #include "models/soundplayerslot.h"
-#include "managers/soundboardmanager.h"
+
+class SoundboardManager;
 
 class SoundPlayerSlotModel : public QAbstractListModel
 {

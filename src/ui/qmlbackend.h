@@ -2,55 +2,20 @@
 #define QMLBACKEND_H
 
 #include <QObject>
-#include <QQuickImageProvider>
-#include <QPixmap>
-#include <QFileInfo>
-#include <QImage>
-#ifdef Q_OS_WIN
-#include <windows.h>
-#include <shellapi.h>
-#endif
-#include <QUrl>
-#include <QTimer>
-#include <QElapsedTimer>
 #include <QVariant>
-#include <QMediaPlayer>
-#include <QAudioOutput>
-#include <QDir>
+#include "models/capturestate.h"
+#include "audio/waveformgenerator.h"
+
 #include "managers/settingsmanager.h"
 #include "managers/recordingmanager.h"
 #include "managers/soundboardmanager.h"
 #include "managers/actionmanager.h"
 #include "managers/hotkeymanager.h"
-#include "models/capturestate.h"
 #include "models/soundplayerslotmodel.h"
 #include "models/audiosourcelistmodel.h"
-#include "audio/waveformgenerator.h"
-
-class FileIconProvider : public QQuickImageProvider
-{
-public:
-    FileIconProvider() : QQuickImageProvider(QQuickImageProvider::Pixmap) {}
-
-    QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize) override
-    {
-        QString filePath = QUrl::fromPercentEncoding(id.toUtf8());
-        QSize actualSize = requestedSize.isValid() ? requestedSize : QSize(32, 32);
-        if (size) *size = actualSize;
-
-#ifdef Q_OS_WIN
-        SHFILEINFOW sfi = {};
-        SHGetFileInfoW(reinterpret_cast<const wchar_t *>(filePath.utf16()),
-                       0, &sfi, sizeof(sfi), SHGFI_ICON | SHGFI_LARGEICON);
-        if (sfi.hIcon) {
-            QPixmap px = QPixmap::fromImage(QImage::fromHICON(sfi.hIcon));
-            DestroyIcon(sfi.hIcon);
-            return px.scaled(actualSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        }
-#endif
-        return QPixmap(actualSize);
-    }
-};
+class QMediaPlayer;
+class QAudioOutput;
+class QTimer;
 
 class QmlBackend : public QObject
 {

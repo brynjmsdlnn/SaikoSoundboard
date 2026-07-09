@@ -6,8 +6,21 @@
 #include <QUrl>
 #include <QMediaDevices>
 #include <QAudioDevice>
+#include <QTimer>
+#include <QMediaPlayer>
+#include <QAudioOutput>
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
 #include "core/adapters/WindowsHotkeyBackend.h"
 #include "core/adapters/WindowsProcessFinder.h"
+#include "managers/settingsmanager.h"
+#include "managers/recordingmanager.h"
+#include "managers/soundboardmanager.h"
+#include "managers/actionmanager.h"
+#include "managers/hotkeymanager.h"
+#include "models/soundplayerslotmodel.h"
+#include "models/audiosourcelistmodel.h"
 
 QmlBackend::QmlBackend(QObject *parent)
     : QObject(parent)

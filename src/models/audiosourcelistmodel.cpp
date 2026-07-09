@@ -1,4 +1,5 @@
 #include "audiosourcelistmodel.h"
+#include "managers/settingsmanager.h"
 
 AudioSourceListModel::AudioSourceListModel(SettingsManager *settings, QObject *parent)
     : QAbstractListModel(parent)

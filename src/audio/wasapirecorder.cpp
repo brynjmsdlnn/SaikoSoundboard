@@ -174,12 +174,12 @@ void WasapiRecorder::stop()
         m_future.waitForFinished();
 }
 
-struct COMInitializer {
+struct RecorderCOMInitializer {
     HRESULT hr;
-    COMInitializer() {
+    RecorderCOMInitializer() {
         hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     }
-    ~COMInitializer() {
+    ~RecorderCOMInitializer() {
         if (SUCCEEDED(hr) || hr == RPC_E_CHANGED_MODE) {
             CoUninitialize();
         }
@@ -189,7 +189,7 @@ struct COMInitializer {
 
 void WasapiRecorder::runCapture()
 {
-    COMInitializer comInit;
+    RecorderCOMInitializer comInit;
     if (!comInit.isValid()) {
         emit error("COM initialization failed.");
         return;
