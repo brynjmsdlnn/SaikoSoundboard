@@ -21,8 +21,8 @@ Get-Process SaikoSoundboard* -ErrorAction SilentlyContinue | Stop-Process -Force
 
 $CMakeBin = "C:\Qt\Tools\CMake_64\bin"
 
-# 1. Ensure PATH has CMake, Qt bin and MinGW bin
-$env:PATH = "$CMakeBin;$QtBin;$QtPrefix\..\..\Tools\mingw1310_64\bin;" + $env:PATH
+# 1. Ensure PATH has CMake, Qt bin, MinGW bin and Ninja
+$env:PATH = "$CMakeBin;$QtBin;$QtPrefix\..\..\Tools\mingw1310_64\bin;$QtPrefix\..\..\Tools\Ninja;" + $env:PATH
 
 # 2. Configure CMake Release
 Write-Host "`n[1/5] Configuring CMake (Release)..." -ForegroundColor Yellow
