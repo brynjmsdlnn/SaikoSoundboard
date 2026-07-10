@@ -6,108 +6,63 @@ import Saiko 1.0
 Rectangle {
     id: root
 
-    property string lastRecordingPath: ""
-    property string statusText: "Ready"
     property bool startEnabled: true
-    property int recordingDurationSec: 10
     property int cardPadding: 12
-    property int headerHeight: 38
 
-    signal stopRequested
+    // Capture mode properties
+    property bool modeEnabled: true
+    property string captureMode: "global"
 
-    implicitHeight: headerColumn.implicitHeight
-    radius: Theme.borderRadius
+    signal captureModeSelected(string newMode)
+    signal settingsRequested()
+    signal aboutRequested()
+
+    implicitHeight: headerContent.implicitHeight + 24
+    radius: Theme.cardRadius
     border.color: Theme.borderDefault
-    color: Backend.isPlaying ? Qt.rgba(Theme.accentPurple.r, Theme.accentPurple.g, Theme.accentPurple.b, 0.05) : Theme.appBackground
+    color: Theme.appBackground
 
-    Behavior on color {
-        ColorAnimation { duration: 300 }
-    }
+    readonly property var captureModeList: [
+        { label: "System Output (Global)", value: "global", icon: "monitor", modeColor: "#ffffff", index: 0 },
+        { label: "Multi-track (sources)", value: "multi", icon: "layers", modeColor: "#bb86fc", index: 1 }
+    ]
 
-    property int __remainingSec: 0
-    property real __elapsedSec: 0.0
+    // Properties for icon cycling animation
+    property bool _showWaveformIcon: false
 
     Timer {
-        id: recordingTimer
-        interval: 100
+        id: iconCycleTimer
+        interval: 2500
         repeat: true
+        running: !captureModeContainer.isExpanded
         onTriggered: {
-            root.__elapsedSec += 0.1;
-            root.__remainingSec = Math.max(0, root.recordingDurationSec - Math.floor(root.__elapsedSec));
-            timerLabel.text = "Time remaining: " + root.__remainingSec + "s";
-            var bytes = Backend.recordingFileSize();
-            statsLabel.text = "Size: " + Math.round(bytes / 1024) + " KB \u00b7 Time: " + root.__elapsedSec.toFixed(1) + "s";
+            root._showWaveformIcon = !root._showWaveformIcon;
         }
-    }
-    Timer {
-        id: stopTimer
-        interval: recordingDurationSec * 1000
-        repeat: false
-        onTriggered: root.stopRequested()
-    }
-    Timer {
-        id: playbackTimer
-        interval: 100
-        repeat: true
-        running: false
-        onTriggered: {
-            var pos = Backend.playbackPosition();
-            var dur = Backend.playbackDuration;
-            timerLabel.text = (pos / 1000).toFixed(1) + "s / " + (dur / 1000).toFixed(1) + "s";
-        }
-    }
-
-    Connections {
-        target: Backend
-        function onIsPlayingChanged() {
-            if (Backend.isPlaying)
-                playbackTimer.start();
-            else {
-                playbackTimer.stop();
-                if (timerLabel.text !== "")
-                    timerLabel.text = "";
+        onRunningChanged: {
+            if (!running) {
+                root._showWaveformIcon = false; // Force showing the active mode's icon when hovered/expanded
             }
         }
     }
 
-    function notifyRecordingStarted() {
-        root.__remainingSec = root.recordingDurationSec;
-        root.__elapsedSec = 0.0;
-        timerLabel.text = "Time remaining: " + root.recordingDurationSec + "s";
-        statsLabel.text = "Size: 0 KB \u00b7 Time: 0.0s";
-        recordingTimer.start();
-        stopTimer.start();
-    }
-    function notifyRecordingStopped() {
-        recordingTimer.stop();
-        stopTimer.stop();
-    }
-    function resetUI() {
-        timerLabel.text = "";
-        statsLabel.text = "";
-    }
-
-    ColumnLayout {
-        id: headerColumn
+    RowLayout {
+        id: headerContent
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        spacing: 0
+        anchors.margins: root.cardPadding
+        spacing: 12
 
-        Item {
-            Layout.fillWidth: true
-            Layout.preferredHeight: root.headerHeight
+        // Left Logo Icon and Title
+        RowLayout {
+            spacing: 8
+            Layout.alignment: Qt.AlignVCenter
 
-            Text {
+            Image {
                 id: headerIcon
-                anchors.left: parent.left
-                anchors.leftMargin: root.cardPadding
-                anchors.verticalCenter: parent.verticalCenter
-                text: "((\u2022))"
-
-                color: Backend.isPlaying ? Theme.accentPurple : Theme.accentGreen
-                font.pixelSize: 16
-                font.bold: true
+                source: "image://icons/radio?color=%23" + (headerIcon.isActive ? (Backend.isPlaying ? "bb86fc" : "e35d5d") : "b0b0b0")
+                width: 16
+                height: 16
 
                 property bool isActive: Backend.isPlaying || !root.startEnabled
 
@@ -125,75 +80,110 @@ Rectangle {
             }
 
             Text {
-                anchors.centerIn: parent
-                text: Backend.isPlaying ? "Playing: " + root.lastRecordingPath.split("/").pop() : root.statusText
+                text: "Saiko Soundboard"
                 color: Theme.textPrimary
-                font.pixelSize: 14
-                font.weight: Font.Medium
-            }
-
-            Text {
-                id: timerLabel
-                anchors.right: parent.right
-                anchors.rightMargin: root.cardPadding
-                anchors.verticalCenter: parent.verticalCenter
-                text: ""
-                color: Theme.accentPurple
                 font.pixelSize: 13
-                visible: text !== ""
+                font.weight: Font.DemiBold
             }
         }
 
         Item {
-            id: statsExtension
             Layout.fillWidth: true
+        }
 
-            property bool showStats: statsLabel.text !== "" && !Backend.isPlaying
+        // Right Utilities: Capture Mode Selector and Settings/About Icon Buttons
+        RowLayout {
+            id: rightUtilities
+            spacing: 8
+            Layout.alignment: Qt.AlignVCenter
 
-            Layout.preferredHeight: showStats ? 28 : 0
-            opacity: showStats ? 1.0 : 0.0
-            clip: true
+            readonly property bool isExpanded: captureModeBtn.containsMouse || labelMouseArea.containsMouse
 
-            Behavior on Layout.preferredHeight {
-                NumberAnimation { duration: 250; easing.type: Easing.InOutQuad }
-            }
-            Behavior on opacity {
-                NumberAnimation { duration: 200 }
-            }
+            // Expanding / Collapsing Label Row (on the left of the button)
+            Item {
+                id: labelRow
+                Layout.alignment: Qt.AlignVCenter
+                Layout.preferredWidth: rightUtilities.isExpanded ? labelLayout.implicitWidth : 0
+                height: labelLayout.implicitHeight
+                opacity: rightUtilities.isExpanded ? 1.0 : 0.0
+                visible: opacity > 0.0
+                clip: true
 
-            Rectangle {
-                anchors.fill: parent
-                anchors.leftMargin: 1
-                anchors.rightMargin: 1
-                anchors.bottomMargin: 1
-
-                color: Theme.recessedBackground
-                radius: Math.max(0, Theme.borderRadius - 1)
-
-                Rectangle {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    height: Theme.borderRadius
-                    color: Theme.recessedBackground
+                Behavior on Layout.preferredWidth {
+                    NumberAnimation { duration: 250; easing.type: Easing.InOutQuad }
+                }
+                Behavior on opacity {
+                    NumberAnimation { duration: 200; easing.type: Easing.InOutQuad }
                 }
 
-                Rectangle {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    height: 1
-                    color: Theme.borderDefault
+                MouseArea {
+                    id: labelMouseArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    acceptedButtons: Qt.NoButton
                 }
 
-                Text {
-                    id: statsLabel
-                    anchors.centerIn: parent
-                    text: ""
-                    color: Theme.textSecondary
-                    font.pixelSize: 12
+                RowLayout {
+                    id: labelLayout
+                    anchors.fill: parent
+                    spacing: 6
+
+                    Image {
+                        source: "image://icons/audio-waveform?color=%23b0b0b0"
+                        sourceSize: Qt.size(14, 14)
+                        Layout.alignment: Qt.AlignVCenter
+                    }
+                    Text {
+                        text: "Capture Mode:"
+                        color: Theme.textSecondary
+                        font.bold: true
+                        font.pixelSize: 12
+                        verticalAlignment: Text.AlignVCenter
+                    }
                 }
             }
+
+            // Capture Mode Icon Button (on the right of the label - stays stationary)
+            SaikoIconButton {
+                id: captureModeBtn
+                isActive: root.modeEnabled
+                tooltipText: "" // Disabled since we show the label on hover instead
+                
+                iconSource: {
+                    if (root._showWaveformIcon) {
+                        return "image://icons/audio-waveform?color=%23b0b0b0";
+                    }
+                    var idx = root.captureMode === "multi" ? 1 : 0;
+                    var item = root.captureModeList[idx];
+                    return "image://icons/" + item.icon + "?color=%23" + item.modeColor.replace("#", "");
+                }
+                onClicked: captureModeMenu.openRelativeTo(captureModeBtn, root)
+            }
+
+            SaikoIconButton {
+                iconSource: "image://icons/cog?color=%23b0b0b0"
+                tooltipText: "Settings"
+                tooltipDirection: "bottom"
+                onClicked: root.settingsRequested()
+            }
+
+            SaikoIconButton {
+                iconSource: "image://icons/info?color=%23b0b0b0"
+                tooltipText: "About"
+                tooltipDirection: "bottom"
+                onClicked: root.aboutRequested()
+            }
+        }
+    }
+
+    // Declared outside layouts as a direct child of root to ensure mapToItem coordinate parent works correctly
+    SaikoIconMenu {
+        id: captureModeMenu
+        model: root.captureModeList
+        currentIndex: root.captureMode === "multi" ? 1 : 0
+        onActivated: function (index) {
+            var selectedMode = root.captureModeList[index].value;
+            root.captureModeSelected(selectedMode);
         }
     }
 }

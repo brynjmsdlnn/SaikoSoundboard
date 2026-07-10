@@ -18,6 +18,7 @@ ApplicationWindow {
 
     property string captureMode: "global"
     property string lastRecordingPath: ""
+    property int lastPlaybackType: Backend.PlaybackNone
 
     // Named capture states instead of bare 0/1/2/3 sprinkled through
     // onCaptureStateChanged. Mirrors whatever CaptureState enum the backend
@@ -61,6 +62,7 @@ ApplicationWindow {
         if (newName === currentName) {
             recordingPanel.setStatusText("Saved: " + currentFilename);
             recordingPanel.setPlayEnabled(true);
+            app.lastPlaybackType = Backend.PlaybackRecording;
             resetAfterStop();
             return;
         }
@@ -69,6 +71,7 @@ ApplicationWindow {
         lastRecordingPath = finalPath;
         recordingPanel.setStatusText("Saved: " + lastRecordingPath.substring(lastRecordingPath.lastIndexOf("/") + 1));
         recordingPanel.setPlayEnabled(true);
+        app.lastPlaybackType = Backend.PlaybackRecording;
         resetAfterStop();
     }
 
@@ -185,6 +188,7 @@ ApplicationWindow {
                 SplitView.minimumWidth: sourcesDock.visible ? horizontalSplit.width - 500 - 4 : 300
                 captureMode: app.captureMode
                 lastRecordingPath: app.lastRecordingPath
+                lastPlaybackType: app.lastPlaybackType
 
                 onWidthChanged: {
                     if (width > 0) {
@@ -201,6 +205,8 @@ ApplicationWindow {
                 }
                 onReplaySaved: function (path) {
                     app.lastRecordingPath = path;
+                    app.lastPlaybackType = Backend.PlaybackReplay;
+                    Backend.loadRecordingWaveform(path);
                 }
                 onSettingsRequested: settingsDialog.show()
                 onAboutRequested: aboutDialog.show()

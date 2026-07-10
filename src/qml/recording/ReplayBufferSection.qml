@@ -17,13 +17,13 @@ Rectangle {
     signal replaySaved(string path)
     signal statusMessage(string text)
 
-    implicitHeight: replayContent.implicitHeight + 24
+    implicitHeight: sectionContent.implicitHeight + 24
     color: Theme.appBackground
     radius: Theme.cardRadius
     border.color: Theme.borderDefault
 
     ColumnLayout {
-        id: replayContent
+        id: sectionContent
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
@@ -32,6 +32,7 @@ Rectangle {
 
         property bool isReplayActive: Backend.recording.isReplayActive
 
+        // Row 1: Header (Full Width)
         RowLayout {
             Layout.fillWidth: true
             spacing: 10
@@ -41,20 +42,20 @@ Rectangle {
                 width: 8
                 height: 8
                 radius: 4
-                color: replayContent.isReplayActive ? Theme.accentGreen : Theme.textDim
+                color: sectionContent.isReplayActive ? Theme.accentGreen : Theme.textDim
                 opacity: 1.0
 
                 SequentialAnimation on opacity {
-                    running: replayContent.isReplayActive
+                    running: sectionContent.isReplayActive
                     loops: Animation.Infinite
                     NumberAnimation { to: 0.3; duration: root.pulseDurationMs; easing.type: Easing.InOutQuad }
                     NumberAnimation { to: 1.0; duration: root.pulseDurationMs; easing.type: Easing.InOutQuad }
                 }
 
                 Connections {
-                    target: replayContent
+                    target: sectionContent
                     function onIsReplayActiveChanged() {
-                        if (!replayContent.isReplayActive)
+                        if (!sectionContent.isReplayActive)
                             statusDot.opacity = 1.0;
                     }
                 }
@@ -66,24 +67,19 @@ Rectangle {
                 font.bold: true
             }
 
-            Item {
-                Layout.fillWidth: true
+            SaikoIconButton {
+                iconSource: "image://icons/folder?color=%23b0b0b0"
+                tooltipText: "Open Replays Folder"
+                onClicked: Qt.openUrlExternally("file:///" + encodeURI(Backend.settings.replayDirectory))
             }
 
-            SaikoCheckBox {
-                text: "Enable"
-                checked: root.replayChecked
-                onToggled: {
-                    Backend.settings.replayEnabled = checked;
-                    Backend.settings.save();
-                    Backend.recording.setReplayEnabled(checked, root.captureMode);
-                }
+            Item {
+                Layout.fillWidth: true
             }
 
             Text {
                 text: "Duration:"
                 color: Theme.textSecondary
-                Layout.leftMargin: 8
             }
 
             Rectangle {
@@ -143,14 +139,60 @@ Rectangle {
                     }
                 }
             }
+        }
 
-            SaikoButton {
-                text: "Save Replay"
-                small: true
-                enabled: root.saveReplayEnabled
-                Layout.leftMargin: 8
+        // Row 2: Controls and Waveform inline side-by-side
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 12
+
+            // Left: Big Save Replay Button (styled like Soundboard Slot Editor action buttons)
+            Button {
+                id: saveButton
+                implicitWidth: 80
+                Layout.preferredHeight: 80
+                enabled: root.saveReplayEnabled && sectionContent.isReplayActive && root.replayChecked
+                opacity: enabled ? 1.0 : 0.4
+
+                Behavior on opacity {
+                    NumberAnimation { duration: 150 }
+                }
+                
+                background: Rectangle {
+                    color: parent.enabled && parent.hovered ? Theme.inputBackground : Theme.recessedBackground
+                    radius: 8
+                    border.color: parent.enabled && parent.hovered ? Theme.accentPurple : Theme.borderDefault
+                    border.width: 1
+                }
+
+                contentItem: ColumnLayout {
+                    spacing: 6
+                    Layout.alignment: Qt.AlignVCenter
+
+                    Image {
+                        source: "image://icons/save?color=%23" + (saveButton.enabled ? "bb86fc" : "b0b0b0")
+                        sourceSize: Qt.size(24, 24)
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+
+                    Text {
+                        text: "Save"
+                        color: Theme.textPrimary
+                        font.pixelSize: 12
+                        font.weight: Font.Medium
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: saveButton.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    acceptedButtons: Qt.NoButton
+                    hoverEnabled: saveButton.enabled
+                }
+
                 onClicked: {
-                    if (!replayContent.isReplayActive)
+                    if (!sectionContent.isReplayActive)
                         return;
                     var stamp = Utils.formatTimestamp(new Date());
                     var path = Backend.settings.replayDirectory + "/Replay_" + stamp + ".wav";
@@ -162,21 +204,69 @@ Rectangle {
                     }
                 }
             }
-        }
 
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: root.waveformHeight
-            color: Theme.recessedBackground
-            radius: 6
-            border.color: Theme.borderDefault
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: root.waveformHeight
+                color: Theme.recessedBackground
+                radius: 6
+                border.color: Theme.borderDefault
+                clip: true
 
-            WaveformView {
-                anchors.fill: parent
-                anchors.margins: 4
-                waveformData: Backend.replayWaveform
-                readOnly: true
-                emptyText: "Replay buffer empty"
+                WaveformView {
+                    anchors.fill: parent
+                    anchors.margins: 4
+                    waveformData: Backend.replayWaveform
+                    layerColor: Theme.accentGreen
+                    readOnly: true
+                    emptyText: "Replay buffer empty"
+                    opacity: root.replayChecked ? 1.0 : 0.15
+                }
+
+                // Disabled Cover Overlay (with centered Enable button)
+                Rectangle {
+                    anchors.fill: parent
+                    color: Qt.rgba(0, 0, 0, 0.4)
+                    visible: !root.replayChecked
+
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 12
+
+                        Text {
+                            text: "Replay Buffer Disabled"
+                            color: Theme.textSecondary
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                        }
+
+                        SaikoButton {
+                            text: "Enable"
+                            small: true
+                            onClicked: {
+                                Backend.settings.replayEnabled = true;
+                                Backend.settings.save();
+                                Backend.recording.setReplayEnabled(true, root.captureMode);
+                            }
+                        }
+                    }
+                }
+
+                // Top-right Disable Overlay Button (visible only when enabled)
+                SaikoButton {
+                    anchors.top: parent.top
+                    anchors.right: parent.right
+                    anchors.margins: 4
+                    text: "Disable"
+                    small: true
+                    implicitWidth: 60
+                    visible: root.replayChecked
+                    onClicked: {
+                        Backend.settings.replayEnabled = false;
+                        Backend.settings.save();
+                        Backend.recording.setReplayEnabled(false, root.captureMode);
+                    }
+                }
             }
         }
     }

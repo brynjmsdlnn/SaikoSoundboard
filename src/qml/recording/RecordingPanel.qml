@@ -2,13 +2,13 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import Saiko 1.0
-import "../shared/utils.js" as Utils
 
-Flickable {
+Item {
     id: root
 
     property string captureMode: "global"
     property string lastRecordingPath: ""
+    property int lastPlaybackType: Backend.PlaybackNone
     property bool startEnabled: true
     property bool stopEnabled: false
     property bool playEnabled: false
@@ -17,10 +17,10 @@ Flickable {
     property bool replayChecked: false
     property string statusText: "Ready"
 
-    signal startRequested
-    signal stopRequested
-    signal settingsRequested
-    signal aboutRequested
+    signal startRequested()
+    signal stopRequested()
+    signal settingsRequested()
+    signal aboutRequested()
     signal captureModeSelected(string newMode)
     signal replaySaved(string path)
 
@@ -28,10 +28,10 @@ Flickable {
         startEnabled = false;
         stopEnabled = true;
         playEnabled = false;
-        recordingHeader.notifyRecordingStarted();
     }
     function notifyRecordingStopped() {
-        recordingHeader.notifyRecordingStopped();
+        stopEnabled = false;
+        startEnabled = true;
     }
     function setStatusText(t) {
         statusText = t;
@@ -52,7 +52,6 @@ Flickable {
         saveReplayEnabled = e;
     }
     function resetUI() {
-        recordingHeader.resetUI();
         stopEnabled = false;
         startEnabled = true;
     }
@@ -61,47 +60,46 @@ Flickable {
     readonly property int contentMargin: 8
     readonly property int sectionSpacing: 10
     readonly property int cardPadding: 12
-    readonly property int headerHeight: 38
     readonly property int waveformHeight: 80
-    readonly property int controlsRowHeight: 44
-    readonly property int controlButtonWidth: 140
-    readonly property int controlButtonHeight: 34
-    readonly property int controlButtonSpacing: 16
     readonly property int pulseDurationMs: 800
 
     SplitView.minimumWidth: 800
     SplitView.minimumHeight: 400
-    contentWidth: width
-    contentHeight: mainColumn.implicitHeight + 24
-    clip: true
 
     ColumnLayout {
         id: mainColumn
-        width: parent.width - 16
-        x: root.contentMargin
-        y: root.contentMargin
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.margins: root.contentMargin
         spacing: root.sectionSpacing
 
         RecordingHeader {
             id: recordingHeader
             Layout.fillWidth: true
-            lastRecordingPath: root.lastRecordingPath
-            statusText: root.statusText
             startEnabled: root.startEnabled
-            recordingDurationSec: root.recordingDurationSec
             cardPadding: root.cardPadding
-            headerHeight: root.headerHeight
-            onStopRequested: root.stopRequested()
-        }
-
-        CaptureModeBar {
-            Layout.fillWidth: true
-            modeEnabled: root.modeEnabled
             captureMode: root.captureMode
-            cardPadding: root.cardPadding
+            modeEnabled: root.modeEnabled
             onCaptureModeSelected: (newMode) => root.captureModeSelected(newMode)
             onSettingsRequested: root.settingsRequested()
             onAboutRequested: root.aboutRequested()
+        }
+
+        RecordingSection {
+            id: recordingSection
+            Layout.fillWidth: true
+            lastRecordingPath: root.lastRecordingPath
+            lastPlaybackType: root.lastPlaybackType
+            startEnabled: root.startEnabled
+            stopEnabled: root.stopEnabled
+            playEnabled: root.playEnabled
+            recordingDurationSec: root.recordingDurationSec
+            waveformHeight: root.waveformHeight
+            cardPadding: root.cardPadding
+            pulseDurationMs: root.pulseDurationMs
+            onStartRequested: root.startRequested()
+            onStopRequested: root.stopRequested()
         }
 
         ReplayBufferSection {
@@ -117,17 +115,6 @@ Flickable {
                 root.playEnabled = true;
             }
             onStatusMessage: (text) => root.setStatusText(text)
-        }
-
-        TransportControls {
-            Layout.fillWidth: true
-            startEnabled: root.startEnabled
-            stopEnabled: root.stopEnabled
-            playEnabled: root.playEnabled
-            lastRecordingPath: root.lastRecordingPath
-            controlsRowHeight: root.controlsRowHeight
-            onStartRequested: root.startRequested()
-            onStopRequested: root.stopRequested()
         }
     }
 }

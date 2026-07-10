@@ -256,9 +256,8 @@ qt_add_qml_module(SaikoSoundboard
         # --- Recording panel ---
         src/qml/recording/RecordingPanel.qml
         src/qml/recording/RecordingHeader.qml
-        src/qml/recording/CaptureModeBar.qml
+        src/qml/recording/RecordingSection.qml
         src/qml/recording/ReplayBufferSection.qml
-        src/qml/recording/TransportControls.qml
 
         # --- Soundboard ---
         src/qml/soundboard/SoundboardGridView.qml

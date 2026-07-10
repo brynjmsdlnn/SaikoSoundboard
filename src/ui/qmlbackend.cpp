@@ -85,9 +85,27 @@ QmlBackend::QmlBackend(QObject *parent)
         m_playbackDuration = dur;
         emit playbackDurationChanged();
     });
+    connect(m_player, &QMediaPlayer::positionChanged, this, [this](qint64) {
+        emit playbackPositionChanged();
+    });
     connect(m_player, &QMediaPlayer::errorOccurred, this, [this](QMediaPlayer::Error, const QString &) {
         m_isPlaying = false;
         emit playbackStateChanged();
+    });
+
+    // Wire up recording PCM capture and state signals
+    connect(m_recordingManager->mixer(), &AudioMixer::mixedPcmReady, this, [this](const QByteArray &data) {
+        if (m_recordingManager->isRecording()) {
+            m_recordingPcm.append(data);
+        }
+    });
+    connect(m_recordingManager, &RecordingManager::recordingStarted, this, [this](const QString &) {
+        m_recordingPcm.clear();
+        m_recordingWaveform = WaveformData();
+        emit recordingWaveformChanged();
+    });
+    connect(m_recordingManager, &RecordingManager::recordingStopped, this, [this](const QString &path) {
+        loadRecordingWaveform(path);
     });
 
 }
@@ -101,13 +119,22 @@ QmlBackend::~QmlBackend()
 
 void QmlBackend::updateReplayWaveform()
 {
-    if (!m_recordingManager || !m_recordingManager->replayBuffer()) return;
-    QByteArray rawPcm = m_recordingManager->replayBuffer()->getBufferData();
-    WAVEFORMATEXTENSIBLE fmt = m_recordingManager->mixer()->getOutputFormat();
-    if (rawPcm.isEmpty() || fmt.Format.nSamplesPerSec <= 0) return;
+    if (m_recordingManager && m_recordingManager->replayBuffer()) {
+        QByteArray rawPcm = m_recordingManager->replayBuffer()->getBufferData();
+        WAVEFORMATEXTENSIBLE fmt = m_recordingManager->mixer()->getOutputFormat();
+        if (!rawPcm.isEmpty() && fmt.Format.nSamplesPerSec > 0) {
+            m_replayWaveform = WaveformGenerator::generateFromPcm(rawPcm, fmt, 256);
+            emit replayWaveformChanged();
+        }
+    }
 
-    m_replayWaveform = WaveformGenerator::generateFromPcm(rawPcm, fmt, 256);
-    emit replayWaveformChanged();
+    if (m_recordingManager && m_recordingManager->isRecording()) {
+        WAVEFORMATEXTENSIBLE fmt = m_recordingManager->mixer()->getOutputFormat();
+        if (!m_recordingPcm.isEmpty() && fmt.Format.nSamplesPerSec > 0) {
+            m_recordingWaveform = WaveformGenerator::generateFromPcm(m_recordingPcm, fmt, 256);
+            emit recordingWaveformChanged();
+        }
+    }
 }
 
 void QmlBackend::playFile(const QString &path)
@@ -221,7 +248,9 @@ CaptureState QmlBackend::captureState() const
     return m_recordingManager ? m_recordingManager->state() : CaptureState::Idle;
 }
 
-qint64 QmlBackend::playbackPosition() const
+void QmlBackend::loadRecordingWaveform(const QString &filePath)
 {
-    return m_player ? m_player->position() : 0;
+    m_recordingPcm.clear();
+    m_recordingWaveform = WaveformGenerator::generate(filePath, 256);
+    emit recordingWaveformChanged();
 }

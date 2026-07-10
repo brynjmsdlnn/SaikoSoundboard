@@ -18,7 +18,7 @@ src/qml/
 ├── components/       # Reusable UI building blocks (SaikoButton, SaikoCheckBox, SaikoComboBox, SaikoTooltip, SaikoMenu, SaikoMenuItem)
 ├── shared/           # Shared singleton and utilities (Theme.qml, utils.js)
 ├── dialogs/          # Standalone windows & popups (SettingsDialog, HotkeyDialog, RoutingDialog, ProcessSelectionPopup)
-├── recording/        # Recording panel sub-components (RecordingPanel, RecordingHeader, CaptureModeBar, ReplayBufferSection, TransportControls)
+├── recording/        # Recording panel sub-components (RecordingPanel, RecordingHeader, RecordingSection, ReplayBufferSection)
 ├── soundboard/       # Soundboard grid & card editor (SoundboardGridView, SoundboardGridCard, ItemEditor, HotkeyCard)
 ├── sources/          # Audio source management (SourcesPanel, WaveformView)
 └── Main.qml          # Application entry point
@@ -56,7 +56,7 @@ Shared singleton and utilities — Theme.qml (singleton), utils.js (JS utility f
 Standalone windows and popups — SettingsDialog, HotkeyDialog, RoutingDialog, ProcessSelectionPopup, AboutDialog. Owned by this doc.
 
 ### `recording/`
-Recording panel sub-components — RecordingPanel, RecordingHeader, CaptureModeBar, ReplayBufferSection, TransportControls. Owned by this doc.
+Recording panel sub-components — RecordingPanel, RecordingHeader, RecordingSection, ReplayBufferSection. Owned by this doc.
 
 ### `soundboard/`
 Soundboard grid and card editor — SoundboardGridView, SoundboardGridCard, SlotEditor, HotkeyCard, and editor/ sub-components (SectionLabel, EditorHeader, SlotNameEditor, AudioSourceSelector, TrimEditor, VolumeSlider, RoutingSelector, HotkeyDisplay, ActionButtons). Owned by this doc.

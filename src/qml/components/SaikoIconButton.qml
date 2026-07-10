@@ -9,6 +9,7 @@ Rectangle {
     property string iconSource: ""
     property string hoveredIconSource: ""
     property string tooltipText: ""
+    property string tooltipDirection: "top"
     property bool isActive: true
     property color hoverColor: "#1a1a1a"
     property color hoverBorderColor: Theme.borderHover
@@ -26,11 +27,16 @@ Rectangle {
     border.color: area.containsMouse ? btn.hoverBorderColor : "transparent"
     border.width: 1
 
+    opacity: btn.isActive ? 1.0 : 0.4
+
     Behavior on color {
         ColorAnimation { duration: 150 }
     }
     Behavior on border.color {
         ColorAnimation { duration: 150 }
+    }
+    Behavior on opacity {
+        NumberAnimation { duration: 150 }
     }
 
     // ── Icon ────────────────────────────────────────────────────────────────
@@ -54,7 +60,7 @@ Rectangle {
     SaikoTooltip {
         text: btn.tooltipText
         hovered: area.containsMouse
-        direction: "top"
+        direction: btn.tooltipDirection
     }
 
     // ── Interaction ─────────────────────────────────────────────────────────

@@ -30,5 +30,9 @@
         <file>headset.svg</file>
         <file>mic.svg</file>
         <file>key-round.svg</file>
+        <file>radio.svg</file>
+        <file>monitor.svg</file>
+        <file>layers.svg</file>
+        <file>audio-waveform.svg</file>
     </qresource>
 </RCC>

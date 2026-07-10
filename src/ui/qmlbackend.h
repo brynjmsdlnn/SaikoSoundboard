@@ -22,6 +22,7 @@ class QmlBackend : public QObject
     Q_OBJECT
     Q_PROPERTY(CaptureState captureState READ captureState NOTIFY captureStateChanged)
     Q_PROPERTY(QVariant replayWaveform READ replayWaveform NOTIFY replayWaveformChanged)
+    Q_PROPERTY(QVariant recordingWaveform READ recordingWaveform NOTIFY recordingWaveformChanged)
     Q_PROPERTY(SettingsManager* settings READ settings CONSTANT)
     Q_PROPERTY(RecordingManager* recording READ recordingManager CONSTANT)
     Q_PROPERTY(SoundboardManager* soundboard READ soundboardManager CONSTANT)
@@ -31,7 +32,15 @@ class QmlBackend : public QObject
     Q_PROPERTY(AudioSourceListModel* sourceModel READ sourceModel CONSTANT)
     Q_PROPERTY(bool isPlaying READ isPlaying NOTIFY playbackStateChanged)
     Q_PROPERTY(qint64 playbackDuration READ playbackDuration NOTIFY playbackDurationChanged)
+    Q_PROPERTY(qint64 playbackPosition READ playbackPosition NOTIFY playbackPositionChanged)
 public:
+    enum PlaybackType {
+        PlaybackNone = 0,
+        PlaybackRecording = 1,
+        PlaybackReplay = 2
+    };
+    Q_ENUM(PlaybackType)
+
     explicit QmlBackend(QObject *parent = nullptr);
     ~QmlBackend();
 
@@ -45,8 +54,10 @@ public:
 
     CaptureState captureState() const;
     QVariant replayWaveform() const { return QVariant::fromValue(m_replayWaveform); }
+    QVariant recordingWaveform() const { return QVariant::fromValue(m_recordingWaveform); }
     bool isPlaying() const { return m_isPlaying; }
     qint64 playbackDuration() const { return m_playbackDuration; }
+    qint64 playbackPosition() const { return m_player ? m_player->position() : 0; }
 
     Q_INVOKABLE QVariantList getRunningProcesses() const;
     Q_INVOKABLE QStringList getProcessesProducingSound() const;
@@ -54,16 +65,18 @@ public:
     Q_INVOKABLE QVariantList getAudioInputDevices() const;
     Q_INVOKABLE int systemDefaultSampleRate() const;
     Q_INVOKABLE qint64 recordingFileSize() const;
-    Q_INVOKABLE qint64 playbackPosition() const;
     Q_INVOKABLE void playFile(const QString &path);
     Q_INVOKABLE void stopPlayback();
     Q_INVOKABLE QString renameRecordingFile(const QString &oldPath, const QString &dir, const QString &newName);
+    Q_INVOKABLE void loadRecordingWaveform(const QString &filePath);
 
 signals:
     void captureStateChanged(CaptureState state);
     void replayWaveformChanged();
+    void recordingWaveformChanged();
     void playbackStateChanged();
     void playbackDurationChanged();
+    void playbackPositionChanged();
 
 private slots:
     void updateReplayWaveform();
@@ -71,6 +84,8 @@ private slots:
 private:
     QTimer *m_replayWaveformTimer;
     WaveformData m_replayWaveform;
+    WaveformData m_recordingWaveform;
+    QByteArray m_recordingPcm;
     SettingsManager *m_settings;
     RecordingManager *m_recordingManager;
     SoundboardManager *m_soundboardManager;
