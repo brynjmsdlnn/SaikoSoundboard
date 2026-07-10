@@ -48,8 +48,16 @@ Rectangle {
                 SequentialAnimation on opacity {
                     running: sectionContent.isReplayActive
                     loops: Animation.Infinite
-                    NumberAnimation { to: 0.3; duration: root.pulseDurationMs; easing.type: Easing.InOutQuad }
-                    NumberAnimation { to: 1.0; duration: root.pulseDurationMs; easing.type: Easing.InOutQuad }
+                    NumberAnimation {
+                        to: 0.3
+                        duration: root.pulseDurationMs
+                        easing.type: Easing.InOutQuad
+                    }
+                    NumberAnimation {
+                        to: 1.0
+                        duration: root.pulseDurationMs
+                        easing.type: Easing.InOutQuad
+                    }
                 }
 
                 Connections {
@@ -77,67 +85,10 @@ Rectangle {
                 Layout.fillWidth: true
             }
 
-            Text {
-                text: "Duration:"
-                color: Theme.textSecondary
-            }
-
-            Rectangle {
-                width: 70
-                height: 26
-                color: Theme.appBackground
-                radius: 4
-                border.color: Theme.borderDefault
-
-                HoverHandler { id: hoverHandler }
-
-                SpinBox {
-                    id: replayDurationSpin
-                    anchors.fill: parent
-                    from: 1
-                    to: 120
-                    value: Backend.settings.replayDuration
-                    editable: true
-                    background: Item {}
-                    textFromValue: function (value) { return value + "s"; }
-                    valueFromText: function (text) {
-                        var parsed = parseInt(text.replace("s", ""), 10);
-                        return isNaN(parsed) ? replayDurationSpin.value : parsed;
-                    }
-                    down.indicator: Item {
-                        x: 0; y: 0; width: 20; height: parent.height
-                        opacity: hoverHandler.hovered ? 1.0 : 0.0
-                        Text {
-                            text: "-"
-                            anchors.centerIn: parent
-                            color: replayDurationSpin.down.pressed ? Theme.borderDefault : Theme.textPrimary
-                        }
-                    }
-                    up.indicator: Item {
-                        x: parent.width - width; y: 0; width: 20; height: parent.height
-                        opacity: hoverHandler.hovered ? 1.0 : 0.0
-                        Text {
-                            text: "+"
-                            anchors.centerIn: parent
-                            color: replayDurationSpin.up.pressed ? Theme.borderDefault : Theme.textPrimary
-                        }
-                    }
-                    contentItem: TextInput {
-                        text: replayDurationSpin.textFromValue(replayDurationSpin.value, replayDurationSpin.locale)
-                        horizontalAlignment: Qt.AlignHCenter
-                        verticalAlignment: Qt.AlignVCenter
-                        color: Theme.textPrimary
-                        selectionColor: Theme.borderDefault
-                        selectByMouse: true
-                        readOnly: !replayDurationSpin.editable
-                        validator: IntValidator { bottom: 1; top: 120 }
-                    }
-                    onValueModified: {
-                        Backend.recording.setReplayDuration(value);
-                        Backend.settings.replayDuration = value;
-                        Backend.settings.save();
-                    }
-                }
+            // ── Replay duration: display ↔ edit with cross-fade transition ──
+            ReplayDurationEditor {
+                id: durationWidget
+                Layout.alignment: Qt.AlignRight
             }
         }
 
@@ -155,9 +106,11 @@ Rectangle {
                 opacity: enabled ? 1.0 : 0.4
 
                 Behavior on opacity {
-                    NumberAnimation { duration: 150 }
+                    NumberAnimation {
+                        duration: 150
+                    }
                 }
-                
+
                 background: Rectangle {
                     color: parent.enabled && parent.hovered ? Theme.inputBackground : Theme.recessedBackground
                     radius: 8
@@ -206,12 +159,17 @@ Rectangle {
             }
 
             Rectangle {
+                id: waveformContainer
                 Layout.fillWidth: true
                 Layout.preferredHeight: root.waveformHeight
                 color: Theme.recessedBackground
                 radius: 6
                 border.color: Theme.borderDefault
                 clip: true
+
+                HoverHandler {
+                    id: containerHover
+                }
 
                 WaveformView {
                     anchors.fill: parent
@@ -220,51 +178,275 @@ Rectangle {
                     layerColor: Theme.accentGreen
                     readOnly: true
                     emptyText: "Replay buffer empty"
+
+                    // Smoothly fade the waveform view in and out
                     opacity: root.replayChecked ? 1.0 : 0.15
-                }
-
-                // Disabled Cover Overlay (with centered Enable button)
-                Rectangle {
-                    anchors.fill: parent
-                    color: Qt.rgba(0, 0, 0, 0.4)
-                    visible: !root.replayChecked
-
-                    RowLayout {
-                        anchors.centerIn: parent
-                        spacing: 12
-
-                        Text {
-                            text: "Replay Buffer Disabled"
-                            color: Theme.textSecondary
-                            font.pixelSize: 12
-                            font.weight: Font.Medium
-                        }
-
-                        SaikoButton {
-                            text: "Enable"
-                            small: true
-                            onClicked: {
-                                Backend.settings.replayEnabled = true;
-                                Backend.settings.save();
-                                Backend.recording.setReplayEnabled(true, root.captureMode);
-                            }
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 350
+                            easing.type: Easing.InOutQuad
                         }
                     }
                 }
 
-                // Top-right Disable Overlay Button (visible only when enabled)
-                SaikoButton {
-                    anchors.top: parent.top
-                    anchors.right: parent.right
-                    anchors.margins: 4
-                    text: "Disable"
-                    small: true
-                    implicitWidth: 60
-                    visible: root.replayChecked
-                    onClicked: {
-                        Backend.settings.replayEnabled = false;
-                        Backend.settings.save();
-                        Backend.recording.setReplayEnabled(false, root.captureMode);
+                // One-Shot Shockwave Animation Overlay
+                Canvas {
+                    id: waveCanvas
+                    anchors.fill: parent
+
+                    property real waveProgress: 0.0
+                    property bool playing: false
+
+                    visible: playing
+                    opacity: playing ? 1.0 : 0.0
+
+                    onWaveProgressChanged: requestPaint()
+
+                    function emitShockwave() {
+                        fadeOut.stop()
+                        waveProgress = 0.0
+                        opacity = 1.0
+                        playing = true
+                        shockwave.restart()
+                    }
+
+                    function endShockwave() {
+                        if (playing) {
+                            fadeOut.restart()
+                        }
+                    }
+
+                    NumberAnimation {
+                        id: shockwave
+
+                        target: waveCanvas
+                        property: "waveProgress"
+
+                        from: 0.0
+                        to: 1.0
+
+                        duration: 5000
+                        easing.type: Easing.OutQuart
+                    }
+
+                    NumberAnimation {
+                        id: fadeOut
+
+                        target: waveCanvas
+                        property: "opacity"
+
+                        to: 0.0
+
+                        duration: 350
+
+                        onFinished: {
+                            waveCanvas.playing = false
+                            shockwave.stop()
+                        }
+                    }
+
+                    onPaint: {
+                        var ctx = getContext("2d");
+                        ctx.reset();
+
+                        var cx = powerButton.x + powerButton.width / 2;
+                        var cy = powerButton.y + powerButton.height / 2;
+
+                        drawWave(ctx, cx, cy, waveProgress);
+                    }
+
+                    function drawWave(ctx, cx, cy, progress) {
+
+                        // Changed to match the enabled button state (Red) instead of Green
+                        var clr = Theme.accentRed;
+
+                        var r = Math.round(clr.r * 255);
+                        var g = Math.round(clr.g * 255);
+                        var b = Math.round(clr.b * 255);
+
+                        var startRadius = 4;
+                        var maxRadius = Math.sqrt(width * width + height * height);
+                        var radius = startRadius + (maxRadius - startRadius) * progress;
+
+                        var alpha = Math.pow(1.0 - progress, 1.2);
+
+                        ctx.save();
+
+                        //----------------------------------------------------
+                        // PASS 0 : Dim the part it passes through
+                        //----------------------------------------------------
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                        ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+                        ctx.fill();
+
+                        //----------------------------------------------------
+                        // PASS 1 : Vignette
+                        //----------------------------------------------------
+                        var vignette = ctx.createRadialGradient(
+                                    cx, cy, radius * 0.45,
+                                    cx, cy, radius * 1.25);
+
+                        vignette.addColorStop(0.0, "rgba(0,0,0,0)");
+                        vignette.addColorStop(0.55, "rgba(0,0,0,0)");
+                        vignette.addColorStop(0.82, "rgba(0,0,0," + (alpha * 0.12) + ")");
+                        vignette.addColorStop(1.0, "rgba(0,0,0," + (alpha * 0.40) + ")");
+
+                        ctx.fillStyle = vignette;
+
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, radius * 1.25, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // (The thick "Large Glow" pass was removed entirely here to eliminate the heavy glow)
+
+                        //----------------------------------------------------
+                        // PASS 2 : Sharp bright edge ring
+                        //----------------------------------------------------
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+
+                        ctx.strokeStyle =
+                                "rgba(" +
+                                r + "," +
+                                g + "," +
+                                b + "," +
+                                (alpha * 0.95) + ")";
+
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+
+                        //----------------------------------------------------
+                        // PASS 3 : Center flash
+                        //----------------------------------------------------
+                        var center = ctx.createRadialGradient(
+                                    cx,
+                                    cy,
+                                    0,
+                                    cx,
+                                    cy,
+                                    40);
+
+                        center.addColorStop(
+                                    0,
+                                    "rgba(" +
+                                    r + "," +
+                                    g + "," +
+                                    b + "," +
+                                    (alpha * 0.30) + ")");
+
+                        center.addColorStop(
+                                    1,
+                                    "rgba(" +
+                                    r + "," +
+                                    g + "," +
+                                    b + ",0)");
+
+                        ctx.fillStyle = center;
+
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, 40, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        ctx.restore();
+                    }
+
+                    onWidthChanged: requestPaint()
+                    onHeightChanged: requestPaint()
+                }
+
+                // Disabled Cover Overlay (Glassmorphic Fade)
+                Rectangle {
+                    anchors.fill: parent
+                    color: Qt.rgba(13 / 255, 13 / 255, 15 / 255, 0.85)
+
+                    // Backdrop dims to 0.85 on hover when disabled, stays at 0.3 base when disabled & not hovered, and is 0.0 when enabled
+                    opacity: root.replayChecked ? 0.0 : (containerHover.hovered ? 1.0 : 0.3)
+                    visible: opacity > 0.0
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 350
+                            easing.type: Easing.InOutQuad
+                        }
+                    }
+                }
+
+                // Centered Circular Power Button (Acts as toggle)
+                Rectangle {
+                    id: powerButton
+                    anchors.centerIn: parent
+                    width: 40
+                    height: 40
+                    radius: 20
+
+                    // When enabled: only show on waveform hover. When disabled: always visible.
+                    opacity: root.replayChecked ?
+                             (containerHover.hovered ? 1.0 : 0.0) :
+                             (btnMouse.containsMouse ? 1.0 : (containerHover.hovered ? 0.8 : 0.5))
+
+                    visible: opacity > 0.0
+                    scale: btnMouse.containsMouse ? 1.1 : 1.0
+
+                    color: root.replayChecked ?
+                           (btnMouse.containsMouse ? Qt.rgba(Theme.accentRed.r, Theme.accentRed.g, Theme.accentRed.b, 0.2) : Qt.rgba(30/255, 30/255, 35/255, 0.9)) :
+                           (btnMouse.containsMouse ? Qt.rgba(Theme.accentGreen.r, Theme.accentGreen.g, Theme.accentGreen.b, 0.2) : Qt.rgba(30/255, 30/255, 35/255, 0.9))
+
+                    border.color: root.replayChecked ?
+                                  (btnMouse.containsMouse ? Theme.accentRed : Theme.accentGreen) :
+                                  (btnMouse.containsMouse ? Theme.accentGreen : "white")
+                    border.width: 1
+
+                    Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+                    Behavior on opacity { NumberAnimation { duration: 200 } }
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                    // Pulse Ring effect (green when disabled, red when enabled & hovered)
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: -4
+                        radius: 24
+                        color: "transparent"
+                        border.color: root.replayChecked ? Theme.accentRed : Theme.accentGreen
+                        border.width: 1.5
+                        opacity: btnMouse.containsMouse ? 0.6 : (root.replayChecked ? 0.0 : 0.2)
+                        scale: btnMouse.containsMouse ? 1.1 : 1.0
+
+                        Behavior on opacity { NumberAnimation { duration: 200 } }
+                        Behavior on scale { NumberAnimation { duration: 200 } }
+                    }
+
+                    Image {
+                        anchors.centerIn: parent
+                        source: "image://icons/power?color=" + (root.replayChecked ? (btnMouse.containsMouse ? encodeURIComponent(Theme.accentRed) : encodeURIComponent(Theme.accentGreen)) : (btnMouse.containsMouse ? encodeURIComponent(Theme.accentGreen) : "%23ffffff"))
+                        sourceSize: Qt.size(16, 16)
+                    }
+
+                    MouseArea {
+                        id: btnMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+
+                        onEntered: {
+                            // Only trigger the shockwave when replay is enabled
+                            if (root.replayChecked) {
+                                waveCanvas.emitShockwave()
+                            }
+                        }
+
+                        onExited: {
+                            waveCanvas.endShockwave()
+                        }
+
+                        onClicked: {
+                            var nextState = !root.replayChecked;
+
+                            Backend.settings.replayEnabled = nextState;
+                            Backend.settings.save();
+                            Backend.recording.setReplayEnabled(nextState, root.captureMode);
+                        }
                     }
                 }
             }

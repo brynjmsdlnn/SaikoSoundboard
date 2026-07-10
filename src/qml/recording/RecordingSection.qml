@@ -357,12 +357,17 @@ Rectangle {
             }
 
             Rectangle {
+                id: waveformContainer
                 Layout.fillWidth: true
                 Layout.preferredHeight: root.waveformHeight
                 color: Theme.recessedBackground
                 radius: 6
                 border.color: Theme.borderDefault
                 clip: true
+
+                HoverHandler {
+                    id: waveformHover
+                }
 
                 WaveformView {
                     anchors.fill: parent
@@ -376,18 +381,38 @@ Rectangle {
 
                 // Play/Stop Overlay Button (centered on top of the waveform)
                 Rectangle {
+                    id: playOverlayButton
                     anchors.centerIn: parent
                     width: 40
                     height: 40
                     radius: 20
-                    color: playMouseArea.containsMouse ? Qt.rgba(0, 0, 0, 0.75) : Qt.rgba(0, 0, 0, 0.5)
-                    border.color: "white"
+                    
+                    // Scale transitions
+                    scale: playMouseArea.containsMouse ? 1.1 : 1.0
+                    
+                    // Visibility transitions
+                    opacity: (root.playEnabled && !root.stopEnabled && waveformHover.hovered) ? 1.0 : 0.0
+                    visible: opacity > 0.0
+
+                    // Dynamic colors based on hover
+                    color: playMouseArea.containsMouse ? 
+                           Qt.rgba(buttonThemeColor.r, buttonThemeColor.g, buttonThemeColor.b, 0.2) : 
+                           Qt.rgba(30/255, 30/255, 35/255, 0.9)
+                           
+                    border.color: playMouseArea.containsMouse ? buttonThemeColor : "white"
                     border.width: 1
-                    visible: root.playEnabled && !root.stopEnabled
+
+                    // Define the theme color helper property (green for play, red for stop)
+                    readonly property color buttonThemeColor: Backend.isPlaying ? Theme.accentRed : Theme.accentGreen
+
+                    Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+                    Behavior on opacity { NumberAnimation { duration: 150 } }
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Behavior on border.color { ColorAnimation { duration: 150 } }
 
                     Image {
                         anchors.centerIn: parent
-                        source: "image://icons/" + (Backend.isPlaying ? "square" : "play") + "?color=%23ffffff"
+                        source: "image://icons/" + (Backend.isPlaying ? "square" : "play") + "?color=" + (playMouseArea.containsMouse ? encodeURIComponent(playOverlayButton.buttonThemeColor) : "%23ffffff")
                         width: 16
                         height: 16
                     }

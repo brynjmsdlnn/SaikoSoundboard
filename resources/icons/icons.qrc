@@ -35,5 +35,9 @@
         <file>layers.svg</file>
         <file>audio-waveform.svg</file>
         <file>grid-2x2-plus.svg</file>
+        <file>timer.svg</file>
+        <file>circle-plus.svg</file>
+        <file>circle-minus.svg</file>
+        <file>power.svg</file>
     </qresource>
 </RCC>

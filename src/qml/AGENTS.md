@@ -6,7 +6,7 @@ All QML UI components for the SaikoSoundboard application. This is the presentat
 
 ## Ownership
 
-- 23 `.qml` files + 1 `utils.js`, organized into feature-based subdirectories
+- 24 `.qml` files + 1 `utils.js`, organized into feature-based subdirectories
 - All files are part of the `Saiko` 1.0 QML module (declared in root CMakeLists.txt via `qt_add_qml_module`)
 - `Theme.qml` is a registered singleton (`QT_QML_SINGLETON_TYPE`)
 - The JS file `utils.js` is imported as `import "../shared/utils.js" as Utils` (or `import "shared/utils.js" as Utils` from root-level files)
@@ -56,7 +56,7 @@ Shared singleton and utilities — Theme.qml (singleton), utils.js (JS utility f
 Standalone windows and popups — SettingsDialog, HotkeyDialog, RoutingDialog, ProcessSelectionPopup, AboutDialog. Owned by this doc.
 
 ### `recording/`
-Recording panel sub-components — RecordingPanel, RecordingHeader, RecordingSection, ReplayBufferSection. Owned by this doc.
+Recording panel sub-components — RecordingPanel, RecordingHeader, RecordingSection, ReplayBufferSection, ReplayDurationEditor. Owned by this doc.
 
 ### `soundboard/`
 Soundboard grid and card editor — SoundboardGridView, SoundboardGridCard, SlotEditor, HotkeyCard, and editor/ sub-components (SectionLabel, EditorHeader, SlotNameEditor, AudioSourceSelector, TrimEditor, VolumeSlider, RoutingSelector, HotkeyDisplay, ActionButtons). Owned by this doc.
