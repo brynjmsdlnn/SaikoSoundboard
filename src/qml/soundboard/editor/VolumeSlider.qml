@@ -15,7 +15,7 @@ ColumnLayout {
     Layout.minimumWidth: 60
     spacing: 8
 
-    SectionLabel {
+    SaikoSectionLabel {
         text: "VOLUME"
         Layout.alignment: Qt.AlignHCenter
     }

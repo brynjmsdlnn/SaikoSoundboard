@@ -15,7 +15,7 @@ ColumnLayout {
     Layout.fillWidth: true
     spacing: 4
 
-    SectionLabel {
+    SaikoSectionLabel {
         text: "HOTKEYS"
     }
 

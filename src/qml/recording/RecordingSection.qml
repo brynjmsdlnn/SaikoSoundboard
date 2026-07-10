@@ -16,25 +16,28 @@ Rectangle {
     property int cardPadding: 12
     property int pulseDurationMs: 800
 
-    signal startRequested()
-    signal stopRequested()
+    signal startRequested
+    signal stopRequested
+    signal assignToSlotRequested
 
     implicitHeight: sectionContent.implicitHeight + 24
-    
+
     // Dynamic background and border color matching the current state
-    color: root.stopEnabled ? Qt.rgba(Theme.accentRed.r, Theme.accentRed.g, Theme.accentRed.b, 0.04)
-                            : (Backend.isPlaying ? (root.lastPlaybackType === Backend.PlaybackReplay ? Qt.rgba(Theme.accentGreen.r, Theme.accentGreen.g, Theme.accentGreen.b, 0.04) : Qt.rgba(Theme.accentPurple.r, Theme.accentPurple.g, Theme.accentPurple.b, 0.04)) : Theme.appBackground)
-    
-    border.color: root.stopEnabled ? Theme.accentRed
-                                   : (Backend.isPlaying ? (root.lastPlaybackType === Backend.PlaybackReplay ? Theme.accentGreen : Theme.accentPurple) : Theme.borderDefault)
-    
+    color: root.stopEnabled ? Qt.rgba(Theme.accentRed.r, Theme.accentRed.g, Theme.accentRed.b, 0.04) : (Backend.isPlaying ? (root.lastPlaybackType === Backend.PlaybackReplay ? Qt.rgba(Theme.accentGreen.r, Theme.accentGreen.g, Theme.accentGreen.b, 0.04) : Qt.rgba(Theme.accentPurple.r, Theme.accentPurple.g, Theme.accentPurple.b, 0.04)) : Theme.appBackground)
+
+    border.color: root.stopEnabled ? Theme.accentRed : (Backend.isPlaying ? (root.lastPlaybackType === Backend.PlaybackReplay ? Theme.accentGreen : Theme.accentPurple) : Theme.borderDefault)
+
     radius: Theme.cardRadius
 
     Behavior on color {
-        ColorAnimation { duration: 300 }
+        ColorAnimation {
+            duration: 300
+        }
     }
     Behavior on border.color {
-        ColorAnimation { duration: 300 }
+        ColorAnimation {
+            duration: 300
+        }
     }
 
     property real __elapsedSec: 0.0
@@ -89,8 +92,16 @@ Rectangle {
                 SequentialAnimation on opacity {
                     running: root.stopEnabled || Backend.isPlaying
                     loops: Animation.Infinite
-                    NumberAnimation { to: 0.3; duration: root.pulseDurationMs; easing.type: Easing.InOutQuad }
-                    NumberAnimation { to: 1.0; duration: root.pulseDurationMs; easing.type: Easing.InOutQuad }
+                    NumberAnimation {
+                        to: 0.3
+                        duration: root.pulseDurationMs
+                        easing.type: Easing.InOutQuad
+                    }
+                    NumberAnimation {
+                        to: 1.0
+                        duration: root.pulseDurationMs
+                        easing.type: Easing.InOutQuad
+                    }
                 }
 
                 Connections {
@@ -121,6 +132,7 @@ Rectangle {
                 onClicked: Qt.openUrlExternally("file:///" + encodeURI(Backend.settings.recordingDirectory))
             }
 
+            // Pushes everything after this point (Info Text & Assign to Slot) to the right side
             Item {
                 Layout.fillWidth: true
             }
@@ -146,6 +158,115 @@ Rectangle {
                     }
                 }
             }
+
+            // Assign to Slot
+            Rectangle {
+                id: assignToSlotContainer
+                Layout.preferredWidth: assignToSlotRow.implicitWidth
+                Layout.fillHeight: true
+                radius: 6
+                visible: root.playEnabled && !root.stopEnabled
+
+                color: assignToSlotRow.isHovered ? "#1a1a1a" : "transparent"
+                border.color: assignToSlotRow.isHovered ? Theme.borderHover : "transparent"
+                border.width: 1
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 150
+                    }
+                }
+                Behavior on border.color {
+                    ColorAnimation {
+                        duration: 150
+                    }
+                }
+
+                RowLayout {
+                    id: assignToSlotRow
+                    anchors.fill: parent
+                    anchors.leftMargin: 2
+                    anchors.rightMargin: 2
+                    spacing: 0
+
+                    property bool isHovered: assignToSlotIconArea.containsMouse || assignToSlotLabelArea.containsMouse
+                    property bool isPressed: assignToSlotIconArea.pressed || assignToSlotLabelArea.pressed
+
+                    scale: assignToSlotRow.isPressed ? 0.8 : 1.0
+
+                    Behavior on scale {
+                        NumberAnimation {
+                            duration: 120
+                            easing.type: Easing.OutBack
+                        }
+                    }
+
+                    // 1. ICON FIRST
+                    Item {
+                        id: assignToSlotIcon
+                        implicitWidth: 22
+                        Layout.fillHeight: true
+
+                        Image {
+                            id: assignToSlotIconImage
+                            anchors.centerIn: parent
+                            sourceSize: Qt.size(14, 14)
+                            source: "image://icons/grid-2x2-plus?color=%23ffffff"
+                        }
+
+                        MouseArea {
+                            id: assignToSlotIconArea
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onClicked: root.assignToSlotRequested()
+                        }
+                    }
+
+                    // 2. TEXT SECOND: Slides right
+                    Item {
+                        id: assignToSlotLabel
+                        Layout.fillHeight: true
+                        Layout.preferredWidth: assignToSlotRow.isHovered ? (assignToSlotText.implicitWidth + 8) : 0
+                        opacity: assignToSlotRow.isHovered ? 1.0 : 0.0
+                        visible: opacity > 0.0
+                        clip: true
+
+                        Behavior on Layout.preferredWidth {
+                            NumberAnimation {
+                                duration: 250
+                                easing.type: Easing.InOutQuad
+                            }
+                        }
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: 200
+                                easing.type: Easing.InOutQuad
+                            }
+                        }
+
+                        MouseArea {
+                            id: assignToSlotLabelArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.assignToSlotRequested()
+                        }
+
+                        Text {
+                            id: assignToSlotText
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.verticalCenterOffset: -0.6
+
+                            text: "Assign to Slot"
+                            color: Theme.textSecondary
+                            font.bold: true
+                            font.pixelSize: 12
+                        }
+                    }
+                }
+            }
         }
 
         // Row 2: Controls and Waveform inline side-by-side
@@ -162,9 +283,11 @@ Rectangle {
                 opacity: enabled ? 1.0 : 0.4
 
                 Behavior on opacity {
-                    NumberAnimation { duration: 150 }
+                    NumberAnimation {
+                        duration: 150
+                    }
                 }
-                
+
                 background: Rectangle {
                     color: parent.enabled && parent.hovered ? Theme.inputBackground : Theme.recessedBackground
                     radius: 8
@@ -203,8 +326,18 @@ Rectangle {
                     SequentialAnimation on opacity {
                         running: root.stopEnabled
                         loops: Animation.Infinite
-                        NumberAnimation { from: 0.05; to: 0.25; duration: 900; easing.type: Easing.InOutSine }
-                        NumberAnimation { from: 0.25; to: 0.05; duration: 900; easing.type: Easing.InOutSine }
+                        NumberAnimation {
+                            from: 0.05
+                            to: 0.25
+                            duration: 900
+                            easing.type: Easing.InOutSine
+                        }
+                        NumberAnimation {
+                            from: 0.25
+                            to: 0.05
+                            duration: 900
+                            easing.type: Easing.InOutSine
+                        }
                     }
                 }
 

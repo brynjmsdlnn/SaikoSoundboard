@@ -34,7 +34,7 @@ ColumnLayout {
         Layout.fillWidth: true
         spacing: 8
 
-        SectionLabel {
+        SaikoSectionLabel {
             text: "TRIM & TIMING"
         }
 

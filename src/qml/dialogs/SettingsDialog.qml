@@ -72,12 +72,8 @@ Window {
                     ColumnLayout {
                         Layout.fillWidth: true
                         spacing: 4
-                        Text {
+                        SaikoSectionLabel {
                             text: "STORAGE LOCATIONS"
-                            color: Theme.textDim
-                            font.pixelSize: Theme.fontSizeSmall || 11
-                            font.letterSpacing: 1.5
-                            font.weight: Font.Bold
                         }
                         Text {
                             text: "By default, recordings and replays are saved inside the Base Directory. You can override each directory to point elsewhere."
@@ -265,12 +261,8 @@ Window {
                     ColumnLayout {
                         Layout.fillWidth: true
                         spacing: 4
-                        Text {
+                        SaikoSectionLabel {
                             text: "AUDIO QUALITY"
-                            color: Theme.textDim
-                            font.pixelSize: Theme.fontSizeSmall || 11
-                            font.letterSpacing: 1.5
-                            font.weight: Font.Bold
                         }
                         Text {
                             text: "Sample rate controls audio frequency range; higher rates capture more detail. Recordings are always saved as 32-bit float for maximum fidelity."

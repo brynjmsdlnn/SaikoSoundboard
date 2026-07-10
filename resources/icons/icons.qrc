@@ -34,5 +34,6 @@
         <file>monitor.svg</file>
         <file>layers.svg</file>
         <file>audio-waveform.svg</file>
+        <file>grid-2x2-plus.svg</file>
     </qresource>
 </RCC>

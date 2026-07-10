@@ -245,6 +245,7 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/components/SaikoTooltip.qml
         src/qml/components/SaikoMenu.qml
         src/qml/components/SaikoMenuItem.qml
+        src/qml/components/SaikoSectionLabel.qml
 
         # --- Dialogs ---
         src/qml/dialogs/SettingsDialog.qml
@@ -252,6 +253,7 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/dialogs/RoutingDialog.qml
         src/qml/dialogs/ProcessSelectionPopup.qml
         src/qml/dialogs/AboutDialog.qml
+        src/qml/dialogs/AssignToSlotDialog.qml
 
         # --- Recording panel ---
         src/qml/recording/RecordingPanel.qml
@@ -264,7 +266,6 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/soundboard/SoundboardGridCard.qml
         src/qml/soundboard/SlotEditor.qml
         src/qml/soundboard/HotkeyCard.qml
-        src/qml/soundboard/editor/SectionLabel.qml
         src/qml/soundboard/editor/EditorHeader.qml
         src/qml/soundboard/editor/AudioSourceSelector.qml
         src/qml/soundboard/editor/TrimEditor.qml

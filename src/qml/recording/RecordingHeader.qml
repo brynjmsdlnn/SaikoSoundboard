@@ -34,7 +34,7 @@ Rectangle {
         id: iconCycleTimer
         interval: 2500
         repeat: true
-        running: !captureModeContainer.isExpanded
+        running: !rightUtilities.isExpanded
         onTriggered: {
             root._showWaveformIcon = !root._showWaveformIcon;
         }

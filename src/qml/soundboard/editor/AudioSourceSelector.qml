@@ -17,7 +17,7 @@ ColumnLayout {
     Layout.fillWidth: true
     spacing: 8
 
-    SectionLabel {
+    SaikoSectionLabel {
         text: "AUDIO SOURCE"
     }
 

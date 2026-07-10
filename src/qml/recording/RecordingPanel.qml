@@ -23,6 +23,7 @@ Item {
     signal aboutRequested()
     signal captureModeSelected(string newMode)
     signal replaySaved(string path)
+    signal assignToSlotRequested()
 
     function notifyRecordingStarted() {
         startEnabled = false;
@@ -100,6 +101,7 @@ Item {
             pulseDurationMs: root.pulseDurationMs
             onStartRequested: root.startRequested()
             onStopRequested: root.stopRequested()
+            onAssignToSlotRequested: root.assignToSlotRequested()
         }
 
         ReplayBufferSection {

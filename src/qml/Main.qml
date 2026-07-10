@@ -210,6 +210,7 @@ ApplicationWindow {
                 }
                 onSettingsRequested: settingsDialog.show()
                 onAboutRequested: aboutDialog.show()
+                onAssignToSlotRequested: assignToSlotDialog.show()
             }
 
             // ---------------- SOURCES DOCK ----------------
@@ -337,6 +338,14 @@ ApplicationWindow {
 
     AboutDialog {
         id: aboutDialog
+    }
+
+    AssignToSlotDialog {
+        id: assignToSlotDialog
+        filePath: app.lastRecordingPath
+        onAccepted: {
+            recordingPanel.setStatusText("Assigned to: " + selectedSlotName);
+        }
     }
 
     Connections {

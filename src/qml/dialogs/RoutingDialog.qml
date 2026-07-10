@@ -102,12 +102,8 @@ Window {
                 anchors.margins: 16
                 spacing: 14
 
-                Text {
+                SaikoSectionLabel {
                     text: "SOUNDBOARD OUTPUTS"
-                    color: Theme.textDim
-                    font.pixelSize: Theme.fontSizeSmall || 11
-                    font.letterSpacing: 1.5
-                    font.weight: Font.Bold
                 }
 
                 RowLayout {
@@ -195,12 +191,8 @@ Window {
                 anchors.margins: 16
                 spacing: 14
 
-                Text {
+                SaikoSectionLabel {
                     text: "VOICE PASSTHROUGH (MIC INPUT)"
-                    color: Theme.textDim
-                    font.pixelSize: Theme.fontSizeSmall || 11
-                    font.letterSpacing: 1.5
-                    font.weight: Font.Bold
                 }
 
                 RowLayout {

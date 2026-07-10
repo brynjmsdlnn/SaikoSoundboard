@@ -98,12 +98,8 @@ Window {
                 anchors.margins: 16
                 spacing: 12
 
-                Text {
+                SaikoSectionLabel {
                     text: "TECHNICAL SPECIFICATIONS"
-                    color: Theme.textDim
-                    font.pixelSize: Theme.fontSizeSmall
-                    font.letterSpacing: 1.5
-                    font.weight: Font.Bold
                 }
 
                 GridLayout {
@@ -142,12 +138,8 @@ Window {
                 anchors.margins: 16
                 spacing: 8
 
-                Text {
+                SaikoSectionLabel {
                     text: "CORE CAPABILITIES"
-                    color: Theme.textDim
-                    font.pixelSize: Theme.fontSizeSmall
-                    font.letterSpacing: 1.5
-                    font.weight: Font.Bold
                 }
 
                 Text {

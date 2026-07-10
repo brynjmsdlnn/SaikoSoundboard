@@ -20,7 +20,7 @@ ColumnLayout {
         { icon: "headphones", label: "Monitor only",        modeColor: "#4caf50" }
     ]
 
-    SectionLabel {
+    SaikoSectionLabel {
         text: "OUTPUT ROUTING"
     }
 
