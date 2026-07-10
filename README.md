@@ -1,4 +1,4 @@
-# SaikoSoundboard (v0.1.0 Beta)
+# SaikoSoundboard (v0.2.0 Beta)
 
 **SaikoSoundboard** is a modern, low-latency Windows soundboard, audio recorder, and instant replay capture application built with **C++17**, **Qt 6 Quick**, and native **WASAPI** audio sub-systems.
 
@@ -8,20 +8,21 @@ Designed for content creators, streamers, and gamers, SaikoSoundboard provides r
 
 ## 🌟 Key Features
 
-- **🎙️ Flexible Audio Capture Modes**:
+- **🎙️ Flexible Audio Capture & Instant Replay**:
   - **System Output (Global)**: Capture clean Windows desktop audio via native WASAPI loopback.
-  - **Multi-Track Application Capture**: Target individual running applications (Discord, Spotify, games, etc.) with custom mix controls, solo monitoring, and volume adjustments.
-- **⚡ Instant Replay Buffer**:
-  - Continuous background audio buffer (configurable duration).
-  - One-click instant save to WAV with instant preview waveforms.
-- **🎛️ Soundboard & Hotkey Dispatcher**:
-  - Responsive soundboard grid with customizable audio slots.
-  - Global Windows hotkey registration for instant sound triggering across applications.
-  - Per-slot audio customization: name, file source, start/end trimming, volume gain, and output device routing.
-- **📊 Real-time Waveform Display**:
-  - Live hardware-accelerated audio waveform visualization during recording and playback.
+  - **Multi-Track Application Capture**: Target individual running processes (Discord, Spotify, games, etc.) with custom mix controls, solo monitoring, and volume adjustments.
+  - **Instant Replay Buffer**: Continuous background audio buffer with configurable duration, one-click save to WAV, and a hover-revealed circular power toggle featuring Canvas ripple animations.
+  - **Replay Duration Editor**: Standalone editor with cross-fade displays, press-and-hold repeat stepping, and soft-cap limit validation.
+- **🎛️ Soundboard & Playback Modes**:
+  - **Configurable Playback Modes**: Choose between 6 slot-level modes (Default, Restart/Retrigger, Toggle/Stop, Queued Sequential, Layered/Cut All, and Layered/Ring Out).
+  - **Slot Assignment ("Assign to Slot")**: Easily assign active recording or replay playback files to any soundboard grid slot via a dedicated selection dialog.
+  - **Interactive Waveform Display**: Live waveform rendering during recording and playback, featuring type-safe visual distinction (green for replays, purple for manual recordings) and multi-track playhead overlays.
+  - **Detailed Status Indicators**: Real-time loop count indicators, playback countdown timers, active queue badges, and marquee text scrolling.
+- **⚡ Advanced Hotkey Dispatcher**:
+  - **Numpad Key Support**: Register top-row digits and numpad digits (`VK_NUMPAD0`–`VK_NUMPAD9`) as distinct global Windows hotkeys.
+  - **Hotkey Capture Lifecycle**: Duplicate keybinding detection, timeout recovery, and real-time unsaved changes warning states.
 - **🎨 Premium Dark Theme UI**:
-  - Sleek, polished Qt Quick interface using dark mode design principles and responsive layouts.
+  - Sleek, polished Qt Quick interface with smooth dual-layer icon cross-fading, hover animations, and modular dialog styling.
 
 ---
 
@@ -91,8 +92,8 @@ Run the provided PowerShell deployment script:
 This script will:
 1. Compile SaikoSoundboard in `Release` mode.
 2. Run `windeployqt` to bundle required Qt libraries and QML modules.
-3. Package the standalone bundle in `dist/SaikoSoundboard-v0.1.0-beta/`.
-4. Build `SaikoSoundboard-0.1.0-Beta-Setup.exe` if Inno Setup Compiler (`iscc.exe`) is installed.
+3. Package the standalone bundle in `dist/SaikoSoundboard-v0.2.0-beta/`.
+4. Build `SaikoSoundboard-0.2.0-Beta-Setup.exe` if Inno Setup Compiler (`iscc.exe`) is installed.
 
 ### 2. Inno Setup Installer
 
@@ -106,20 +107,25 @@ iscc installer/SaikoSoundboard.iss
 
 ## 🏗️ Architecture Overview
 
-The codebase strictly adheres to clean architecture principles:
+The codebase strictly adheres to clean architecture principles, modularized into static library targets linked under `SaikoSoundboardCore`:
 
 ```
 SaikoSoundboard/
-├── src/core/domain/      # Pure C++ business logic (no Qt dependencies)
-├── src/core/adapters/    # Platform adapters (Windows WASAPI, Hotkeys, Process Finder)
-├── src/audio/            # WASAPI audio engine (Recorder, Mixer, ReplayBuffer, SoundPlayer)
-├── src/managers/         # Orchestration layer (Action, Hotkey, Settings, Soundboard)
-├── src/models/           # Qt Abstract Data Models
-├── src/ui/               # C++ QmlBackend singleton & Waveform QQuickPaintedItems
-├── src/qml/              # Qt Quick UI components, dialogs, and themes
-├── installer/            # Windows installer configurations (Inno Setup)
-└── tools/                # Release & deployment scripts, hardware verification tools
+├── src/core/domain/      # SaikoDomain: Pure C++ business logic (no Qt or platform dependencies)
+├── src/core/adapters/    # SaikoAdapters: Native Windows platform integrations (API, hotkeys, process muting)
+├── src/audio/            # SaikoAudio: WASAPI audio engine (recorder, mixer, replay buffer, WAV writer)
+├── src/managers/         # SaikoManagers: Orchestration layer managing slots, hotkeys, settings, and recordings
+├── src/models/           # SaikoModels: Qt QAbstractListModel implementations (slots, active devices)
+├── src/ui/               # SaikoUI: C++ QmlBackend singleton and Waveform quick items
+├── src/qml/              # UI representation: Qt Quick files, themes, animations, and dialogs
+├── installer/            # Standalone Windows installer configuration (Inno Setup)
+└── tools/                # Release deployment packaging script and hardware verification utilities
 ```
+
+### ⚡ Build Performance Optimizations
+To support rapid iterations and fast build times under **MinGW 13.1** and **CMake**:
+- **Precompiled Headers (PCH)**: Heavy common headers (Qt, standard libraries, Win32 APIs) are precompiled via `COMMON_PCH_HEADERS` to eliminate compile cascades.
+- **Unity Builds**: Source files in compilation-heavy libraries (`SaikoAudio` and `SaikoManagers`) are grouped into single compilation units to optimize link times and compile passes.
 
 ---
 

@@ -85,6 +85,25 @@ Rectangle {
                 font.pixelSize: 13
                 font.weight: Font.DemiBold
             }
+
+            Rectangle {
+                height: 16
+                implicitWidth: versionText.implicitWidth + 8
+                color: Qt.rgba(Theme.accentTeal.r, Theme.accentTeal.g, Theme.accentTeal.b, 0.15)
+                border.color: Theme.accentTeal
+                border.width: 1
+                radius: 8
+                Layout.alignment: Qt.AlignVCenter
+
+                Text {
+                    id: versionText
+                    anchors.centerIn: parent
+                    text: "v0.2.0"
+                    color: Theme.accentTeal
+                    font.pixelSize: 9
+                    font.weight: Font.Bold
+                }
+            }
         }
 
         Item {

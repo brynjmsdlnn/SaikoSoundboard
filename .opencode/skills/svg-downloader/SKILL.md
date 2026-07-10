@@ -1,11 +1,11 @@
 ---
 name: svg-downloader
-description: Download SVGs from Lucide icon set, save to src/icons/, and register in icons.qrc
+description: Download SVGs from Lucide icon set, save to resources/icons/, and register in resources/icons/icons.qrc
 ---
 
 # SVG Icon Downloader
 
-Downloads SVG icons from Lucide GitHub, saves to `src/icons/`, and registers in `src/icons/icons.qrc`.
+Downloads SVG icons from Lucide GitHub, saves to `resources/icons/`, and registers in `resources/icons/icons.qrc`.
 
 ## Usage
 
@@ -16,15 +16,15 @@ Downloads SVG icons from Lucide GitHub, saves to `src/icons/`, and registers in 
 ## Project-specific defaults
 
 - Source: `https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/`
-- Icons directory: `src/icons/`
-- QRC file: `src/icons/icons.qrc`
+- Icons directory: `resources/icons/`
+- QRC file: `resources/icons/icons.qrc`
 - QRC prefix: `/icons`
 
 ## Workflow for each icon
 
 1. Fetch the SVG from Lucide's GitHub
-2. Save to `src/icons/<name>.svg`
-3. Add `<file><name>.svg</file>` to `icons.qrc`
+2. Save to `resources/icons/<name>.svg`
+3. Add `<file><name>.svg</file>` to `resources/icons/icons.qrc`
 4. Build to verify
 
 ## Example
