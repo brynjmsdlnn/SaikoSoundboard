@@ -15,9 +15,9 @@ All QML UI components for the SaikoSoundboard application. This is the presentat
 
 ```
 src/qml/
-├── components/       # Reusable UI building blocks (SaikoButton, SaikoCheckBox, SaikoComboBox, SaikoTooltip, SaikoMenu, SaikoMenuItem)
+├── components/       # Reusable UI building blocks (SaikoButton, SaikoCheckBox, SaikoComboBox, SaikoTooltip, SaikoMenu, SaikoMenuItem, SaikoDialog)
 ├── shared/           # Shared singleton and utilities (Theme.qml, utils.js)
-├── dialogs/          # Standalone windows & popups (SettingsDialog, HotkeyDialog, RoutingDialog, ProcessSelectionPopup)
+├── dialogs/          # Standalone windows & popups (SettingsDialog, HotkeyDialog, RoutingDialog, SourceSelectionPopup)
 ├── recording/        # Recording panel sub-components (RecordingPanel, RecordingHeader, RecordingSection, ReplayBufferSection)
 ├── soundboard/       # Soundboard grid & card editor (SoundboardGridView, SoundboardGridCard, ItemEditor, HotkeyCard)
 ├── sources/          # Audio source management (SourcesPanel, WaveformView)
@@ -47,13 +47,13 @@ src/qml/
 No children — all files organized under this directory.
 
 ### `components/`
-Reusable UI primitives — SaikoButton, SaikoCheckBox, SaikoComboBox, SaikoTooltip, SaikoMenu, SaikoMenuItem. Owned by this doc.
+Reusable UI primitives — SaikoButton, SaikoCheckBox, SaikoComboBox, SaikoTooltip, SaikoMenu, SaikoMenuItem, SaikoDialog. Owned by this doc.
 
 ### `shared/`
 Shared singleton and utilities — Theme.qml (singleton), utils.js (JS utility functions). Owned by this doc.
 
 ### `dialogs/`
-Standalone windows and popups — SettingsDialog, HotkeyDialog, RoutingDialog, ProcessSelectionPopup, AboutDialog. Owned by this doc.
+Standalone windows and popups — SettingsDialog, HotkeyDialog, RoutingDialog, SourceSelectionPopup, AboutDialog. Owned by this doc.
 
 ### `recording/`
 Recording panel sub-components — RecordingPanel, RecordingHeader, RecordingSection, ReplayBufferSection, ReplayDurationEditor. Owned by this doc.

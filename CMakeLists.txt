@@ -240,6 +240,7 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/components/SaikoButton.qml
         src/qml/components/SaikoCheckBox.qml
         src/qml/components/SaikoComboBox.qml
+        src/qml/components/SaikoDialog.qml
         src/qml/components/SaikoIconButton.qml
         src/qml/components/SaikoIconMenu.qml
         src/qml/components/SaikoTooltip.qml
@@ -251,7 +252,7 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/dialogs/SettingsDialog.qml
         src/qml/dialogs/HotkeyDialog.qml
         src/qml/dialogs/RoutingDialog.qml
-        src/qml/dialogs/ProcessSelectionPopup.qml
+        src/qml/dialogs/SourceSelectionPopup.qml
         src/qml/dialogs/AboutDialog.qml
         src/qml/dialogs/AssignToSlotDialog.qml
 

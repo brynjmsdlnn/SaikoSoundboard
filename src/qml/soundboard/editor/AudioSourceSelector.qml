@@ -183,70 +183,30 @@ ColumnLayout {
         }
     }
 
-    Dialog {
+    SaikoDialog {
         id: saveFileNameDialog
-        parent: Overlay.overlay
-        x: Math.round((parent.width - width) / 2)
-        y: Math.round((parent.height - height) / 2)
+        title: "Save Permanent File"
+        text: "Enter a file name:"
+        confirmText: "Save"
+        confirmColor: Theme.accentPurple
         width: 300
-        modal: true
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
-        background: Rectangle {
-            color: Theme.inputBackground
-            border.color: Theme.borderDefault
-            radius: 8
+        TextField {
+            id: saveNameField
+            Layout.fillWidth: true
+            text: saveFileNameDialog.stripExtension(root.filePath ? root.filePath.split("/").pop() : root.slotName)
+            selectByMouse: true
+            color: Theme.textPrimary
+            font.pixelSize: 14
+            background: Rectangle {
+                color: Theme.recessedBackground
+                border.color: saveNameField.activeFocus ? Theme.accentPurple : Theme.borderDefault
+                radius: 6
+            }
+            onAccepted: saveFileNameDialog.saveAction()
         }
 
-        contentItem: ColumnLayout {
-            spacing: 12
-
-            Text {
-                text: "Save Permanent File"
-                font.bold: true
-                font.pixelSize: 14
-                color: Theme.textPrimary
-            }
-
-            Text {
-                text: "Enter a file name:"
-                color: Theme.textSecondary
-                font.pixelSize: 12
-            }
-
-            TextField {
-                id: saveNameField
-                Layout.fillWidth: true
-                text: saveFileNameDialog.stripExtension(root.filePath ? root.filePath.split("/").pop() : root.slotName)
-                selectByMouse: true
-                color: Theme.textPrimary
-                font.pixelSize: 14
-                background: Rectangle {
-                    color: Theme.recessedBackground
-                    border.color: saveNameField.activeFocus ? Theme.accentPurple : Theme.borderDefault
-                    radius: 6
-                }
-                onAccepted: saveFileNameDialog.saveAction()
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignRight
-                spacing: 8
-                Layout.topMargin: 8
-
-                SaikoButton {
-                    text: "Cancel"
-                    small: true
-                    onClicked: saveFileNameDialog.close()
-                }
-                SaikoButton {
-                    text: "Save"
-                    small: true
-                    onClicked: saveFileNameDialog.saveAction()
-                }
-            }
-        }
+        onAccepted: saveFileNameDialog.saveAction()
 
         function stripExtension(name) {
             var idx = name.lastIndexOf(".")

@@ -224,6 +224,9 @@ Rectangle {
                     startTimeMs: model.startTimeMs
                     endTimeMs: model.endTimeMs
                     playState: model.playState
+                    playHotkey: model.playHotkey
+                    assignHotkey: model.assignHotkey
+                    isTemporary: model.isTemporary
                 }
             }
         }

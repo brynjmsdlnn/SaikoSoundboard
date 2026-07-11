@@ -79,53 +79,36 @@ ApplicationWindow {
         recordingPanel.resetUI();
     }
 
-    Dialog {
+    SaikoDialog {
         id: renameDialog
         title: "Save recording"
-        standardButtons: Dialog.Ok | Dialog.Cancel
-        modal: true
-        x: Math.round((app.width - width) / 2)
-        y: Math.round((app.height - height) / 2)
+        text: "Enter a name for the recording:"
+        confirmText: "Save"
+        confirmColor: Theme.accentPurple
         width: 360
 
-        background: Rectangle {
-            color: Theme.inputBackground
-            border.color: Theme.borderHover
+        Rectangle {
+            Layout.fillWidth: true
+            height: 36
+            color: Theme.recessedBackground
+            radius: Theme.borderRadius
+            border.color: renameInput.activeFocus ? Theme.accentPurple : Theme.borderDefault
             border.width: 1
-            radius: Theme.cardRadius
-        }
-
-        contentItem: ColumnLayout {
-            anchors.margins: 16
-            spacing: 12
-            Text {
-                text: "Enter a name for the recording:"
-                color: Theme.textPrimary
-                font.pixelSize: Theme.fontSizeHeading
+            Behavior on border.color {
+                ColorAnimation {
+                    duration: Theme.animDuration
+                }
             }
-            Rectangle {
-                Layout.fillWidth: true
-                height: 36
-                color: Theme.appBackground
-                radius: Theme.borderRadius
-                border.color: renameInput.activeFocus ? Theme.accentPurple : Theme.borderDefault
-                border.width: 1
-                Behavior on border.color {
-                    ColorAnimation {
-                        duration: Theme.animDuration
-                    }
-                }
-                TextInput {
-                    id: renameInput
-                    anchors.fill: parent
-                    anchors.leftMargin: 10
-                    anchors.rightMargin: 10
-                    verticalAlignment: TextInput.AlignVCenter
-                    color: Theme.textPrimary
-                    font.pixelSize: Theme.fontSizeNormal
-                    focus: true
-                    onAccepted: renameDialog.accept()
-                }
+            TextInput {
+                id: renameInput
+                anchors.fill: parent
+                anchors.leftMargin: 10
+                anchors.rightMargin: 10
+                verticalAlignment: TextInput.AlignVCenter
+                color: Theme.textPrimary
+                font.pixelSize: Theme.fontSizeNormal
+                selectByMouse: true
+                onAccepted: renameDialog.accept()
             }
         }
 
@@ -133,9 +116,15 @@ ApplicationWindow {
             var name = renameInput.text.trim();
             finishRename(name.length > 0 ? name : "Recording");
         }
+
         onRejected: {
             resetAfterStop();
         }
+
+        onOpened: {
+            renameInput.forceActiveFocus();
+        }
+
         onVisibleChanged: {
             if (visible) {
                 var parts = lastRecordingPath.split("/");

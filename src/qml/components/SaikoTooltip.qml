@@ -15,6 +15,7 @@ Popup {
     visible: root.hovered && text.length > 0
     closePolicy: Popup.NoAutoClose
     padding: 0
+    enabled: false
 
     width: textItem.implicitWidth + 16
     height: 26
@@ -39,9 +40,9 @@ Popup {
     x: {
         if (!parent) return 0;
         if (root.direction === "left") {
-            return root.hovered ? -width - 8 : -width + 4;
+            return root.hovered ? -width - 8 : -width - 24;
         } else if (root.direction === "right") {
-            return root.hovered ? parent.width + 8 : parent.width - 4;
+            return root.hovered ? parent.width + 8 : parent.width + 24;
         } else {
             // Horizontal Center alignment for "top" and "bottom" directions
             return (parent.width - width) / 2;
@@ -52,9 +53,9 @@ Popup {
     y: {
         if (!parent) return 0;
         if (root.direction === "top") {
-            return root.hovered ? -height - 8 : -height + 4;
+            return root.hovered ? -height - 8 : -height - 24;
         } else if (root.direction === "bottom") {
-            return root.hovered ? parent.height + 8 : parent.height - 4;
+            return root.hovered ? parent.height + 8 : parent.height + 24;
         } else {
             // Vertical Center alignment for "left" and "right" directions
             return (parent.height - height) / 2;

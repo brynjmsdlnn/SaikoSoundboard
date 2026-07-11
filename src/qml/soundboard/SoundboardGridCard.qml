@@ -67,6 +67,9 @@ Rectangle {
     property int startTimeMs: 0
     property int endTimeMs: -1
     property int playState: 0
+    property string playHotkey: ""
+    property string assignHotkey: ""
+    property bool isTemporary: false
 
     property int queueCount: 0
     property var layerPositionsMs: []
@@ -573,12 +576,31 @@ Rectangle {
         }
     }
 
-    MessageDialog {
+    SaikoDialog {
         id: removeConfirmDialog
-        title: "Confirm delete"
+        title: "Confirm Delete"
         text: "Are you sure you want to delete this player?"
-        informativeText: (filePath && filePath !== "") ? "It has an assigned audio file." : ""
-        buttons: MessageDialog.Yes | MessageDialog.No
+        informativeText: {
+            var messages = [];
+            if (filePath && filePath !== "") {
+                if (!fileExists) {
+                    messages.push("The assigned audio file is missing.");
+                } else if (isTemporary) {
+                    messages.push("It has an unsaved temporary recording.");
+                } else {
+                    messages.push("It has an assigned audio file.");
+                }
+            }
+            if (playHotkey || assignHotkey) {
+                var bindings = [];
+                if (playHotkey) bindings.push("Play: " + playHotkey);
+                if (assignHotkey) bindings.push("Assign: " + assignHotkey);
+                messages.push("It has hotkey bindings (" + bindings.join(", ") + ").");
+            }
+            return messages.join("\n");
+        }
+        confirmText: "Delete"
+        confirmColor: Theme.destructiveRed
         onAccepted: {
             if (slotId) {
                 Backend.soundboard.removePlayer(slotId);

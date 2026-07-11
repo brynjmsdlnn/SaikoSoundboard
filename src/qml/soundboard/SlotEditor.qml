@@ -352,11 +352,31 @@ Rectangle {
     }
 
     // ── Dialogs ───────────────────────────────────────────────────────────────
-    MessageDialog {
+    SaikoDialog {
         id: removeConfirmDialog
-        title: "Confirm delete"
+        title: "Confirm Delete"
         text: "Delete this player?"
-        buttons: MessageDialog.Yes | MessageDialog.No
+        informativeText: {
+            var messages = [];
+            if (editor.filePath && editor.filePath !== "") {
+                if (!editor.fileExists) {
+                    messages.push("The assigned audio file is missing.");
+                } else if (editor.isTemporary) {
+                    messages.push("It has an unsaved temporary recording.");
+                } else {
+                    messages.push("It has an assigned audio file.");
+                }
+            }
+            if (editor.playHotkey || editor.assignHotkey) {
+                var bindings = [];
+                if (editor.playHotkey) bindings.push("Play: " + editor.playHotkey);
+                if (editor.assignHotkey) bindings.push("Assign: " + editor.assignHotkey);
+                messages.push("It has hotkey bindings (" + bindings.join(", ") + ").");
+            }
+            return messages.join("\n");
+        }
+        confirmText: "Delete"
+        confirmColor: Theme.destructiveRed
         onAccepted: {
             if (editor.slotId)
                 Backend.soundboard.removePlayer(editor.slotId);
