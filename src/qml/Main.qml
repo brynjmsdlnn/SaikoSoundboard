@@ -238,6 +238,9 @@ ApplicationWindow {
                     onSourceAdded: function (name, executableName, executablePath) {
                         Backend.sourceModel.addSource(name, executableName, executablePath);
                     }
+                    onDeviceAdded: function (name, deviceName) {
+                        Backend.sourceModel.addDeviceSource(name, deviceName);
+                    }
                     onSourceRemoved: function (sourceId) {
                         Backend.sourceModel.removeSource(sourceId);
                     }

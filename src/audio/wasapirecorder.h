@@ -15,7 +15,7 @@ public:
     explicit WasapiRecorder(QObject *parent = nullptr);
     ~WasapiRecorder();
 
-    void start(DWORD pid);
+    void start(DWORD pid, const QString &deviceName = "");
     void stop();
 
     // Override the capture sample rate. Set before start().
@@ -42,6 +42,7 @@ private:
 
     QString m_fileName;
     DWORD m_processId;
+    QString m_deviceName;
     std::atomic<bool> m_running;
     QFuture<void> m_future;
     qint64 m_dataChunkOffset;

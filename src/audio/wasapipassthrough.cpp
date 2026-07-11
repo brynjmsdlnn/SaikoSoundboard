@@ -152,8 +152,13 @@ static void writeOutputSample(BYTE *dst, float sample, bool isFloat, WORD bitsPe
     }
 }
 
-WasapiPassthrough::WasapiPassthrough(QObject *parent) : QObject(parent), m_running(false) {}
+WasapiPassthrough::WasapiPassthrough(QObject *parent) : QObject(parent), m_running(false), m_volume(1.0f) {}
 WasapiPassthrough::~WasapiPassthrough() { stop(); }
+
+void WasapiPassthrough::setVolume(float volume)
+{
+    m_volume.store(volume);
+}
 
 void WasapiPassthrough::start(const QString &inputDeviceDesc, const QString &outputDeviceDesc)
 {
@@ -317,12 +322,13 @@ void WasapiPassthrough::runPassthrough(const QString &inputDeviceDesc, const QSt
                     tempConvertedFrames.resize(numFramesRead * outChannels);
                     bool isSilent = (bufFlags & AUDCLNT_BUFFERFLAGS_SILENT) || (pData == nullptr);
 
+                    float vol = m_volume.load();
                     for (UINT32 i = 0; i < numFramesRead; ++i) {
                         float inChSamples[8] = {0.0f};
                         if (!isSilent) {
                             for (WORD c = 0; c < std::min(inChannels, static_cast<WORD>(8)); ++c) {
                                 const BYTE *samplePtr = pData + (i * inBlockAlign) + (c * inBytesPerSample);
-                                inChSamples[c] = readInputSample(samplePtr, isInFloat, inBitsPerSample);
+                                inChSamples[c] = readInputSample(samplePtr, isInFloat, inBitsPerSample) * vol;
                             }
                         }
 

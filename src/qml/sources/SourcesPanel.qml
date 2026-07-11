@@ -13,6 +13,7 @@ Rectangle {
     property bool locked: false
 
     signal sourceAdded(string name, string executableName, string executablePath)
+    signal deviceAdded(string name, string deviceName)
     signal sourceRemoved(string sourceId)
 
     ColumnLayout {
@@ -73,14 +74,19 @@ Rectangle {
 
                         // Process Icon
                         Image {
-                            source: executablePath ? "image://fileicon/" + encodeURIComponent(executablePath) : ""
+                            source: {
+                                if (model.type === "device") {
+                                    return "image://icons/volume-2?color=%23b0b0b0"
+                                }
+                                return executablePath ? "image://fileicon/" + encodeURIComponent(executablePath) : ""
+                            }
                             width: 24
                             height: 24
                             fillMode: Image.PreserveAspectFit
                             Layout.preferredWidth: 24
                             Layout.preferredHeight: 24
-                            opacity: executablePath ? 0.9 : 0.2
-                            visible: executablePath !== ""
+                            opacity: (model.type === "device" || executablePath) ? 0.9 : 0.2
+                            visible: model.type === "device" || executablePath !== ""
                         }
 
                         // Process Details
@@ -99,7 +105,7 @@ Rectangle {
                                 Layout.fillWidth: true
                             }
                             Text {
-                                text: executableName
+                                text: model.type === "device" ? model.deviceName : executableName
                                 color: Theme.textDim
                                 font.pixelSize: Theme.fontSizeSmall
                                 elide: Text.ElideRight
@@ -131,8 +137,34 @@ Rectangle {
                                     }
                                 }
                                 SaikoTooltip {
-                                    text: model.enabled ? "Mute Source" : "Unmute Source"
+                                    text: model.enabled ? "Mute Source (Exclude from Recording)" : "Unmute Source (Include in Recording)"
                                     hovered: muteBtn.hovered
+                                    direction: "left"
+                                    z: 999
+                                }
+                            }
+
+                            // Listen/Passthrough Toggle (Only for Device type sources)
+                            Item {
+                                width: 28
+                                height: 22
+                                visible: !root.locked && model.type === "device"
+                                SaikoButton {
+                                    id: listenBtn
+                                    anchors.fill: parent
+                                    iconSource: "image://icons/headset"
+                                    small: true
+                                    filled: model.monitor
+                                    accentColor: Theme.accentPurple
+                                    onClicked: {
+                                        var newMonitor = !model.monitor
+                                        var sourceId = root.sourceModel.getSourceId(index)
+                                        root.sourceModel.setMonitor(sourceId, newMonitor)
+                                    }
+                                }
+                                SaikoTooltip {
+                                    text: model.monitor ? "Stop Listening (Mute Monitoring)" : "Listen to Device (Passthrough to Headphones)"
+                                    hovered: listenBtn.hovered
                                     direction: "left"
                                     z: 999
                                 }
@@ -309,6 +341,9 @@ Rectangle {
         sourceModel: root.sourceModel
         onProcessSelected: (name, executableName, executablePath) => {
             root.sourceAdded(name, executableName, executablePath)
+        }
+        onDeviceSelected: (name, deviceName) => {
+            root.deviceAdded(name, deviceName)
         }
     }
 }

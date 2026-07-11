@@ -8,6 +8,8 @@
 #include <audioclient.h>
 #include <mmdeviceapi.h>
 #include <objidl.h>
+#include <propsys.h>
+#include <propidl.h>
 
 // Manually define missing modern Windows SDK structures for MinGW compatibility
 #ifndef AUDIOCLIENT_ACTIVATION_TYPE_PROCESS_LOOPBACK
@@ -141,6 +143,55 @@ static WAVEFORMATEX* GetSystemMixFormat()
     return pwfx;
 }
 
+static const PROPERTYKEY PKEY_Device_FriendlyName_W_Rec = { { 0xa45c254e, 0xdf1c, 0x4efd, { 0x80, 0x20, 0x67, 0xd1, 0x46, 0xa8, 0x50, 0xe0 } }, 14 };
+
+static QString getRecorderDeviceFriendlyName(IMMDevice *device)
+{
+    IPropertyStore *props = nullptr;
+    if (FAILED(device->OpenPropertyStore(STGM_READ, &props)))
+        return {};
+    PROPVARIANT var;
+    PropVariantInit(&var);
+    QString name;
+    if (SUCCEEDED(props->GetValue(PKEY_Device_FriendlyName_W_Rec, &var)) && var.vt == VT_LPWSTR)
+        name = QString::fromWCharArray(var.pwszVal);
+    PropVariantClear(&var);
+    props->Release();
+    return name;
+}
+
+static IMMDevice *findRecorderDeviceByDesc(EDataFlow flow, const QString &desc)
+{
+    IMMDeviceEnumerator *pEnum = nullptr;
+    if (FAILED(CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
+                                __uuidof(IMMDeviceEnumerator), (void**)&pEnum)))
+        return nullptr;
+
+    IMMDeviceCollection *pCol = nullptr;
+    if (FAILED(pEnum->EnumAudioEndpoints(flow, DEVICE_STATE_ACTIVE, &pCol))) {
+        pEnum->Release();
+        return nullptr;
+    }
+
+    IMMDevice *result = nullptr;
+    UINT count = 0;
+    pCol->GetCount(&count);
+    for (UINT i = 0; i < count; ++i) {
+        IMMDevice *pDev = nullptr;
+        if (SUCCEEDED(pCol->Item(i, &pDev))) {
+            QString name = getRecorderDeviceFriendlyName(pDev);
+            if (name == desc) {
+                result = pDev;
+                break;
+            }
+            pDev->Release();
+        }
+    }
+    pCol->Release();
+    pEnum->Release();
+    return result;
+}
+
 int WasapiRecorder::systemMixSampleRate()
 {
     WAVEFORMATEX *pwfx = GetSystemMixFormat();
@@ -158,11 +209,12 @@ void WasapiRecorder::setTargetSampleRate(int sampleRate)
     m_targetSampleRate = sampleRate;
 }
 
-void WasapiRecorder::start(DWORD pid)
+void WasapiRecorder::start(DWORD pid, const QString &deviceName)
 {
     if (m_running) return;
     m_fileName.clear();
     m_processId = pid;
+    m_deviceName = deviceName;
     m_running = true;
     m_future = QtConcurrent::run([this]() { runCapture(); });
 }
@@ -197,6 +249,22 @@ void WasapiRecorder::runCapture()
 
     IAudioClient *pAudioClient = NULL;
     DWORD flags = AUDCLNT_STREAMFLAGS_LOOPBACK | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY;
+
+    if (m_processId == 0 && !m_deviceName.isEmpty()) {
+        qDebug() << "WASAPI: Attempting device-specific loopback audio capture for device:" << m_deviceName;
+        IMMDevice *pDevice = findRecorderDeviceByDesc(eRender, m_deviceName);
+        if (pDevice) {
+            HRESULT hr = pDevice->Activate(IID_IAudioClient, CLSCTX_ALL, NULL, (void**)&pAudioClient);
+            if (SUCCEEDED(hr)) {
+                qDebug() << "WASAPI: Device-specific Audio Client successfully activated.";
+            } else {
+                qDebug() << "WASAPI: Failed to activate device-specific Audio Client. hr =" << hr;
+            }
+            pDevice->Release();
+        } else {
+            qDebug() << "WASAPI: Could not find target device for loopback:" << m_deviceName;
+        }
+    }
 
     if (m_processId != 0) {
         qDebug() << "WASAPI: Attempting per-process audio capture for PID:" << m_processId;

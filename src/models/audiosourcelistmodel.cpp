@@ -30,6 +30,9 @@ QVariant AudioSourceListModel::data(const QModelIndex &index, int role) const
     case EnabledRole:        return src.enabled;
     case VolumeRole:         return src.volume;
     case SoloRole:           return src.solo;
+    case TypeRole:           return src.type;
+    case DeviceNameRole:     return src.deviceName;
+    case MonitorRole:        return src.monitor;
     default: return {};
     }
 }
@@ -44,6 +47,9 @@ QHash<int, QByteArray> AudioSourceListModel::roleNames() const
         {EnabledRole,        "enabled"},
         {VolumeRole,         "volume"},
         {SoloRole,           "solo"},
+        {TypeRole,           "type"},
+        {DeviceNameRole,     "deviceName"},
+        {MonitorRole,        "monitor"},
     };
 }
 
@@ -60,6 +66,25 @@ bool AudioSourceListModel::addSource(const QString &name, const QString &executa
     src.name = name;
     src.executableName = executableName;
     src.executablePath = executablePath;
+    auto sources = m_settings->sources();
+    sources.append(src);
+    m_settings->setSources(sources);
+    m_settings->save();
+    return true;
+}
+
+bool AudioSourceListModel::addDeviceSource(const QString &name, const QString &deviceName)
+{
+    for (const auto &existing : m_sources) {
+        if (existing.type == "device" && existing.deviceName.compare(deviceName, Qt::CaseInsensitive) == 0)
+            return false;
+    }
+    AudioSource src;
+    src.name = name;
+    src.type = "device";
+    src.deviceName = deviceName;
+    src.executableName = "Audio Device";
+    src.executablePath = "";
     auto sources = m_settings->sources();
     sources.append(src);
     m_settings->setSources(sources);
@@ -84,6 +109,15 @@ bool AudioSourceListModel::hasExecutable(const QString &executableName) const
 {
     for (const auto &src : m_sources) {
         if (src.executableName.compare(executableName, Qt::CaseInsensitive) == 0)
+            return true;
+    }
+    return false;
+}
+
+bool AudioSourceListModel::hasDevice(const QString &deviceName) const
+{
+    for (const auto &src : m_sources) {
+        if (src.type == "device" && src.deviceName.compare(deviceName, Qt::CaseInsensitive) == 0)
             return true;
     }
     return false;
@@ -153,6 +187,27 @@ bool AudioSourceListModel::setVolume(const QString &sourceId, float volume)
             m_settings->setSources(sources);
             m_settings->save();
             emit dataChanged(index(i), index(i), {VolumeRole});
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AudioSourceListModel::setMonitor(const QString &sourceId, bool monitor)
+{
+    for (int i = 0; i < m_sources.size(); ++i) {
+        if (m_sources[i].id == sourceId) {
+            m_sources[i].monitor = monitor;
+            auto sources = m_settings->sources();
+            for (int j = 0; j < sources.size(); ++j) {
+                if (sources[j].id == sourceId) {
+                    sources[j].monitor = monitor;
+                    break;
+                }
+            }
+            m_settings->setSources(sources);
+            m_settings->save();
+            emit dataChanged(index(i), index(i), {MonitorRole});
             return true;
         }
     }

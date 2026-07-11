@@ -12,6 +12,18 @@
 #include "core/adapters/WindowsProcessFinder.h"
 #include "core/adapters/WindowsAudioSessionController.h"
 #include <QAudioDevice>
+#include "audio/wasapipassthrough.h"
+
+static QString mapRenderToCaptureDevice(const QString &renderName)
+{
+    QString captureName = renderName;
+    if (captureName.contains("Input")) {
+        captureName.replace("Input", "Output");
+    } else if (captureName.contains("input")) {
+        captureName.replace("input", "output");
+    }
+    return captureName;
+}
 
 RecordingManager::RecordingManager(SettingsManager *settings, QObject *parent)
     : QObject(parent)
@@ -32,11 +44,21 @@ RecordingManager::RecordingManager(SettingsManager *settings, QObject *parent)
             m_replayBuffer->pushPcmChunk(data);
         }
     });
+
+    connect(m_settings, &SettingsManager::sourcesChanged, this, &RecordingManager::syncDevicePassthroughs);
+    connect(m_settings, &SettingsManager::localMonitorDeviceChanged, this, &RecordingManager::syncDevicePassthroughs);
+
+    syncDevicePassthroughs();
 }
 
 RecordingManager::~RecordingManager()
 {
     stopEngine();
+    for (auto passthrough : std::as_const(m_devicePassthroughs)) {
+        passthrough->stop();
+        delete passthrough;
+    }
+    m_devicePassthroughs.clear();
 }
 
 void RecordingManager::updateState()
@@ -114,14 +136,19 @@ void RecordingManager::startEngine(const QString &mode)
     }
 
     if (mode == "global") {
-        startRecorderForPid(0, "global", 1.0f);
+        startDeviceRecorder("", "global", 1.0f);
     } else {
         QList<AudioSource> sources = m_settings->sources();
         for (const auto& src : std::as_const(sources)) {
-            DWORD pid = Saiko::Adapters::WindowsProcessFinder::findProcessId(src.executableName);
-            if (pid != 0) {
-                startRecorderForPid(pid, src.id, src.volume);
+            if (src.type == "device") {
+                startDeviceRecorder(src.deviceName, src.id, src.volume);
                 m_mixer->setSourceMuted(src.id, !src.enabled);
+            } else {
+                DWORD pid = Saiko::Adapters::WindowsProcessFinder::findProcessId(src.executableName);
+                if (pid != 0) {
+                    startProcessRecorder(pid, src.id, src.volume);
+                    m_mixer->setSourceMuted(src.id, !src.enabled);
+                }
             }
         }
     }
@@ -193,9 +220,32 @@ bool RecordingManager::saveReplay(const QString &path)
     return true;
 }
 
-void RecordingManager::startRecorderForPid(DWORD pid, const QString& sourceId, float volume)
+void RecordingManager::startProcessRecorder(DWORD pid, const QString& sourceId, float volume)
 {
     WasapiRecorder *rec = new WasapiRecorder(this);
+    setupRecorder(rec, sourceId, volume);
+
+    rec->start(pid, "");
+    m_activeRecorders.append(rec);
+
+    m_sourcePids.insert(sourceId, pid);
+    updateMuteStates();
+}
+
+void RecordingManager::startDeviceRecorder(const QString& deviceName, const QString& sourceId, float volume)
+{
+    WasapiRecorder *rec = new WasapiRecorder(this);
+    setupRecorder(rec, sourceId, volume);
+
+    rec->start(0, deviceName);
+    m_activeRecorders.append(rec);
+
+    m_sourcePids.insert(sourceId, 0);
+    updateMuteStates();
+}
+
+void RecordingManager::setupRecorder(WasapiRecorder *rec, const QString& sourceId, float volume)
+{
     rec->setTargetSampleRate(m_settings->recordingSampleRate());
     m_mixer->addSource(sourceId, volume);
 
@@ -217,12 +267,6 @@ void RecordingManager::startRecorderForPid(DWORD pid, const QString& sourceId, f
             }
         }
     });
-
-    rec->start(pid);
-    m_activeRecorders.append(rec);
-
-    m_sourcePids.insert(sourceId, pid);
-    updateMuteStates();
 }
 
 void RecordingManager::updateMuteStates()
@@ -258,11 +302,36 @@ void RecordingManager::setSourceVolume(const QString &sourceId, float volume)
     if (m_mixer) {
         m_mixer->updateVolume(sourceId, volume);
     }
+    if (m_devicePassthroughs.contains(sourceId)) {
+        m_devicePassthroughs[sourceId]->setVolume(volume);
+    }
 }
 
 void RecordingManager::setSourceMuted(const QString &sourceId, bool muted)
 {
     if (m_mixer) {
         m_mixer->setSourceMuted(sourceId, muted);
+    }
+}
+
+void RecordingManager::syncDevicePassthroughs()
+{
+    // Tear down all active passthroughs
+    for (auto passthrough : std::as_const(m_devicePassthroughs)) {
+        passthrough->stop();
+        passthrough->deleteLater();
+    }
+    m_devicePassthroughs.clear();
+    
+    // Rebuild active passthroughs for all monitored device sources
+    QList<AudioSource> sources = m_settings->sources();
+    for (const auto &src : std::as_const(sources)) {
+        if (src.type == "device" && src.monitor) {
+            QString captureDev = mapRenderToCaptureDevice(src.deviceName);
+            WasapiPassthrough *passthrough = new WasapiPassthrough(this);
+            passthrough->start(captureDev, m_settings->localMonitorDevice());
+            passthrough->setVolume(src.volume);
+            m_devicePassthroughs.insert(src.id, passthrough);
+        }
     }
 }

@@ -7,6 +7,7 @@ Popup {
     id: root
     property var sourceModel: null
     signal processSelected(string name, string executableName, string executablePath)
+    signal deviceSelected(string name, string deviceName)
 
     x: Math.round((parent.width - width) / 2)
     y: Math.round((parent.height - height) / 2)
@@ -16,6 +17,7 @@ Popup {
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
     padding: 0
 
+    property string activeTab: "processes"
     property var allProcesses: []
 
     function refresh() {
@@ -46,11 +48,21 @@ Popup {
         var idx = processList.currentIndex
         if (idx < 0 || typeof model !== 'object' || idx >= model.length) return
         var item = model[idx]
-        var exeName = item.name
-        var fullPath = item.fullPath
-        var dotIdx = exeName.lastIndexOf(".")
-        var displayName = dotIdx > 0 ? exeName.substring(0, dotIdx) : exeName
-        root.processSelected(displayName, exeName, fullPath)
+        if (root.activeTab === "processes") {
+            var exeName = item.name
+            var fullPath = item.fullPath
+            var dotIdx = exeName.lastIndexOf(".")
+            var displayName = dotIdx > 0 ? exeName.substring(0, dotIdx) : exeName
+            root.processSelected(displayName, exeName, fullPath)
+        } else {
+            var devDesc = item.description
+            var cleanName = devDesc
+            var parenIdx = cleanName.indexOf(" (")
+            if (parenIdx > 0) {
+                cleanName = cleanName.substring(0, parenIdx)
+            }
+            root.deviceSelected(cleanName, devDesc)
+        }
         root.close()
     }
 
@@ -73,7 +85,7 @@ Popup {
                 spacing: 8
 
                 Text {
-                    text: "Select Process"
+                    text: root.activeTab === "processes" ? "Select Process" : "Select Audio Device"
                     color: Theme.textPrimary
                     font.pixelSize: 16
                     font.weight: Font.Bold
@@ -85,9 +97,81 @@ Popup {
                     id: refreshButton
                     text: "Refresh"
                     small: true
+                    visible: root.activeTab === "processes"
                     enabled: !buttonTextResetTimer.running
                     Layout.alignment: Qt.AlignVCenter
                     onClicked: root.refresh()
+                }
+            }
+
+            // --- Premium Segmented Tab Selector ---
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 0
+                
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 32
+                    color: Theme.inputBackground
+                    radius: 6
+                    
+                    RowLayout {
+                        anchors.fill: parent
+                        spacing: 2
+                        anchors.margins: 2
+                        
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            radius: 4
+                            color: root.activeTab === "processes" ? Theme.cardBackground : "transparent"
+                            border.color: root.activeTab === "processes" ? Theme.borderDefault : "transparent"
+                            border.width: 1
+                            
+                            Text {
+                                anchors.centerIn: parent
+                                text: "Processes"
+                                color: root.activeTab === "processes" ? Theme.textPrimary : Theme.textDim
+                                font.pixelSize: 12
+                                font.weight: root.activeTab === "processes" ? Font.DemiBold : Font.Normal
+                            }
+                            
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    root.activeTab = "processes"
+                                    processList.currentIndex = -1
+                                }
+                            }
+                        }
+                        
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            radius: 4
+                            color: root.activeTab === "devices" ? Theme.cardBackground : "transparent"
+                            border.color: root.activeTab === "devices" ? Theme.borderDefault : "transparent"
+                            border.width: 1
+                            
+                            Text {
+                                anchors.centerIn: parent
+                                text: "Audio Devices"
+                                color: root.activeTab === "devices" ? Theme.textPrimary : Theme.textDim
+                                font.pixelSize: 12
+                                font.weight: root.activeTab === "devices" ? Font.DemiBold : Font.Normal
+                            }
+                            
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    root.activeTab = "devices"
+                                    processList.currentIndex = -1
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -116,7 +200,7 @@ Popup {
                     }
 
                     Text {
-                        text: "Search running processes..."
+                        text: root.activeTab === "processes" ? "Search running processes..." : "Search audio devices..."
                         color: Theme.textDim
                         font.pixelSize: Theme.fontSizeNormal
                         visible: !searchField.text && !searchField.activeFocus
@@ -135,18 +219,33 @@ Popup {
                 spacing: 4
 
                 model: {
-                    var raw = root.allProcesses
-                    if (!raw || raw.length === 0) return []
                     var q = searchField.text.trim().toLowerCase()
-                    if (!q) return raw
-                    var result = []
-                    for (var i = 0; i < raw.length; i++) {
-                        if (raw[i].name.toLowerCase().indexOf(q) >= 0 ||
-                            raw[i].fullPath.toLowerCase().indexOf(q) >= 0) {
-                            result.push(raw[i])
+                    if (root.activeTab === "processes") {
+                        var raw = root.allProcesses
+                        if (!raw || raw.length === 0) return []
+                        if (!q) return raw
+                        var result = []
+                        for (var i = 0; i < raw.length; i++) {
+                            if (raw[i].name.toLowerCase().indexOf(q) >= 0 ||
+                                raw[i].fullPath.toLowerCase().indexOf(q) >= 0) {
+                                result.push(raw[i])
+                            }
                         }
+                        return result
+                    } else {
+                        var rawDevs = Backend.getAudioOutputDevices()
+                        if (!rawDevs || rawDevs.length === 0) return []
+                        var resultDevs = []
+                        for (var d = 0; d < rawDevs.length; d++) {
+                            var dev = rawDevs[d]
+                            if (root.sourceModel && !root.sourceModel.hasDevice(dev.description)) {
+                                if (!q || dev.description.toLowerCase().indexOf(q) >= 0) {
+                                    resultDevs.push(dev)
+                                }
+                            }
+                        }
+                        return resultDevs
                     }
-                    return result
                 }
 
                 delegate: Rectangle {
@@ -175,26 +274,33 @@ Popup {
                         spacing: 10
 
                         Image {
-                            source: modelData.fullPath ? "image://fileicon/" + encodeURIComponent(modelData.fullPath) : ""
+                            source: {
+                                if (root.activeTab === "devices") {
+                                    return "image://icons/volume-2?color=%23b0b0b0"
+                                }
+                                return modelData.fullPath ? "image://fileicon/" + encodeURIComponent(modelData.fullPath) : ""
+                            }
                             width: 20
                             height: 20
                             fillMode: Image.PreserveAspectFit
                             Layout.preferredWidth: 20
                             Layout.preferredHeight: 20
-                            opacity: modelData.fullPath ? 0.9 : 0.2
+                            opacity: (root.activeTab === "devices" || modelData.fullPath) ? 0.9 : 0.2
                         }
 
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 1
                             Text {
-                                text: modelData.name
+                                text: root.activeTab === "devices" ? modelData.description : modelData.name
                                 color: Theme.textPrimary
                                 font.pixelSize: Theme.fontSizeNormal
                                 font.weight: Font.Medium
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
                             }
                             Text {
-                                text: modelData.fullPath
+                                text: root.activeTab === "devices" ? (modelData.isVirtual ? "Virtual Audio Cable" : "Audio Playback Device") : modelData.fullPath
                                 color: Theme.textDim
                                 font.pixelSize: 9
                                 elide: Text.ElideLeft
@@ -204,7 +310,7 @@ Popup {
 
                         Row {
                             id: audioIndicator
-                            visible: !!modelData.isProducingSound
+                            visible: root.activeTab === "processes" && !!modelData.isProducingSound
                             spacing: 2
                             Layout.alignment: Qt.AlignVCenter
                             Layout.rightMargin: 6
@@ -279,6 +385,7 @@ Popup {
     }
 
     function updateAudioStatus() {
+        if (root.activeTab !== "processes") return
         var activeExes = Backend.getProcessesProducingSound()
         var activeSet = {}
         var hasMissingExe = false
@@ -287,7 +394,6 @@ Popup {
             var exe = activeExes[i]
             activeSet[exe] = true
             
-            // Check if this active audio exe is present in our list
             var found = false
             for (var k = 0; k < allProcesses.length; k++) {
                 if (allProcesses[k].name.toLowerCase() === exe) {
@@ -301,8 +407,6 @@ Popup {
         }
 
         if (hasMissingExe) {
-            // A process started producing sound that isn't in our loaded processes list.
-            // Trigger a full refresh (which will reload and sort).
             refresh()
             return
         }
@@ -321,7 +425,6 @@ Popup {
         }
 
         if (changed) {
-            // Re-sort so that currently playing processes move to the top
             updatedList.sort(function(a, b) {
                 if (a.isProducingSound && !b.isProducingSound) return -1;
                 if (!a.isProducingSound && b.isProducingSound) return 1;
@@ -340,6 +443,7 @@ Popup {
     }
 
     onOpened: {
+        activeTab = "processes"
         refresh()
         searchField.text = ""
         processList.currentIndex = -1

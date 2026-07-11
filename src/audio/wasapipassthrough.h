@@ -15,6 +15,7 @@ public:
 
     void start(const QString &inputDeviceDesc, const QString &outputDeviceDesc);
     void stop();
+    void setVolume(float volume);
 
 signals:
     void error(const QString &message);
@@ -23,6 +24,7 @@ private:
     void runPassthrough(const QString &inputDeviceDesc, const QString &outputDeviceDesc);
 
     std::atomic<bool> m_running;
+    std::atomic<float> m_volume;
     QFuture<void> m_future;
 };
 

@@ -17,6 +17,8 @@
 #include "managers/settingsmanager.h"
 #include "models/capturestate.h"
 
+class WasapiPassthrough;
+
 class RecordingManager : public QObject
 {
     Q_OBJECT
@@ -68,9 +70,12 @@ signals:
     void soloChanged(const QString &sourceId, bool solo);
 
 private:
-    void startRecorderForPid(DWORD pid, const QString& sourceId, float volume);
+    void startProcessRecorder(DWORD pid, const QString& sourceId, float volume);
+    void startDeviceRecorder(const QString& deviceName, const QString& sourceId, float volume);
+    void setupRecorder(WasapiRecorder *rec, const QString& sourceId, float volume);
     void updateMuteStates();
     void updateState();
+    void syncDevicePassthroughs();
 
     SettingsManager *m_settings;
     AudioMixer *m_mixer;
@@ -78,6 +83,7 @@ private:
     WavWriter *m_wavWriter;
     QList<WasapiRecorder*> m_activeRecorders;
     QMap<QString, DWORD> m_sourcePids;
+    QMap<QString, WasapiPassthrough*> m_devicePassthroughs;
     QSet<QString> m_soloedSources;
     bool m_replayEnabled;
     CaptureState m_state;
