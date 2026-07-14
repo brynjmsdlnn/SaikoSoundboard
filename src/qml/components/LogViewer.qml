@@ -56,6 +56,19 @@ Rectangle {
                     font.weight: Font.Bold
                 }
 
+                // Open logs folder button
+                SaikoIconButton {
+                    implicitWidth: 26
+                    implicitHeight: 24
+                    isActive: true
+                    tooltipText: "Open logs folder"
+                    tooltipDirection: "right"
+                    iconSource: "image://icons/folder?color=%23b0b0b0"
+                    onClicked: {
+                        Qt.openUrlExternally("file:///" + encodeURI(Backend.logDirectory()))
+                    }
+                }
+
                 Item { Layout.fillWidth: true }
 
                 // Filter combo
@@ -87,8 +100,8 @@ Rectangle {
                     implicitWidth: 26
                     implicitHeight: 24
                     isActive: true
-                    tooltipText: "Clear"
-                    tooltipDirection: "bottom"
+                    tooltipText: "Clear logs"
+                    tooltipDirection: "left"
                     iconSource: "image://icons/trash?color=%23b0b0b0"
                     onClicked: LogModel.clear()
                 }

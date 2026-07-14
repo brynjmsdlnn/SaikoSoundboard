@@ -28,5 +28,5 @@ inline constexpr WindowMetrics kWindowMetrics = {
     /* .resizeBorder  = */ 6,
     /* .titleBarHeight = */ 38,
     /* .buttonWidth   = */ 45,
-    /* .buttonCount   = */ 3,
+    /* .buttonCount   = */ 6,
 };

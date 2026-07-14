@@ -11,6 +11,7 @@
 #include <QTimer>
 #include <QMediaPlayer>
 #include <QAudioOutput>
+#include <QQuickWindow>
 #ifdef Q_OS_WIN
 #include <windows.h>
 #endif
@@ -291,4 +292,23 @@ QString QmlBackend::defaultBaseDirectory() const
 QString QmlBackend::logDirectory() const
 {
     return StoragePaths::logDirectory();
+}
+
+void QmlBackend::toggleMaximize(QQuickWindow *window)
+{
+    if (!window) return;
+#ifdef Q_OS_WIN
+    HWND hwnd = (HWND)window->winId();
+    if (IsZoomed(hwnd)) {
+        PostMessage(hwnd, WM_SYSCOMMAND, SC_RESTORE, 0);
+    } else {
+        PostMessage(hwnd, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
+    }
+#else
+    if (window->visibility() == QWindow::Maximized) {
+        window->showNormal();
+    } else {
+        window->showMaximized();
+    }
+#endif
 }

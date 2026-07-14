@@ -9,15 +9,30 @@ Rectangle {
     property bool startEnabled: true
     property int cardPadding: 12
 
+    property string statusText: "Ready"
+
+    readonly property color statusColor: {
+        var txt = statusText.toLowerCase();
+        if (txt.indexOf("recording") !== -1) {
+            return Theme.accentRed;
+        } else if (txt.indexOf("replay") !== -1 || txt.indexOf("saved") !== -1) {
+            return Theme.accentGreen;
+        } else if (txt.indexOf("failed") !== -1 || txt.indexOf("error") !== -1) {
+            return Theme.destructiveRed;
+        } else if (txt.indexOf("ready") !== -1) {
+            return Theme.textSecondary;
+        } else {
+            return Theme.accentPurple;
+        }
+    }
+
     // Capture mode properties
     property bool modeEnabled: true
     property string captureMode: "global"
 
-    property bool logViewerActive: false
     signal captureModeSelected(string newMode)
-    signal settingsRequested()
-    signal aboutRequested()
-    signal toggleLogViewerRequested()
+    signal settingsRequested
+    signal aboutRequested
 
     implicitHeight: headerContent.implicitHeight + 24
     radius: Theme.cardRadius
@@ -25,8 +40,20 @@ Rectangle {
     color: Theme.appBackground
 
     readonly property var captureModeList: [
-        { label: "System Output (Global)", value: "global", icon: "monitor", modeColor: "#ffffff", index: 0 },
-        { label: "Multi-track (sources)", value: "multi", icon: "layers", modeColor: "#bb86fc", index: 1 }
+        {
+            label: "System Output (Global)",
+            value: "global",
+            icon: "monitor",
+            modeColor: "#ffffff",
+            index: 0
+        },
+        {
+            label: "Multi-track (sources)",
+            value: "multi",
+            icon: "layers",
+            modeColor: "#bb86fc",
+            index: 1
+        }
     ]
 
     // Properties for icon cycling animation
@@ -71,8 +98,16 @@ Rectangle {
                 SequentialAnimation on opacity {
                     running: headerIcon.isActive
                     loops: Animation.Infinite
-                    NumberAnimation { to: 0.2; duration: 800; easing.type: Easing.InOutQuad }
-                    NumberAnimation { to: 1.0; duration: 800; easing.type: Easing.InOutQuad }
+                    NumberAnimation {
+                        to: 0.2
+                        duration: 800
+                        easing.type: Easing.InOutQuad
+                    }
+                    NumberAnimation {
+                        to: 1.0
+                        duration: 800
+                        easing.type: Easing.InOutQuad
+                    }
                 }
 
                 onIsActiveChanged: {
@@ -81,29 +116,35 @@ Rectangle {
                 }
             }
 
-            Text {
-                text: "Saiko Soundboard"
-                color: Theme.textPrimary
-                font.pixelSize: 13
-                font.weight: Font.DemiBold
-            }
-
-            Rectangle {
-                height: 16
-                implicitWidth: versionText.implicitWidth + 8
-                color: Qt.rgba(Theme.accentTeal.r, Theme.accentTeal.g, Theme.accentTeal.b, 0.15)
-                border.color: Theme.accentTeal
-                border.width: 1
-                radius: 8
+            RowLayout {
+                spacing: 8
                 Layout.alignment: Qt.AlignVCenter
 
                 Text {
-                    id: versionText
-                    anchors.centerIn: parent
-                    text: "v0.2.0"
-                    color: Theme.accentTeal
+                    text: "Audio Capture"
+                    color: Theme.textPrimary
+                    font.pixelSize: 13
+                    font.weight: Font.DemiBold
+                    Layout.alignment: Qt.AlignVCenter
+                }
+
+                // Vertical Divider Line
+                Rectangle {
+                    width: 1
+                    height: 10
+                    color: Qt.alpha(Theme.textPrimary, 0.2) // Subtle divider color
+                    Layout.alignment: Qt.AlignVCenter
+                }
+
+                Text {
+                    id: statusTextLabel
+                    text: root.statusText.toUpperCase()
+                    color: root.statusColor
                     font.pixelSize: 9
                     font.weight: Font.Bold
+                    Layout.alignment: Qt.AlignVCenter
+
+                    Behavior on color { ColorAnimation { duration: 150 } }
                 }
             }
         }
@@ -131,10 +172,16 @@ Rectangle {
                 clip: true
 
                 Behavior on Layout.preferredWidth {
-                    NumberAnimation { duration: 250; easing.type: Easing.InOutQuad }
+                    NumberAnimation {
+                        duration: 250
+                        easing.type: Easing.InOutQuad
+                    }
                 }
                 Behavior on opacity {
-                    NumberAnimation { duration: 200; easing.type: Easing.InOutQuad }
+                    NumberAnimation {
+                        duration: 200
+                        easing.type: Easing.InOutQuad
+                    }
                 }
 
                 MouseArea {
@@ -169,7 +216,7 @@ Rectangle {
                 id: captureModeBtn
                 isActive: root.modeEnabled
                 tooltipText: "" // Disabled since we show the label on hover instead
-                
+
                 iconSource: {
                     if (root._showWaveformIcon) {
                         return "image://icons/audio-waveform?color=%23b0b0b0";
@@ -179,30 +226,6 @@ Rectangle {
                     return "image://icons/" + item.icon + "?color=%23" + item.modeColor.replace("#", "");
                 }
                 onClicked: captureModeMenu.openRelativeTo(captureModeBtn, root)
-            }
-
-            SaikoIconButton {
-                iconSource: "image://icons/cog?color=%23b0b0b0"
-                tooltipText: "Settings"
-                tooltipDirection: "bottom"
-                onClicked: root.settingsRequested()
-            }
-
-            SaikoIconButton {
-                iconSource: "image://icons/info?color=%23b0b0b0"
-                tooltipText: "About"
-                tooltipDirection: "bottom"
-                onClicked: root.aboutRequested()
-            }
-
-            // Log viewer toggle button
-            SaikoIconButton {
-                id: logViewerBtn
-                isActive: true
-                tooltipText: root.logViewerActive ? "Hide Logs" : "Show Logs"
-                tooltipDirection: "bottom"
-                iconSource: "image://icons/list?color=" + encodeURIComponent(root.logViewerActive ? Theme.accentPurple : Theme.textDim)
-                onClicked: root.toggleLogViewerRequested()
             }
         }
     }

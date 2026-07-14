@@ -13,6 +13,10 @@ Rectangle {
     property bool isActive: true
     property color hoverColor: "#1a1a1a"
     property color hoverBorderColor: Theme.borderHover
+    property string textIcon: ""
+    property string textIconFontFamily: "Segoe UI"
+    property int textIconSize: 12
+    property var textIconColor: undefined // overrides default color when set (set to a color value)
 
     readonly property alias containsMouse: area.containsMouse
 
@@ -56,8 +60,8 @@ Rectangle {
     // ── Animated Icon ──────────────────────────────────────────────
     Item {
         anchors.centerIn: parent
-        width: 14
-        height: 14
+        width: btn.textIcon !== "" ? parent.width : 14
+        height: btn.textIcon !== "" ? parent.height : 14
 
         scale: area.pressed ? 0.75 : 1.0
         Behavior on scale {
@@ -73,7 +77,7 @@ Rectangle {
             anchors.fill: parent
             sourceSize: Qt.size(14, 14)
             opacity: 0
-            visible: opacity > 0
+            visible: opacity > 0 && btn.textIcon === ""
         }
 
         // Active icon layer (new icon during cross-fade, current icon otherwise)
@@ -84,6 +88,19 @@ Rectangle {
             source: (btn.hoveredIconSource && area.containsMouse)
                 ? btn.hoveredIconSource
                 : btn.iconSource
+            visible: btn.textIcon === ""
+        }
+
+        Text {
+            id: activeTextIcon
+            anchors.fill: parent
+            text: btn.textIcon
+            font.pixelSize: btn.textIconSize
+            font.family: btn.textIconFontFamily
+            color: btn.textIconColor !== undefined ? btn.textIconColor : (area.containsMouse ? Theme.textPrimary : Theme.textSecondary)
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            visible: btn.textIcon !== ""
         }
 
         // Explicit property animations for smooth cross-fade

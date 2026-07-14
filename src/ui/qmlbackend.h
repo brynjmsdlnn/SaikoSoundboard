@@ -17,6 +17,7 @@
 class QMediaPlayer;
 class QAudioOutput;
 class QTimer;
+class QQuickWindow;
 
 class QmlBackend : public QObject
 {
@@ -74,6 +75,7 @@ public:
     Q_INVOKABLE void stopPlayback();
     Q_INVOKABLE QString renameRecordingFile(const QString &oldPath, const QString &dir, const QString &newName);
     Q_INVOKABLE void loadRecordingWaveform(const QString &filePath);
+    Q_INVOKABLE void toggleMaximize(QQuickWindow *window);
 
     // Path helpers (delegates to StoragePaths for QML consumption)
     Q_INVOKABLE QString generateRecordingFilePath() const;

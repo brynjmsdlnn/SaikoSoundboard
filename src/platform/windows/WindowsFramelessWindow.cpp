@@ -152,6 +152,10 @@ bool WindowsFramelessWindow::handleGetMinMaxInfo(MSG *msg, qintptr *result)
     if (monitor) {
         MONITORINFO mi = { sizeof(mi) };
         if (GetMonitorInfoW(monitor, &mi)) {
+            mmi->ptMaxSize.x = (mi.rcWork.right  - mi.rcWork.left);
+            mmi->ptMaxSize.y = (mi.rcWork.bottom - mi.rcWork.top);
+            mmi->ptMaxPosition.x = mi.rcWork.left;
+            mmi->ptMaxPosition.y = mi.rcWork.top;
             mmi->ptMaxTrackSize.x = (mi.rcWork.right  - mi.rcWork.left);
             mmi->ptMaxTrackSize.y = (mi.rcWork.bottom - mi.rcWork.top);
         }

@@ -21,6 +21,9 @@
 
 int main(int argc, char *argv[])
 {
+    // Force the basic single-threaded render loop to synchronize window position
+    // updates and frame rendering on Windows. This eliminates drag lag.
+    qputenv("QSG_RENDER_LOOP", "basic");
     qputenv("QT_QUICK_CONTROLS_STYLE", "Basic");
 
     QGuiApplication a(argc, argv);

@@ -22,6 +22,15 @@ Rectangle {
 
     readonly property var targetWindow: Window.window
 
+    signal settingsClicked()
+    signal aboutClicked()
+    signal logViewerClicked()
+
+    property bool logViewerActive: false
+    property bool showDeveloperOptions: false
+
+    readonly property string iconFontFamily: Qt.platform.os === "windows" ? "Segoe MDL2 Assets" : "Segoe UI"
+
     // ── Window dragging + Aero snap + drag-to-restore ────────────────────────
     DragHandler {
         id: dragHandler
@@ -92,10 +101,30 @@ Rectangle {
             font.pixelSize: 12
             font.weight: Font.DemiBold
         }
+
+        Rectangle {
+            height: 16
+            implicitWidth: versionText.implicitWidth + 8
+            color: Qt.rgba(Theme.accentTeal.r, Theme.accentTeal.g, Theme.accentTeal.b, 0.15)
+            border.color: Theme.accentTeal
+            border.width: 1
+            radius: 8
+            Layout.alignment: Qt.AlignVCenter
+
+            Text {
+                id: versionText
+                anchors.centerIn: parent
+                text: "v0.3.0"
+                color: Theme.accentTeal
+                font.pixelSize: 9
+                font.weight: Font.Bold
+            }
+        }
     }
 
     // ── Window control buttons ──────────────────────────────────────────────
     Row {
+        id: windowControls
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.bottom: parent.bottom
@@ -112,10 +141,10 @@ Rectangle {
                 color: closeBtn.hovered ? Theme.destructiveRed : "transparent"
             }
             contentItem: Text {
-                text: "\u2715"
+                text: Qt.platform.os === "windows" ? "\uE8BB" : "\u2715"
                 color: closeBtn.hovered ? "#ffffff" : Theme.textSecondary
-                font.pixelSize: 12
-                font.family: "Segoe UI"
+                font.pixelSize: Qt.platform.os === "windows" ? 10 : 12
+                font.family: titleBar.iconFontFamily
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
@@ -137,21 +166,22 @@ Rectangle {
                 color: maxBtn.hovered ? Qt.rgba(255, 255, 255, 0.08) : "transparent"
             }
             contentItem: Text {
-                text: (titleBar.targetWindow && titleBar.targetWindow.visibility === Window.Maximized) ? "\u{1F5D7}" : "\u{1F5D6}"
+                text: {
+                    var isMax = titleBar.targetWindow && titleBar.targetWindow.visibility === Window.Maximized;
+                    if (Qt.platform.os === "windows") {
+                        return isMax ? "\uE923" : "\uE922";
+                    } else {
+                        return isMax ? "\u{1F5D7}" : "\u{1F5D6}";
+                    }
+                }
                 color: maxBtn.hovered ? Theme.textPrimary : Theme.textSecondary
-                font.pixelSize: 11
-                font.family: "Segoe UI"
+                font.pixelSize: Qt.platform.os === "windows" ? 10 : 11
+                font.family: titleBar.iconFontFamily
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
             onClicked: {
-                var win = titleBar.targetWindow;
-                if (!win) return;
-                if (win.visibility === Window.Maximized) {
-                    win.showNormal();
-                } else {
-                    win.showMaximized();
-                }
+                Backend.toggleMaximize(titleBar.targetWindow);
             }
         }
 
@@ -166,10 +196,10 @@ Rectangle {
                 color: minBtn.hovered ? Qt.rgba(255, 255, 255, 0.08) : "transparent"
             }
             contentItem: Text {
-                text: "\u{1F5D5}"
+                text: Qt.platform.os === "windows" ? "\uE921" : "\u{1F5D5}"
                 color: minBtn.hovered ? Theme.textPrimary : Theme.textSecondary
-                font.pixelSize: 10
-                font.family: "Segoe UI"
+                font.pixelSize: Qt.platform.os === "windows" ? 10 : 10
+                font.family: titleBar.iconFontFamily
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
@@ -180,6 +210,74 @@ Rectangle {
             }
         }
     }
+
+    // ── Utility buttons (Logs, Settings, About) ─────────────────────────────
+    Row {
+        id: utilityButtons
+        anchors.right: parent.right
+        anchors.rightMargin: 143 // 3 window buttons * 45px + 8px gap
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 6
+
+        SaikoIconButton {
+            id: logViewerBtn
+            visible: titleBar.showDeveloperOptions
+            scale: 0
+            opacity: 0
+            textIcon: Qt.platform.os === "windows" ? "\uE81C" : "\u2630"
+            textIconFontFamily: titleBar.iconFontFamily
+            textIconSize: Qt.platform.os === "windows" ? 11 : 13
+            tooltipText: titleBar.logViewerActive ? "Hide Logs" : "Show Logs"
+            tooltipDirection: "bottom"
+            textIconColor: titleBar.logViewerActive ? Theme.accentPurple : undefined
+            onClicked: titleBar.logViewerClicked()
+
+            Behavior on scale {
+                NumberAnimation {
+                    duration: 450
+                    easing.type: Easing.OutBack
+                    easing.overshoot: 1.8
+                }
+            }
+
+            Behavior on opacity {
+                NumberAnimation { duration: 350 }
+            }
+
+            onVisibleChanged: {
+                if (visible) {
+                    scale = 0;
+                    opacity = 0;
+                    Qt.callLater(function () {
+                        logViewerBtn.scale = 1;
+                        logViewerBtn.opacity = 1;
+                    });
+                }
+            }
+        }
+
+        SaikoIconButton {
+            id: settingsBtn
+            textIcon: Qt.platform.os === "windows" ? "\uE713" : "\u2699"
+            textIconFontFamily: titleBar.iconFontFamily
+            textIconSize: Qt.platform.os === "windows" ? 11 : 13
+            tooltipText: "Settings"
+            tooltipDirection: "bottom"
+            onClicked: titleBar.settingsClicked()
+        }
+
+        SaikoIconButton {
+            id: aboutBtn
+            textIcon: Qt.platform.os === "windows" ? "\uE946" : "\u2139"
+            textIconFontFamily: titleBar.iconFontFamily
+            textIconSize: Qt.platform.os === "windows" ? 11 : 13
+            tooltipText: "About"
+            tooltipDirection: "bottom"
+            onClicked: titleBar.aboutClicked()
+        }
+    }
+
+
 
     // ── Bottom separator line ────────────────────────────────────────────────
     Rectangle {

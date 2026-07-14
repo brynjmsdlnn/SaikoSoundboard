@@ -17,6 +17,32 @@ Window {
     modality: Qt.ApplicationModal
     flags: Qt.Dialog | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
 
+    signal devModeTriggered()
+
+    // ── Type "saiko" to reveal the developer log viewer button ──────────────
+    property string __typedSequence: ""
+
+    Item {
+        id: keyHandler
+        anchors.fill: parent
+        focus: true
+        Keys.onPressed: function (event) {
+            var ch = event.text.toLowerCase();
+            if (ch.length !== 1) return;
+
+            // Track last 5 keystrokes
+            root.__typedSequence = (root.__typedSequence + ch).slice(-5);
+
+            if (root.__typedSequence === "saiko") {
+                root.__typedSequence = "";
+                root.devModeTriggered();
+            }
+        }
+
+        // Grab focus when the dialog opens so typing starts immediately
+        Component.onCompleted: forceActiveFocus()
+    }
+
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 24
@@ -67,7 +93,7 @@ Window {
                         Text {
                             id: versionText
                             anchors.centerIn: parent
-                            text: "v0.2.0 Beta"
+                            text: "v0.3.0 Beta"
                             color: Theme.accentTeal
                             font.pixelSize: 11
                             font.weight: Font.Bold

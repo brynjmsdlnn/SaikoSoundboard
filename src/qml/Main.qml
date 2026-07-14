@@ -157,6 +157,11 @@ ApplicationWindow {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
+        logViewerActive: app.showLogViewer
+        showDeveloperOptions: app.devModeEnabled
+        onSettingsClicked: settingsDialog.show()
+        onAboutClicked: aboutDialog.show()
+        onLogViewerClicked: app.toggleLogViewer()
     }
 
     // ============================================================
@@ -224,8 +229,6 @@ ApplicationWindow {
                     app.lastPlaybackType = Backend.PlaybackReplay;
                     Backend.loadRecordingWaveform(path);
                 }
-                logViewerActive: app.showLogViewer
-                onToggleLogViewerRequested: app.toggleLogViewer()
                 onSettingsRequested: settingsDialog.show()
                 onAboutRequested: aboutDialog.show()
                 onAssignToSlotRequested: assignToSlotDialog.show()
@@ -302,6 +305,7 @@ ApplicationWindow {
     }
 
     property bool showLogViewer: false
+    property bool devModeEnabled: false
     property int folderPickerTarget: 0
 
     function toggleLogViewer() {
@@ -368,6 +372,10 @@ ApplicationWindow {
 
     AboutDialog {
         id: aboutDialog
+        onDevModeTriggered: {
+            app.devModeEnabled = true;
+            aboutDialog.close();
+        }
     }
 
     LogWindow {
