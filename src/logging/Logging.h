@@ -8,12 +8,11 @@ namespace Logging {
 
 // Initializes the logging system. Must be called once after QGuiApplication
 // construction, before any LOG_*() macro is used.
+// Delegates to Logger::initialize() which owns all sink setup.
 void initialize(LogLevel minimumLevel = LogLevel::Debug) noexcept;
 
 // Shuts down the logging system. Safe to call multiple times.
-// Currently a no-op placeholder: the logging subsystem has no resources
-// that require explicit teardown. Future phases (FileSink, spdlog) will
-// add flush-and-close logic here.
+// Delegates to Logger::shutdown() which owns all sink teardown.
 void shutdown() noexcept;
 
 } // namespace Logging

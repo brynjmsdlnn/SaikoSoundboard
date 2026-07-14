@@ -60,7 +60,20 @@ void Logger::log(LogLevel level,
     record.threadId  = std::this_thread::get_id();
 
     m_console.write(record);
+    m_file.write(record);
     emit logRecordCreated(record);
+}
+
+void Logger::initialize(LogLevel level)
+{
+    ConsoleSink::tryEnableColors();
+    setMinimumLevel(level);
+    m_file.open();
+}
+
+void Logger::shutdown()
+{
+    m_file.close();
 }
 
 } // namespace Logging

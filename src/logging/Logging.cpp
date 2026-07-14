@@ -1,7 +1,6 @@
 #include "Logging.h"
-#include "ConsoleSink.h"
-#include "Logger.h"
 #include "LogRecord.h"
+#include "Logger.h"
 
 #include <QMetaType>
 
@@ -14,16 +13,12 @@ void initialize(LogLevel minimumLevel) noexcept
     // (required when Logger::log() is called from background threads).
     qRegisterMetaType<LogRecord>("Saiko::Logging::LogRecord");
 
-    ConsoleSink::tryEnableColors();
-    Logger::instance().setMinimumLevel(minimumLevel);
+    Logger::instance().initialize(minimumLevel);
 }
 
 void shutdown() noexcept
 {
-    // No-op: the logging subsystem has no resources that require
-    // explicit teardown in the current phase. This function exists
-    // so future phases (FileSink flush/close, spdlog shutdown) have
-    // a defined call site without changing the public API.
+    Logger::instance().shutdown();
 }
 
 } // namespace Logging

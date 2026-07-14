@@ -1,11 +1,13 @@
 # ------------------------------------------------------------------
 # SaikoLogging — lightweight logging foundation
 #
-# Phase 1: Logger singleton + ConsoleSink + macros.
+# Logger singleton dispatches to ConsoleSink, FileSink, and LogModel.
 # No backend abstraction, no dynamic registration.
 # ------------------------------------------------------------------
 
 add_library(SaikoLogging STATIC
+    FileSink.cpp
+    FileSink.h
     Logger.cpp
     Logger.h
     ConsoleSink.cpp
@@ -28,4 +30,6 @@ target_include_directories(SaikoLogging
 target_link_libraries(SaikoLogging
     PUBLIC
         Qt${QT_VERSION_MAJOR}::Core
+    PRIVATE
+        SaikoStorage
 )

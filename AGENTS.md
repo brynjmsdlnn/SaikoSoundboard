@@ -91,8 +91,14 @@ Default section order:
 ### `src/qml/`
 QML UI layer — 20 QML files + 1 JS utility. All part of the `Saiko 1.0` module. Uses `Theme` singleton, `SaikoButton`, `utils.js`, `AboutDialog`. See `src/qml/AGENTS.md` for conventions.
 
+### `src/logging/`
+Logging subsystem — Logger singleton, ConsoleSink, FileSink (session log with QElapsedTimer timing), LogModel (QML-bound log buffer), LogRecord, LogLevel, LogCategory, LogMacros. See `src/logging/AGENTS.md` for architecture and lifecycle.
+
 ### `src/core/`
 Core layer — pure business logic in `domain/` (no Qt, no platform deps) and platform adapters in `adapters/` (Windows API). See `src/core/AGENTS.md` for purity rules.
+
+### `src/storage/`
+Filesystem path utility — stateless `StoragePaths` class for all path construction (settings, recordings, replays, temp files, logs). No file I/O. See `src/storage/AGENTS.md` for contracts.
 
 ### `src/audio/`
 Audio engine — mixer, WASAPI recorder, WASAPI passthrough, sound player, replay buffer, waveform generator, WAV writer. Standard C++ with Qt Multimedia and WASAPI. No child AGENTS.md — owned by root.

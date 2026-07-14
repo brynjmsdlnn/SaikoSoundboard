@@ -90,7 +90,7 @@ void LogModel::clear()
 
 void LogModel::onLogRecord(const LogRecord &record)
 {
-    // ── Phase 1: store record under mutex ──
+    // ── Store record under mutex ──
     bool passes = false;
     bool isWrapped = false;
     int insertRow = -1;
@@ -123,7 +123,7 @@ void LogModel::onLogRecord(const LogRecord &record)
         return;
     }
 
-    // ── Phase 2: notify UI without mutex ──
+    // ── Notify UI without mutex ──
     if (isWrapped) {
         rebuildFilter();
     } else {
@@ -134,7 +134,7 @@ void LogModel::onLogRecord(const LogRecord &record)
 
     emit countChanged();
 
-    // ── Phase 3: advance ring-buffer index after UI notification ──
+    // ── Advance ring-buffer index after UI notification ──
     if (isWrapped) {
         QMutexLocker lock(&m_mutex);
         m_nextIndex = (m_nextIndex + 1) % kMaxEntries;
