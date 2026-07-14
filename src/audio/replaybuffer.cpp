@@ -1,5 +1,5 @@
 #include "audio/replaybuffer.h"
-#include <QDebug>
+#include "logging/LogMacros.h"
 #include <cstring>
 
 ReplayBuffer::ReplayBuffer(QObject *parent)
@@ -38,7 +38,9 @@ void ReplayBuffer::updateMaxBytes()
     
     qint64 maxBytes = bytesPerSec * m_durationSeconds;
     m_ringBuffer.setMaxBytes(static_cast<size_t>(maxBytes));
-    qDebug() << "ReplayBuffer: Max size updated to" << maxBytes << "bytes (" << m_durationSeconds << "s)";
+    LOG_DEBUG(LogCategory::Replay,
+             QStringLiteral("ReplayBuffer: Max size updated to %1 bytes (%2s)")
+                 .arg(maxBytes).arg(m_durationSeconds));
 }
 
 void ReplayBuffer::pushPcmChunk(const QByteArray& chunk)

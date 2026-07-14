@@ -1,7 +1,6 @@
 #include "audio/wasapipassthrough.h"
 #include <initguid.h>
 
-#include <QDebug>
 #include <QtConcurrent>
 #include <QThread>
 #include <audioclient.h>

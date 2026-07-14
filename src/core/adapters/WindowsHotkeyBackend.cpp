@@ -1,5 +1,5 @@
 #include "core/adapters/WindowsHotkeyBackend.h"
-#include <QDebug>
+#include "logging/LogMacros.h"
 #include <windows.h>
 
 namespace Saiko {
@@ -40,8 +40,10 @@ bool WindowsHotkeyBackend::registerHotkey(int id, const std::string& keySequence
     if (vk == 0) return false;
 
     if (!RegisterHotKey(NULL, id, modifiers, vk)) {
-        qWarning() << "WindowsHotkeyBackend: Failed to register hotkey"
-                   << QString::fromStdString(keySequence) << "Error:" << GetLastError();
+        LOG_WARN(LogCategory::Hotkeys,
+                 QStringLiteral("WindowsHotkeyBackend: Failed to register hotkey %1 Error: %2")
+                     .arg(QString::fromStdString(keySequence))
+                     .arg(GetLastError()));
         return false;
     }
 

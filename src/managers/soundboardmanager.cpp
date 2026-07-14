@@ -1,6 +1,6 @@
 #include "soundboardmanager.h"
+#include "logging/LogMacros.h"
 #include <QUrl>
-#include <QDebug>
 #include <QMediaDevices>
 #include <QFuture>
 #include <QFutureWatcher>
@@ -168,10 +168,12 @@ void SoundboardManager::playPlayer(const QString &id)
                 effectiveMode = m_settings->defaultPlaybackMode();
             }
 
-            qDebug().nospace() << "[SoundboardManager] playPlayer id=" << id
-                               << " name=\"" << slot->name
-                               << "\" slotMode=" << slot->playbackMode
-                               << " effectiveMode=" << effectiveMode;
+            LOG_DEBUG(LogCategory::Playback,
+                     QStringLiteral("[SoundboardManager] playPlayer id=%1 name=\"%2\" slotMode=%3 effectiveMode=%4")
+                         .arg(id)
+                         .arg(slot->name)
+                         .arg(static_cast<int>(slot->playbackMode))
+                         .arg(static_cast<int>(effectiveMode)));
 
             player->play(effectiveMode);
         }
@@ -331,8 +333,11 @@ void SoundboardManager::setPlayerPlaybackMode(const QString &id, PlaybackMode mo
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
         if (slot->locked) return;
-        qDebug().nospace() << "[SoundboardManager] setPlayerPlaybackMode id=" << id
-                           << " name=\"" << slot->name << "\" newMode=" << mode;
+        LOG_DEBUG(LogCategory::Playback,
+                 QStringLiteral("[SoundboardManager] setPlayerPlaybackMode id=%1 name=\"%2\" newMode=%3")
+                     .arg(id)
+                     .arg(slot->name)
+                     .arg(static_cast<int>(mode)));
         slot->playbackMode = mode;
         if (SoundPlayer *player = getPlayer(id)) {
             PlaybackMode effective = (mode == PlaybackMode::Default) ? m_settings->defaultPlaybackMode() : mode;
@@ -513,7 +518,8 @@ void SoundboardManager::updatePassthroughEngine()
 
     m_passthrough = new WasapiPassthrough(this);
     connect(m_passthrough, &WasapiPassthrough::error, this, [](const QString &msg) {
-        qWarning() << "Passthrough:" << msg;
+        LOG_WARN(LogCategory::Audio,
+                 QStringLiteral("Passthrough: %1").arg(msg));
     });
     m_passthrough->start(voiceDevName, outputDevName);
 }

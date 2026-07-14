@@ -2,8 +2,8 @@
 #include <mmdeviceapi.h>
 #include <audiopolicy.h>
 #include <psapi.h>
+#include "logging/LogMacros.h"
 #include <QFileInfo>
-#include <QDebug>
 
 namespace Saiko {
 namespace Adapters {
@@ -15,7 +15,9 @@ bool WindowsAudioSessionController::setAbsoluteMuteExcept(const QSet<QString>& e
     IMMDeviceEnumerator* pEnumerator = NULL;
     hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
     if (FAILED(hr)) {
-        qDebug() << "WASAPI: CoCreateInstance MMDeviceEnumerator failed. hr = 0x" << QString::number(hr, 16);
+        LOG_WARN(LogCategory::Audio,
+                 QStringLiteral("WASAPI: CoCreateInstance MMDeviceEnumerator failed. hr = 0x%1")
+                     .arg(QString::number(hr, 16)));
         return false;
     }
     
@@ -23,7 +25,9 @@ bool WindowsAudioSessionController::setAbsoluteMuteExcept(const QSet<QString>& e
     hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
     pEnumerator->Release();
     if (FAILED(hr)) {
-        qDebug() << "WASAPI: GetDefaultAudioEndpoint failed. hr = 0x" << QString::number(hr, 16);
+        LOG_WARN(LogCategory::Audio,
+                 QStringLiteral("WASAPI: GetDefaultAudioEndpoint failed. hr = 0x%1")
+                     .arg(QString::number(hr, 16)));
         return false;
     }
     
@@ -31,7 +35,9 @@ bool WindowsAudioSessionController::setAbsoluteMuteExcept(const QSet<QString>& e
     hr = pDevice->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, NULL, (void**)&pSessionManager);
     pDevice->Release();
     if (FAILED(hr)) {
-        qDebug() << "WASAPI: Activate IAudioSessionManager2 failed. hr = 0x" << QString::number(hr, 16);
+        LOG_WARN(LogCategory::Audio,
+                 QStringLiteral("WASAPI: Activate IAudioSessionManager2 failed. hr = 0x%1")
+                     .arg(QString::number(hr, 16)));
         return false;
     }
     
@@ -39,7 +45,9 @@ bool WindowsAudioSessionController::setAbsoluteMuteExcept(const QSet<QString>& e
     hr = pSessionManager->GetSessionEnumerator(&pSessionEnumerator);
     pSessionManager->Release();
     if (FAILED(hr)) {
-        qDebug() << "WASAPI: GetSessionEnumerator failed. hr = 0x" << QString::number(hr, 16);
+        LOG_WARN(LogCategory::Audio,
+                 QStringLiteral("WASAPI: GetSessionEnumerator failed. hr = 0x%1")
+                     .arg(QString::number(hr, 16)));
         return false;
     }
     
@@ -90,7 +98,9 @@ bool WindowsAudioSessionController::setAbsoluteMuteExcept(const QSet<QString>& e
                         
                         hr = pSimpleVolume->SetMute(shouldMute, NULL);
                         if (FAILED(hr)) {
-                            qDebug() << "WASAPI: Failed to set mute state for PID" << sessionPid << "to" << shouldMute;
+                            LOG_WARN(LogCategory::Audio,
+                                     QStringLiteral("WASAPI: Failed to set mute state for PID %1 to %2")
+                                         .arg(sessionPid).arg(shouldMute));
                         }
                         pSimpleVolume->Release();
                     }

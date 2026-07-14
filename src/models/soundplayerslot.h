@@ -1,6 +1,7 @@
 #ifndef SOUNDPLAYERSLOT_H
 #define SOUNDPLAYERSLOT_H
 
+#include "logging/LogMacros.h"
 #include <QString>
 #include <QJsonObject>
 #include <QUuid>
@@ -79,7 +80,8 @@ inline PlaybackMode stringToPlaybackMode(const QString& str) {
     if (str == "QueuedSequential") return PlaybackMode::QueuedSequential;
     if (str == "LayeredCutAll") return PlaybackMode::LayeredCutAll;
     if (str == "LayeredRingOut") return PlaybackMode::LayeredRingOut;
-    qWarning() << "Unknown PlaybackMode string:" << str << "— falling back to Default";
+    LOG_WARN(LogCategory::Settings,
+             QStringLiteral("Unknown PlaybackMode string: %1 \u2014 falling back to Default").arg(str));
     return PlaybackMode::Default;
 }
 

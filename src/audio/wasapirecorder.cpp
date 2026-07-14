@@ -1,7 +1,7 @@
 #include "audio/wasapirecorder.h"
 #include <initguid.h> // Must remain at the top before GUID usage to force local instantiation
 
-#include <QDebug>
+#include "logging/LogMacros.h"
 #include <QtConcurrent>
 #include <QElapsedTimer>
 #include <QThread>
@@ -99,7 +99,9 @@ public:
         HRESULT hrActivate = S_OK;
         IUnknown *punkAudioInterface = NULL;
         m_hr = operation->GetActivateResult(&hrActivate, &punkAudioInterface);
-        qDebug() << "WASAPI: ActivateCompleted callback. GetActivateResult hr =" << m_hr << "device activation hr =" << hrActivate;
+        LOG_DEBUG(LogCategory::Audio,
+                 QStringLiteral("WASAPI: ActivateCompleted callback. GetActivateResult hr = %1 device activation hr = %2")
+                     .arg(m_hr).arg(hrActivate));
         if (SUCCEEDED(m_hr) && SUCCEEDED(hrActivate)) {
             m_audioInterface = punkAudioInterface;
         } else {
@@ -251,23 +253,28 @@ void WasapiRecorder::runCapture()
     DWORD flags = AUDCLNT_STREAMFLAGS_LOOPBACK | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY;
 
     if (m_processId == 0 && !m_deviceName.isEmpty()) {
-        qDebug() << "WASAPI: Attempting device-specific loopback audio capture for device:" << m_deviceName;
+        LOG_DEBUG(LogCategory::Audio,
+                 QStringLiteral("WASAPI: Attempting device-specific loopback audio capture for device: %1").arg(m_deviceName));
         IMMDevice *pDevice = findRecorderDeviceByDesc(eRender, m_deviceName);
         if (pDevice) {
             HRESULT hr = pDevice->Activate(IID_IAudioClient, CLSCTX_ALL, NULL, (void**)&pAudioClient);
             if (SUCCEEDED(hr)) {
-                qDebug() << "WASAPI: Device-specific Audio Client successfully activated.";
+                LOG_DEBUG(LogCategory::Audio,
+                         QStringLiteral("WASAPI: Device-specific Audio Client successfully activated."));
             } else {
-                qDebug() << "WASAPI: Failed to activate device-specific Audio Client. hr =" << hr;
+                LOG_WARN(LogCategory::Audio,
+                        QStringLiteral("WASAPI: Failed to activate device-specific Audio Client. hr = %1").arg(hr));
             }
             pDevice->Release();
         } else {
-            qDebug() << "WASAPI: Could not find target device for loopback:" << m_deviceName;
+            LOG_WARN(LogCategory::Audio,
+                    QStringLiteral("WASAPI: Could not find target device for loopback: %1").arg(m_deviceName));
         }
     }
 
     if (m_processId != 0) {
-        qDebug() << "WASAPI: Attempting per-process audio capture for PID:" << m_processId;
+        LOG_DEBUG(LogCategory::Audio,
+                 QStringLiteral("WASAPI: Attempting per-process audio capture for PID: %1").arg(m_processId));
         HMODULE hLib = LoadLibraryA("mmdevapi.dll");
         if (hLib) {
             auto pActivateFn = (ActivateAudioInterfaceAsyncPtr)GetProcAddress(hLib, "ActivateAudioInterfaceAsync");
@@ -289,35 +296,43 @@ void WasapiRecorder::runCapture()
                 // BUG FIX 1: Pass IID_IAudioClient instead of IID_IActivateAudioInterfaceCompletionHandler
                 HRESULT hr = pActivateFn(L"VAD\\Process_Loopback", IID_IAudioClient, &prop, handler, &operation);
                 if (SUCCEEDED(hr)) {
-                    qDebug() << "WASAPI: ActivateAudioInterfaceAsync operation started successfully. Waiting for callback...";
+                    LOG_DEBUG(LogCategory::Audio,
+                             QStringLiteral("WASAPI: ActivateAudioInterfaceAsync operation started successfully. Waiting for callback..."));
                     if (WaitForSingleObject(handler->GetEvent(), 5000) == WAIT_OBJECT_0) {
                         HRESULT hrResult = handler->GetResult(&pAudioClient);
                         if (SUCCEEDED(hrResult)) {
-                            qDebug() << "WASAPI: Per-process Audio Client successfully activated.";
+                            LOG_DEBUG(LogCategory::Audio,
+                                     QStringLiteral("WASAPI: Per-process Audio Client successfully activated."));
                             // Keep loopback flags!
                         } else {
-                            qDebug() << "WASAPI: Failed to get activated Audio Client interface. hr =" << hrResult;
+                            LOG_WARN(LogCategory::Audio,
+                                    QStringLiteral("WASAPI: Failed to get activated Audio Client interface. hr = %1").arg(hrResult));
                         }
                     } else {
-                        qDebug() << "WASAPI: Timeout waiting for per-process activation callback.";
+                        LOG_WARN(LogCategory::Audio,
+                                QStringLiteral("WASAPI: Timeout waiting for per-process activation callback."));
                     }
                     operation->Release();
                 } else {
-                    qDebug() << "WASAPI: ActivateAudioInterfaceAsync failed with hr =" << hr;
+                    LOG_WARN(LogCategory::Audio,
+                            QStringLiteral("WASAPI: ActivateAudioInterfaceAsync failed with hr = %1").arg(hr));
                 }
                 handler->Release();
             } else {
-                qDebug() << "WASAPI: Failed to get proc address of ActivateAudioInterfaceAsync.";
+                LOG_WARN(LogCategory::Audio,
+                        QStringLiteral("WASAPI: Failed to get proc address of ActivateAudioInterfaceAsync."));
             }
             FreeLibrary(hLib);
         } else {
-            qDebug() << "WASAPI: Failed to load mmdevapi.dll.";
+            LOG_WARN(LogCategory::Audio,
+                    QStringLiteral("WASAPI: Failed to load mmdevapi.dll."));
         }
     }
 
     // System-wide loopback fallback
     if (!pAudioClient) {
-        qDebug() << "WASAPI: Falling back to system-wide loopback recording...";
+        LOG_DEBUG(LogCategory::Audio,
+                 QStringLiteral("WASAPI: Falling back to system-wide loopback recording..."));
         IMMDeviceEnumerator *pEnum = NULL;
         if (SUCCEEDED(CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnum))) {
             IMMDevice *pDevice = NULL;
@@ -377,16 +392,19 @@ void WasapiRecorder::runCapture()
 
     REFERENCE_TIME bufDuration = 0; // Set to 0 to use engine default buffer duration and avoid alignment issues
 
-    qDebug() << "WASAPI: Initializing audio client. ShareMode: Shared, Flags: 0x" << QString::number(flags, 16);
+    LOG_DEBUG(LogCategory::Audio,
+             QStringLiteral("WASAPI: Initializing audio client. ShareMode: Shared, Flags: 0x%1").arg(QString::number(flags, 16)));
     HRESULT hrInit = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, flags, bufDuration, 0, pInitFormat, NULL);
     if (FAILED(hrInit)) {
-        qDebug() << "WASAPI: Initialize with autoconvert flags failed (hr = 0x" << QString::number(hrInit, 16) << "). Retrying with basic loopback flag...";
+        LOG_DEBUG(LogCategory::Audio,
+                 QStringLiteral("WASAPI: Initialize with autoconvert flags failed (hr = 0x%1). Retrying with basic loopback flag...").arg(QString::number(hrInit, 16)));
         flags = AUDCLNT_STREAMFLAGS_LOOPBACK;
         hrInit = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, flags, bufDuration, 0, pInitFormat, NULL);
     }
 
     if (FAILED(hrInit)) {
-        qDebug() << "WASAPI: pAudioClient->Initialize failed with hr = 0x" << QString::number(hrInit, 16);
+        LOG_WARN(LogCategory::Audio,
+                QStringLiteral("WASAPI: pAudioClient->Initialize failed with hr = 0x%1").arg(QString::number(hrInit, 16)));
         CoTaskMemFree(pwfx);
         pAudioClient->Release();
         emit error(QString("Initialization of audio stream failed. hr = 0x%1").arg(hrInit, 8, 16, QChar('0')));

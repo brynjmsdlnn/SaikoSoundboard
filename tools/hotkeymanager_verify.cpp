@@ -4,12 +4,12 @@
 #include "managers/recordingmanager.h"
 #include "managers/settingsmanager.h"
 #include "core/adapters/WindowsHotkeyBackend.h"
+#include "logging/LogMacros.h"
 #include <QCoreApplication>
-#include <QDebug>
 #include <QTimer>
 
 void verifyHotkeyManager() {
-    qDebug() << "Starting HotkeyManager verification...";
+    LOG_DEBUG(LogCategory::General, QStringLiteral("Starting HotkeyManager verification..."));
 
     SettingsManager settings;
     SoundboardManager sb(&settings);
@@ -35,34 +35,34 @@ void verifyHotkeyManager() {
     Action testAction = Action::createPlay("test_id");
 
     if (hotkeyManager.registerHotkey(testKey, testAction)) {
-        qDebug() << "Registration SUCCESS for" << testKey;
+        LOG_DEBUG(LogCategory::General, QStringLiteral("Registration SUCCESS for %1").arg(testKey));
     } else {
-        qDebug() << "Registration FAILED for" << testKey;
+        LOG_DEBUG(LogCategory::General, QStringLiteral("Registration FAILED for %1").arg(testKey));
     }
 
     // Test Duplicate Detection
     if (!hotkeyManager.registerHotkey(testKey, testAction)) {
-        qDebug() << "Duplicate detection SUCCESS (prevented double registration)";
+        LOG_DEBUG(LogCategory::General, QStringLiteral("Duplicate detection SUCCESS (prevented double registration)"));
     } else {
-        qDebug() << "Duplicate detection FAILED (allowed double registration)";
+        LOG_DEBUG(LogCategory::General, QStringLiteral("Duplicate detection FAILED (allowed double registration)"));
     }
 
     // Test IsRegistered
     if (hotkeyManager.isRegistered(testKey)) {
-        qDebug() << "isRegistered SUCCESS";
+        LOG_DEBUG(LogCategory::General, QStringLiteral("isRegistered SUCCESS"));
     } else {
-        qDebug() << "isRegistered FAILED";
+        LOG_DEBUG(LogCategory::General, QStringLiteral("isRegistered FAILED"));
     }
 
     // Test Unregistration
     hotkeyManager.unregisterHotkey(testKey);
     if (!hotkeyManager.isRegistered(testKey)) {
-        qDebug() << "Unregistration SUCCESS";
+        LOG_DEBUG(LogCategory::General, QStringLiteral("Unregistration SUCCESS"));
     } else {
-        qDebug() << "Unregistration FAILED";
+        LOG_DEBUG(LogCategory::General, QStringLiteral("Unregistration FAILED"));
     }
 
-    qDebug() << "Verification complete. Note: Global hotkey trigger requires manual key press during app run.";
+    LOG_DEBUG(LogCategory::General, QStringLiteral("Verification complete. Note: Global hotkey trigger requires manual key press during app run."));
 }
 
 int main(int argc, char *argv[]) {

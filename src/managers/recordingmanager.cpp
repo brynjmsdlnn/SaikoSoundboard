@@ -1,7 +1,7 @@
 #include "managers/recordingmanager.h"
+#include "logging/LogMacros.h"
 #include <QFileInfo>
 #include <QDir>
-#include <QDebug>
 #include <cstring>
 
 #ifdef Q_OS_WIN
@@ -82,7 +82,8 @@ void RecordingManager::updateState()
     if (newState != m_state) {
         m_state = newState;
         emit stateChanged(m_state);
-        qDebug() << "RecordingManager: State changed to" << (int)m_state;
+        LOG_DEBUG(LogCategory::Recording,
+                  QStringLiteral("RecordingManager: State changed to %1").arg(static_cast<int>(m_state)));
     }
 
     bool newEngine = !m_activeRecorders.isEmpty();

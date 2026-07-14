@@ -2,9 +2,9 @@
 #include "managers/soundboardmanager.h"
 #include "managers/recordingmanager.h"
 #include "managers/settingsmanager.h"
+#include "logging/LogMacros.h"
 #include <QDateTime>
 #include <QDir>
-#include <QDebug>
 
 ActionManager::ActionManager(SoundboardManager *sb, RecordingManager *rec, SettingsManager *settings, QObject *parent)
     : QObject(parent), m_sb(sb), m_rec(rec), m_settings(settings)
@@ -60,7 +60,8 @@ void ActionManager::handleAssignReplayToPlayer(const QString &playerId)
     if (m_rec->saveReplay(path)) {
         m_sb->loadReplayToPlayer(playerId, path);
     } else {
-        qWarning() << "ActionManager: Failed to save replay for assignment to player" << playerId;
+        LOG_WARN(LogCategory::General,
+                 QStringLiteral("ActionManager: Failed to save replay for assignment to player %1").arg(playerId));
     }
 }
 
@@ -72,7 +73,8 @@ void ActionManager::handleSaveReplay()
     QString path = m_settings->replayDirectory() + QString("/Replay_%1.wav").arg(timestamp);
     
     if (!m_rec->saveReplay(path)) {
-        qWarning() << "ActionManager: Failed to save replay";
+        LOG_WARN(LogCategory::General,
+                 QStringLiteral("ActionManager: Failed to save replay"));
     }
 }
 
@@ -131,8 +133,10 @@ void ActionManager::handleMakePermanent(const QString &playerId, const QString &
     // Copy file to permanent directory
     if (QFile::copy(slot->filePath, permanentPath)) {
         m_sb->promoteTempFile(playerId, permanentPath);
-        qDebug() << "ActionManager: Replay made permanent at" << permanentPath;
+        LOG_DEBUG(LogCategory::General,
+                  QStringLiteral("ActionManager: Replay made permanent at %1").arg(permanentPath));
     } else {
-        qWarning() << "ActionManager: Failed to copy temporary replay to permanent path";
+        LOG_WARN(LogCategory::General,
+                 QStringLiteral("ActionManager: Failed to copy temporary replay to permanent path"));
     }
 }

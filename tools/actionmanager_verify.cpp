@@ -2,12 +2,12 @@
 #include "managers/soundboardmanager.h"
 #include "managers/recordingmanager.h"
 #include "managers/settingsmanager.h"
+#include "logging/LogMacros.h"
 #include <QCoreApplication>
-#include <QDebug>
 #include <QTimer>
 
 void verifyActionManager() {
-    qDebug() << "Starting ActionManager verification...";
+    LOG_DEBUG(LogCategory::General, QStringLiteral("Starting ActionManager verification..."));
 
     SettingsManager settings;
     SoundboardManager sb(&settings);
@@ -33,15 +33,15 @@ void verifyActionManager() {
     actionManager.dispatch(Action::createAssignReplay(testPlayerId));
     actionManager.dispatch(Action::createSaveReplay());
 
-    qDebug() << "Play Dispatched:" << playEmitted;
-    qDebug() << "Stop Dispatched:" << stopEmitted;
-    qDebug() << "Assign Replay Dispatched:" << assignEmitted;
-    qDebug() << "Save Replay Dispatched:" << saveEmitted;
+    LOG_DEBUG(LogCategory::General, QStringLiteral("Play Dispatched: %1").arg(playEmitted));
+    LOG_DEBUG(LogCategory::General, QStringLiteral("Stop Dispatched: %1").arg(stopEmitted));
+    LOG_DEBUG(LogCategory::General, QStringLiteral("Assign Replay Dispatched: %1").arg(assignEmitted));
+    LOG_DEBUG(LogCategory::General, QStringLiteral("Save Replay Dispatched: %1").arg(saveEmitted));
 
     if (playEmitted && stopEmitted && assignEmitted && saveEmitted) {
-        qDebug() << "Verification SUCCESS: All actions dispatched successfully.";
+        LOG_DEBUG(LogCategory::General, QStringLiteral("Verification SUCCESS: All actions dispatched successfully."));
     } else {
-        qDebug() << "Verification FAILED.";
+        LOG_DEBUG(LogCategory::General, QStringLiteral("Verification FAILED."));
     }
 }
 

@@ -1,10 +1,10 @@
 #include "audio/soundplayer.h"
+#include "logging/LogMacros.h"
 #include <QCoreApplication>
-#include <QDebug>
 #include <QTimer>
 
 void verifySoundPlayer() {
-    qDebug() << "Starting SoundPlayer verification...";
+    LOG_DEBUG(LogCategory::General, QStringLiteral("Starting SoundPlayer verification..."));
 
     // 1. Verify player instances are independent
     SoundPlayer player1;
@@ -13,10 +13,10 @@ void verifySoundPlayer() {
     player1.setVolume(0.5f);
     player2.setVolume(0.8f);
 
-    qDebug() << "Independence Check: Players created and volumes set independently.";
-    qDebug() << "Simultaneous Playback Check: Design allows multiple QMediaPlayer instances.";
-    qDebug() << "Overlapping Check: Independent instances ensure overlapping is possible.";
-    qDebug() << "Verification complete.";
+    LOG_DEBUG(LogCategory::General, QStringLiteral("Independence Check: Players created and volumes set independently."));
+    LOG_DEBUG(LogCategory::General, QStringLiteral("Simultaneous Playback Check: Design allows multiple QMediaPlayer instances."));
+    LOG_DEBUG(LogCategory::General, QStringLiteral("Overlapping Check: Independent instances ensure overlapping is possible."));
+    LOG_DEBUG(LogCategory::General, QStringLiteral("Verification complete."));
 }
 
 int main(int argc, char *argv[]) {

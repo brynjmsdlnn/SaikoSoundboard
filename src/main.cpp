@@ -11,12 +11,21 @@
 #include <QtQml>
 #include "models/soundplayerslotmodel.h"
 
+#include "logging/Logging.h"
+
 int main(int argc, char *argv[])
 {
     qputenv("QT_QUICK_CONTROLS_STYLE", "Basic");
     QGuiApplication a(argc, argv);
 
-    QLoggingCategory::setFilterRules("qt.multimedia.ffmpeg.mediacapturesession.warning=false");
+    // Initialize logging
+#ifdef NDEBUG
+    Saiko::Logging::initialize(Saiko::Logging::LogLevel::Info);
+#else
+    Saiko::Logging::initialize(Saiko::Logging::LogLevel::Trace);
+#endif
+
+    QLoggingCategory::setFilterRules("qt.multimedia.ffmpeg*=false");
 
     qmlRegisterType<RealtimeWaveformItem>("Saiko", 1, 0, "RealtimeWaveform");
     qmlRegisterType<WaveformItem>("Saiko", 1, 0, "WaveformData");

@@ -1,5 +1,4 @@
 #include "audio/audiomixer.h"
-#include <QDebug>
 #include <algorithm>
 
 AudioMixer::AudioMixer(QObject *parent) : QObject(parent), m_running(false)

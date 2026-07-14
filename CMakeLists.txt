@@ -22,6 +22,10 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia Concurrent Qui
 
 enable_testing()
 
+# --- Logging ---
+
+add_subdirectory(src/logging)
+
 # --- Source Groups ---
 
 set(CORE_DOMAIN_SOURCES
@@ -127,6 +131,7 @@ add_library(SaikoModels INTERFACE)
 target_include_directories(SaikoModels INTERFACE src)
 target_link_libraries(SaikoModels INTERFACE 
     SaikoDomain 
+    SaikoLogging
     Qt${QT_VERSION_MAJOR}::Qml
 )
 
@@ -165,6 +170,7 @@ target_link_libraries(SaikoSoundboardCore INTERFACE
     SaikoAudio
     SaikoAdapters
     SaikoDomain
+    SaikoLogging
 )
 
 # --- Precompiled Headers ---

@@ -1,6 +1,5 @@
 #include "audio/wavwriter.h"
 #include <QDataStream>
-#include <QDebug>
 
 WavWriter::WavWriter(QObject *parent)
     : QObject(parent)

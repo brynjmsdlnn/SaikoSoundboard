@@ -1,7 +1,6 @@
 #include "audio/waveformgenerator.h"
 #include <QFile>
 #include <QDataStream>
-#include <QDebug>
 #include <cmath>
 #include <algorithm>
 

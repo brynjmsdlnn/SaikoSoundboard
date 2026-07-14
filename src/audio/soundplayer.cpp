@@ -1,6 +1,6 @@
 #include "audio/soundplayer.h"
+#include "logging/LogMacros.h"
 #include <QUrl>
-#include <QDebug>
 #include <QFile>
 #include <QAudioOutput>
 
@@ -68,7 +68,10 @@ void SoundPlayer::play(PlaybackMode mode)
     QString fileLeaf = m_filePath.section('/', -1, -1, QString::SectionIncludeTrailingSep).section('\\', -1, -1);
 
     if (m_playbackMode == PlaybackMode::ToggleStop) {
-        qDebug().nospace() << "[SoundPlayer] play mode=Toggle file=\"" << fileLeaf << "\" alreadyPlaying=" << (playbackState() == QMediaPlayer::PlayingState);
+        LOG_DEBUG(LogCategory::Playback,
+                 QStringLiteral("[SoundPlayer] play mode=Toggle file=\"%1\" alreadyPlaying=%2")
+                     .arg(fileLeaf)
+                     .arg(playbackState() == QMediaPlayer::PlayingState));
         if (playbackState() == QMediaPlayer::PlayingState) {
             stop();
             return;
@@ -77,7 +80,11 @@ void SoundPlayer::play(PlaybackMode mode)
         playInternal();
     }
     else if (m_playbackMode == PlaybackMode::QueuedSequential) {
-        qDebug().nospace() << "[SoundPlayer] play mode=Continuous file=\"" << fileLeaf << "\" alreadyPlaying=" << (playbackState() == QMediaPlayer::PlayingState) << " loops=" << m_remainingLoops;
+        LOG_DEBUG(LogCategory::Playback,
+                 QStringLiteral("[SoundPlayer] play mode=Continuous file=\"%1\" alreadyPlaying=%2 loops=%3")
+                     .arg(fileLeaf)
+                     .arg(playbackState() == QMediaPlayer::PlayingState)
+                     .arg(m_remainingLoops));
         if (playbackState() == QMediaPlayer::PlayingState) {
             updateRemainingLoops(m_remainingLoops + 1);
         } else {
@@ -87,8 +94,12 @@ void SoundPlayer::play(PlaybackMode mode)
     }
     else if (m_playbackMode == PlaybackMode::LayeredCutAll || m_playbackMode == PlaybackMode::LayeredRingOut) {
         bool alreadyPlaying = (playbackState() == QMediaPlayer::PlayingState);
-        qDebug().nospace() << "[SoundPlayer] play mode=" << (m_playbackMode == PlaybackMode::LayeredCutAll ? "LayeredCutAll" : "LayeredRingOut")
-                           << " file=\"" << fileLeaf << "\" alreadyPlaying=" << alreadyPlaying << " activeTransients=" << m_transientPlayers.size();
+        LOG_DEBUG(LogCategory::Playback,
+                 QStringLiteral("[SoundPlayer] play mode=%1 file=\"%2\" alreadyPlaying=%3 activeTransients=%4")
+                     .arg(m_playbackMode == PlaybackMode::LayeredCutAll ? QStringLiteral("LayeredCutAll") : QStringLiteral("LayeredRingOut"))
+                     .arg(fileLeaf)
+                     .arg(alreadyPlaying)
+                     .arg(m_transientPlayers.size()));
         if (alreadyPlaying) {
             SoundPlayer *transient = new SoundPlayer(this);
             transient->load(m_filePath);
@@ -99,18 +110,26 @@ void SoundPlayer::play(PlaybackMode mode)
             transient->setClipRange(m_startTimeMs, m_endTimeMs);
 
             m_transientPlayers.append(transient);
-            qDebug().nospace() << "[SoundPlayer] overlapping spawned transient=" << transient << " totalActive=" << m_transientPlayers.size();
+            LOG_DEBUG(LogCategory::Playback,
+                     QStringLiteral("[SoundPlayer] overlapping spawned transient=0x%1 totalActive=%2")
+                         .arg(QString::number(reinterpret_cast<quintptr>(transient), 16))
+                         .arg(m_transientPlayers.size()));
 
             connect(transient, &SoundPlayer::positionChanged, this, [this]() {
                 emit layerPositionsChanged();
             });
 
             connect(transient, &SoundPlayer::stateChanged, this, [this, transient](QMediaPlayer::PlaybackState state) {
-                qDebug().nospace() << "[SoundPlayer] overlapping transient=" << transient << " state=" << state;
+                LOG_DEBUG(LogCategory::Playback,
+                         QStringLiteral("[SoundPlayer] overlapping transient=0x%1 state=%2")
+                             .arg(QString::number(reinterpret_cast<quintptr>(transient), 16))
+                             .arg(static_cast<int>(state)));
                 if (state == QMediaPlayer::StoppedState) {
                     m_transientPlayers.removeOne(transient);
                     transient->deleteLater();
-                    qDebug().nospace() << "[SoundPlayer] overlapping transient cleaned up remaining=" << m_transientPlayers.size();
+                    LOG_DEBUG(LogCategory::Playback,
+                             QStringLiteral("[SoundPlayer] overlapping transient cleaned up remaining=%1")
+                                 .arg(m_transientPlayers.size()));
                     emit layerPositionsChanged();
                 }
                 handlePlayerStateChanged(state);
@@ -142,7 +161,10 @@ void SoundPlayer::play(PlaybackMode mode)
         }
     }
     else { // Mode 1 (Restart) or Default
-        qDebug().nospace() << "[SoundPlayer] play mode=Restart/Default file=\"" << fileLeaf << "\" alreadyPlaying=" << (playbackState() == QMediaPlayer::PlayingState);
+        LOG_DEBUG(LogCategory::Playback,
+                 QStringLiteral("[SoundPlayer] play mode=Restart/Default file=\"%1\" alreadyPlaying=%2")
+                     .arg(fileLeaf)
+                     .arg(playbackState() == QMediaPlayer::PlayingState));
         updateRemainingLoops(0);
         playInternal();
     }
@@ -182,7 +204,10 @@ void SoundPlayer::playPreview()
 void SoundPlayer::stop()
 {
     QString fileLeaf = m_filePath.section('/', -1, -1, QString::SectionIncludeTrailingSep).section('\\', -1, -1);
-    qDebug().nospace() << "[SoundPlayer] stop file=\"" << fileLeaf << "\" cleaningTransients=" << m_transientPlayers.size();
+    LOG_DEBUG(LogCategory::Playback,
+             QStringLiteral("[SoundPlayer] stop file=\"%1\" cleaningTransients=%2")
+                 .arg(fileLeaf)
+                 .arg(m_transientPlayers.size()));
 
     updateRemainingLoops(0);
     m_stoppingInternal = true;
