@@ -17,6 +17,7 @@ Item {
     property bool replayChecked: false
     property string statusText: "Ready"
 
+    property bool logViewerActive: false
     signal startRequested()
     signal stopRequested()
     signal settingsRequested()
@@ -24,6 +25,7 @@ Item {
     signal captureModeSelected(string newMode)
     signal replaySaved(string path)
     signal assignToSlotRequested()
+    signal toggleLogViewerRequested()
 
     function notifyRecordingStarted() {
         startEnabled = false;
@@ -82,9 +84,11 @@ Item {
             cardPadding: root.cardPadding
             captureMode: root.captureMode
             modeEnabled: root.modeEnabled
+            logViewerActive: root.logViewerActive
             onCaptureModeSelected: (newMode) => root.captureModeSelected(newMode)
             onSettingsRequested: root.settingsRequested()
             onAboutRequested: root.aboutRequested()
+            onToggleLogViewerRequested: root.toggleLogViewerRequested()
         }
 
         RecordingSection {

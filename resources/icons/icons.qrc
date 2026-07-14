@@ -39,5 +39,7 @@
         <file>circle-plus.svg</file>
         <file>circle-minus.svg</file>
         <file>power.svg</file>
+        <file>trash.svg</file>
+        <file>list.svg</file>
     </qresource>
 </RCC>

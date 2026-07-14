@@ -10,9 +10,10 @@ namespace Logging {
 // construction, before any LOG_*() macro is used.
 void initialize(LogLevel minimumLevel = LogLevel::Debug) noexcept;
 
-// Shuts down the logging system. Flushes and releases any resources held by
-// registered sinks. Safe to call multiple times. After shutdown, LOG_*()
-// macros become no-ops.
+// Shuts down the logging system. Safe to call multiple times.
+// Currently a no-op placeholder: the logging subsystem has no resources
+// that require explicit teardown. Future phases (FileSink, spdlog) will
+// add flush-and-close logic here.
 void shutdown() noexcept;
 
 } // namespace Logging

@@ -12,6 +12,7 @@
 #include "models/soundplayerslotmodel.h"
 
 #include "logging/Logging.h"
+#include "logging/LogModel.h"
 
 int main(int argc, char *argv[])
 {
@@ -34,6 +35,9 @@ int main(int argc, char *argv[])
 
     qmlRegisterSingletonInstance("Saiko", 1, 0, "Backend", &backend);
     qmlRegisterSingletonInstance("Saiko", 1, 0, "SlotModel", backend.slotModel());
+
+    Saiko::Logging::LogModel logModel;
+    qmlRegisterSingletonInstance("Saiko", 1, 0, "LogModel", &logModel);
 
     QQmlApplicationEngine engine;
     engine.addImageProvider(QLatin1String("fileicon"), new FileIconProvider());

@@ -13,9 +13,11 @@ Rectangle {
     property bool modeEnabled: true
     property string captureMode: "global"
 
+    property bool logViewerActive: false
     signal captureModeSelected(string newMode)
     signal settingsRequested()
     signal aboutRequested()
+    signal toggleLogViewerRequested()
 
     implicitHeight: headerContent.implicitHeight + 24
     radius: Theme.cardRadius
@@ -191,6 +193,16 @@ Rectangle {
                 tooltipText: "About"
                 tooltipDirection: "bottom"
                 onClicked: root.aboutRequested()
+            }
+
+            // Log viewer toggle button
+            SaikoIconButton {
+                id: logViewerBtn
+                isActive: true
+                tooltipText: root.logViewerActive ? "Hide Logs" : "Show Logs"
+                tooltipDirection: "bottom"
+                iconSource: "image://icons/list?color=" + encodeURIComponent(root.logViewerActive ? Theme.accentPurple : Theme.textDim)
+                onClicked: root.toggleLogViewerRequested()
             }
         }
     }

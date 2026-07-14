@@ -197,6 +197,8 @@ ApplicationWindow {
                     app.lastPlaybackType = Backend.PlaybackReplay;
                     Backend.loadRecordingWaveform(path);
                 }
+                logViewerActive: app.showLogViewer
+                onToggleLogViewerRequested: app.toggleLogViewer()
                 onSettingsRequested: settingsDialog.show()
                 onAboutRequested: aboutDialog.show()
                 onAssignToSlotRequested: assignToSlotDialog.show()
@@ -237,7 +239,7 @@ ApplicationWindow {
             }
         }
 
-        // ---------------- BOTTOM DOCK: SOUNDBOARD SLOTS ----------------
+        // ---------------- SOUNDBOARD SLOTS ----------------
         Rectangle {
             id: soundboardDock
             SplitView.preferredHeight: Backend.settings.soundboardDockHeight > 0 ? Backend.settings.soundboardDockHeight : 280
@@ -272,7 +274,16 @@ ApplicationWindow {
         }
     }
 
+    property bool showLogViewer: false
     property int folderPickerTarget: 0
+
+    function toggleLogViewer() {
+        if (logWindow.visible) {
+            logWindow.close();
+        } else {
+            logWindow.show();
+        }
+    }
 
     FolderDialog {
         id: folderDialog
@@ -330,6 +341,12 @@ ApplicationWindow {
 
     AboutDialog {
         id: aboutDialog
+    }
+
+    LogWindow {
+        id: logWindow
+        onOpened: showLogViewer = true
+        onClosed: showLogViewer = false
     }
 
     AssignToSlotDialog {

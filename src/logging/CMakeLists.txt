@@ -15,6 +15,9 @@ add_library(SaikoLogging STATIC
     LogLevel.h
     LogCategory.h
     LogMacros.h
+    LogRecord.h
+    LogModel.cpp
+    LogModel.h
 )
 
 target_include_directories(SaikoLogging

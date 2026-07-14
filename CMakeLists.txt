@@ -253,6 +253,7 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/components/SaikoMenu.qml
         src/qml/components/SaikoMenuItem.qml
         src/qml/components/SaikoSectionLabel.qml
+        src/qml/components/LogViewer.qml
 
         # --- Dialogs ---
         src/qml/dialogs/SettingsDialog.qml
@@ -261,6 +262,7 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/dialogs/SourceSelectionPopup.qml
         src/qml/dialogs/AboutDialog.qml
         src/qml/dialogs/AssignToSlotDialog.qml
+        src/qml/dialogs/LogWindow.qml
 
         # --- Recording panel ---
         src/qml/recording/RecordingPanel.qml
