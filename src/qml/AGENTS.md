@@ -35,6 +35,7 @@ src/qml/
 - Components within the same `Saiko` module can reference each other without explicit file-path imports
 - `utils.js` is the only JS file — add shared utility functions here, not in individual QML files
 - When adding a `qrc:/icons/` or `image://icons/` reference in QML, verify the SVG exists in `resources/icons/` and is registered in `resources/icons/icons.qrc`. If missing, download it from Lucide (`https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/<name>.svg`) and register it
+- The main window (`Main.qml`) is frameless (`Qt.FramelessWindowHint`). On Windows, native window dragging, Aero Snap, drop shadows, and edge/corner resizing are handled by `WindowsFramelessWindow` in `src/platform/windows/` (using Win32 WM_NCHITTEST/WM_NCCALCSIZE/WM_GETMINMAXINFO). The title bar height is exposed to QML via `Backend.titleBarHeight` — this is the single source of truth shared between C++ hit-testing and the visual `TitleBar.qml`. For non-Windows platforms, it falls back to the QML `DragHandler` in `TitleBar.qml` and the transparent resizer MouseAreas in `WindowResizeHandlers.qml`. Any window layout edits must keep these QML components intact.
 
 ## Verification
 

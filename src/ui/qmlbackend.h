@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QVariant>
+#include "platform/WindowMetrics.h"
 #include "models/capturestate.h"
 #include "audio/waveformgenerator.h"
 
@@ -33,6 +34,7 @@ class QmlBackend : public QObject
     Q_PROPERTY(bool isPlaying READ isPlaying NOTIFY playbackStateChanged)
     Q_PROPERTY(qint64 playbackDuration READ playbackDuration NOTIFY playbackDurationChanged)
     Q_PROPERTY(qint64 playbackPosition READ playbackPosition NOTIFY playbackPositionChanged)
+    Q_PROPERTY(int titleBarHeight READ titleBarHeight CONSTANT)
 public:
     enum PlaybackType {
         PlaybackNone = 0,
@@ -58,6 +60,9 @@ public:
     bool isPlaying() const { return m_isPlaying; }
     qint64 playbackDuration() const { return m_playbackDuration; }
     qint64 playbackPosition() const { return m_player ? m_player->position() : 0; }
+
+    /// Canonical title bar height (single source of truth with C++ hit-testing).
+    int titleBarHeight() const { return kWindowMetrics.titleBarHeight; }
 
     Q_INVOKABLE QVariantList getRunningProcesses() const;
     Q_INVOKABLE QStringList getProcessesProducingSound() const;

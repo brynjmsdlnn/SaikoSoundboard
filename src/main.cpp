@@ -1,22 +1,28 @@
-#include "ui/qmlbackend.h"
-#include "ui/realtimewaveformitem.h"
-#include "ui/waveformitem.h"
-#include "ui/colorediconprovider.h"
-#include "ui/fileiconprovider.h"
-
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QLoggingCategory>
 #include <QtQml>
+
+#include "ui/qmlbackend.h"
+#include "ui/realtimewaveformitem.h"
+#include "ui/waveformitem.h"
+#include "ui/colorediconprovider.h"
+#include "ui/fileiconprovider.h"
 #include "models/soundplayerslotmodel.h"
 
 #include "logging/Logging.h"
 #include "logging/LogModel.h"
 
+#ifdef Q_OS_WIN
+#include "platform/windows/WindowsFramelessWindow.h"
+#include <QQuickWindow>
+#endif
+
 int main(int argc, char *argv[])
 {
     qputenv("QT_QUICK_CONTROLS_STYLE", "Basic");
+
     QGuiApplication a(argc, argv);
 
     // Application metadata
@@ -44,10 +50,21 @@ int main(int argc, char *argv[])
     qmlRegisterSingletonInstance("Saiko", 1, 0, "LogModel", &logModel);
 
     QQmlApplicationEngine engine;
+
     engine.addImageProvider(QLatin1String("fileicon"), new FileIconProvider());
     engine.addImageProvider(QLatin1String("icons"), new ColoredIconProvider());
 
     engine.load(QUrl("qrc:/qt/qml/Saiko/src/qml/Main.qml"));
+
+#ifdef Q_OS_WIN
+    QQuickWindow *window = qobject_cast<QQuickWindow *>(
+        engine.rootObjects().isEmpty() ? nullptr : engine.rootObjects().first());
+
+    if (window) {
+        auto *frameless = new WindowsFramelessWindow(window);
+        QGuiApplication::instance()->installNativeEventFilter(frameless);
+    }
+#endif
 
     return QGuiApplication::exec();
 }

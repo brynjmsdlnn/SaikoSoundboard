@@ -15,10 +15,25 @@ ApplicationWindow {
     minimumHeight: 600
     title: "Saiko Soundboard"
     color: Theme.appBackground
+    flags: Qt.Window | Qt.FramelessWindowHint
 
     property string captureMode: "global"
     property string lastRecordingPath: ""
     property int lastPlaybackType: Backend.PlaybackNone
+
+    property int normalWidth: 1100
+    property int normalHeight: 900
+
+    onWidthChanged: {
+        if (visibility === Window.Windowed || visibility === Window.AutomaticVisibility) {
+            normalWidth = width;
+        }
+    }
+    onHeightChanged: {
+        if (visibility === Window.Windowed || visibility === Window.AutomaticVisibility) {
+            normalHeight = height;
+        }
+    }
 
     // Named capture states instead of bare 0/1/2/3 sprinkled through
     // onCaptureStateChanged. Mirrors whatever CaptureState enum the backend
@@ -135,11 +150,24 @@ ApplicationWindow {
     }
 
     // ============================================================
+    // Custom Title Bar
+    // ============================================================
+    TitleBar {
+        id: titleBar
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+    }
+
+    // ============================================================
     // Main layout
     // ============================================================
     SplitView {
         id: verticalSplit
-        anchors.fill: parent
+        anchors.top: titleBar.bottom
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
         orientation: Qt.Vertical
 
         handle: Rectangle {
@@ -389,5 +417,13 @@ ApplicationWindow {
                 recordingPanel.setPlayEnabled(app.lastRecordingPath.length > 0);
             }
         }
+    }
+
+    // ============================================================
+    // Window Resize Handlers (only enabled when not maximized)
+    // ============================================================
+    WindowResizeHandlers {
+        id: resizeHandlers
+        anchors.fill: parent
     }
 }

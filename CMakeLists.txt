@@ -207,10 +207,22 @@ target_precompile_headers(SaikoUI PRIVATE ${COMMON_PCH_HEADERS})
 
 set(ICONS_RESOURCE resources/icons/icons.qrc)
 
+# --- Platform-specific sources ---
+
+set(PLATFORM_SOURCES)
+if(WIN32)
+    list(APPEND PLATFORM_SOURCES
+        src/platform/WindowMetrics.h
+        src/platform/windows/WindowsFramelessWindow.cpp
+        src/platform/windows/WindowsFramelessWindow.h
+    )
+endif()
+
 # --- Application Target ---
 
 set(APP_SOURCES
     src/main.cpp
+    ${PLATFORM_SOURCES}
     ${ICONS_RESOURCE}
 )
 
@@ -260,6 +272,8 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/components/SaikoMenuItem.qml
         src/qml/components/SaikoSectionLabel.qml
         src/qml/components/LogViewer.qml
+        src/qml/components/TitleBar.qml
+        src/qml/components/WindowResizeHandlers.qml
 
         # --- Dialogs ---
         src/qml/dialogs/SettingsDialog.qml
@@ -296,6 +310,10 @@ qt_add_qml_module(SaikoSoundboard
 )
 
 target_link_libraries(SaikoSoundboard PRIVATE SaikoSoundboardCore)
+
+if(WIN32)
+    target_link_libraries(SaikoSoundboard PRIVATE dwmapi)
+endif()
 
 set_target_properties(SaikoSoundboard PROPERTIES
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}

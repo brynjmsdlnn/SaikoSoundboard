@@ -100,6 +100,9 @@ Core layer — pure business logic in `domain/` (no Qt, no platform deps) and pl
 ### `src/storage/`
 Filesystem path utility — stateless `StoragePaths` class for all path construction (settings, recordings, replays, temp files, logs). No file I/O. See `src/storage/AGENTS.md` for contracts.
 
+### `src/platform/`
+Platform-specific windowing — `WindowMetrics.h` (cross-platform named constants for frameless window dimensions), `windows/WindowsFramelessWindow.h/.cpp` (Win32 WM_NCHITTEST/WM_NCCALCSIZE/WM_GETMINMAXINFO hit-testing + DPI scaling). Owned by root.
+
 ### `src/audio/`
 Audio engine — mixer, WASAPI recorder, WASAPI passthrough, sound player, replay buffer, waveform generator, WAV writer. Standard C++ with Qt Multimedia and WASAPI. No child AGENTS.md — owned by root.
 
