@@ -2,6 +2,8 @@
 #include "ui/realtimewaveformitem.h"
 #include "ui/waveformitem.h"
 #include "audio/wasapirecorder.h"
+#include "storage/StoragePaths.h"
+#include <QDateTime>
 #include <QFileInfo>
 #include <QUrl>
 #include <QMediaDevices>
@@ -253,4 +255,40 @@ void QmlBackend::loadRecordingWaveform(const QString &filePath)
     m_recordingPcm.clear();
     m_recordingWaveform = WaveformGenerator::generate(filePath, 256);
     emit recordingWaveformChanged();
+}
+
+// --------------------------------------------------------------------------
+// Path helpers for QML
+// --------------------------------------------------------------------------
+
+QString QmlBackend::generateRecordingFilePath() const
+{
+    const QString ts = QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_HHmmss"));
+    return m_settings->recordingDirectory() + QStringLiteral("/Recording_%1.wav").arg(ts);
+}
+
+QString QmlBackend::generateReplayFilePath() const
+{
+    const QString ts = QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_HHmmss"));
+    return m_settings->replayDirectory() + QStringLiteral("/Replay_%1.wav").arg(ts);
+}
+
+QString QmlBackend::defaultRecordingDirectory() const
+{
+    return StoragePaths::defaultRecordingDirectory();
+}
+
+QString QmlBackend::defaultReplayDirectory() const
+{
+    return StoragePaths::defaultReplayDirectory();
+}
+
+QString QmlBackend::defaultBaseDirectory() const
+{
+    return StoragePaths::defaultBaseDirectory();
+}
+
+QString QmlBackend::logDirectory() const
+{
+    return StoragePaths::logDirectory();
 }

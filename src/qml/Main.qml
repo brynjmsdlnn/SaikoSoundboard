@@ -29,8 +29,7 @@ ApplicationWindow {
     readonly property int stateRecordingAndReplay: 3
 
     function startRecording() {
-        var fmt = Utils.formatTimestamp(new Date());
-        lastRecordingPath = Backend.settings.recordingDirectory + "/Recording_" + fmt + ".wav";
+        lastRecordingPath = Backend.generateRecordingFilePath();
 
         if (!Backend.recording.isEngineRunning)
             Backend.recording.startEngine(captureMode);

@@ -8,7 +8,6 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QFile>
-#include <QStandardPaths>
 #include <QList>
 #include "models/audiosource.h"
 #include "models/soundplayerslot.h"

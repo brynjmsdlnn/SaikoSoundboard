@@ -2,7 +2,6 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import Saiko 1.0
-import "../shared/utils.js" as Utils
 
 Rectangle {
     id: root
@@ -147,11 +146,10 @@ Rectangle {
                 onClicked: {
                     if (!sectionContent.isReplayActive)
                         return;
-                    var stamp = Utils.formatTimestamp(new Date());
-                    var path = Backend.settings.replayDirectory + "/Replay_" + stamp + ".wav";
+                    var path = Backend.generateReplayFilePath();
                     if (Backend.recording.saveReplay(path)) {
                         root.replaySaved(path);
-                        root.statusMessage("Replay saved: Replay_" + stamp + ".wav");
+                        root.statusMessage("Replay saved: " + path.substring(path.lastIndexOf("/") + 1));
                     } else {
                         root.statusMessage("Failed to save replay");
                     }

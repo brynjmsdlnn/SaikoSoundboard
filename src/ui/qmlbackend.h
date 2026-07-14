@@ -70,6 +70,14 @@ public:
     Q_INVOKABLE QString renameRecordingFile(const QString &oldPath, const QString &dir, const QString &newName);
     Q_INVOKABLE void loadRecordingWaveform(const QString &filePath);
 
+    // Path helpers (delegates to StoragePaths for QML consumption)
+    Q_INVOKABLE QString generateRecordingFilePath() const;
+    Q_INVOKABLE QString generateReplayFilePath() const;
+    Q_INVOKABLE QString defaultRecordingDirectory() const;
+    Q_INVOKABLE QString defaultReplayDirectory() const;
+    Q_INVOKABLE QString defaultBaseDirectory() const;
+    Q_INVOKABLE QString logDirectory() const;
+
 signals:
     void captureStateChanged(CaptureState state);
     void replayWaveformChanged();

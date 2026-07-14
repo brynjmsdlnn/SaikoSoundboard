@@ -19,6 +19,10 @@ int main(int argc, char *argv[])
     qputenv("QT_QUICK_CONTROLS_STYLE", "Basic");
     QGuiApplication a(argc, argv);
 
+    // Application metadata
+    QCoreApplication::setOrganizationName("Saiko Interactive");
+    QCoreApplication::setApplicationName("Saiko Soundboard");
+
     // Initialize logging
 #ifdef NDEBUG
     Saiko::Logging::initialize(Saiko::Logging::LogLevel::Info);

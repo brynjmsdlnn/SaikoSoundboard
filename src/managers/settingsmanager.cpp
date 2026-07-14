@@ -1,17 +1,13 @@
 #include "managers/settingsmanager.h"
+#include "storage/StoragePaths.h"
 #include <QDir>
 #include <QFileInfo>
-
-static QString defaultBaseDir()
-{
-    return QDir::toNativeSeparators(QDir::homePath() + "/Saiko Soundboard");
-}
 
 SettingsManager::SettingsManager(QObject *parent)
     : QObject(parent)
     , m_replayEnabled(false)
     , m_replayDuration(30)
-    , m_baseDirectory(defaultBaseDir())
+    , m_baseDirectory(StoragePaths::defaultBaseDirectory())
     , m_hotkeysEnabled(true)
 {
 }
@@ -161,8 +157,8 @@ void SettingsManager::load()
     }
 
     // Ensure resolved paths exist (all fields assigned by now)
-    QDir().mkpath(recordingDirectory());
-    QDir().mkpath(replayDirectory());
+    StoragePaths::ensureDirectoryExists(recordingDirectory());
+    StoragePaths::ensureDirectoryExists(replayDirectory());
 
     if (sourcesDirty)          emit sourcesChanged();
     if (slotsDirty)            emit soundBoardSlotsChanged();
@@ -224,9 +220,7 @@ void SettingsManager::save()
 
 QString SettingsManager::getSettingsFilePath() const
 {
-    QString appData = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    QDir().mkpath(appData);
-    return appData + "/settings.json";
+    return StoragePaths::settingsFilePath();
 }
 
 // --- Setters with NOTIFY signals ---
@@ -281,14 +275,14 @@ void SettingsManager::setBaseDirectory(const QString &dir)
 {
     if (m_baseDirectory == dir) return;
     m_baseDirectory = dir;
-    QDir().mkpath(dir);
+    StoragePaths::ensureDirectoryExists(dir);
     emit baseDirectoryChanged();
     if (m_recordingDirectoryOverride.isEmpty()) {
-        QDir().mkpath(recordingDirectory());
+        StoragePaths::ensureDirectoryExists(recordingDirectory());
         emit recordingDirectoryChanged();
     }
     if (m_replayDirectoryOverride.isEmpty()) {
-        QDir().mkpath(replayDirectory());
+        StoragePaths::ensureDirectoryExists(replayDirectory());
         emit replayDirectoryChanged();
     }
 }
@@ -297,7 +291,7 @@ void SettingsManager::setRecordingDirectoryOverride(const QString &dir)
 {
     if (m_recordingDirectoryOverride == dir) return;
     m_recordingDirectoryOverride = dir;
-    QDir().mkpath(recordingDirectory());
+    StoragePaths::ensureDirectoryExists(recordingDirectory());
     emit recordingDirectoryOverrideChanged();
     emit recordingDirectoryChanged();
 }
@@ -306,7 +300,7 @@ void SettingsManager::setReplayDirectoryOverride(const QString &dir)
 {
     if (m_replayDirectoryOverride == dir) return;
     m_replayDirectoryOverride = dir;
-    QDir().mkpath(replayDirectory());
+    StoragePaths::ensureDirectoryExists(replayDirectory());
     emit replayDirectoryOverrideChanged();
     emit replayDirectoryChanged();
 }

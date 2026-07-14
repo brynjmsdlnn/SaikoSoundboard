@@ -26,6 +26,10 @@ enable_testing()
 
 add_subdirectory(src/logging)
 
+# --- Storage ---
+
+add_subdirectory(src/storage)
+
 # --- Source Groups ---
 
 set(CORE_DOMAIN_SOURCES
@@ -146,6 +150,7 @@ target_link_libraries(SaikoManagers
         SaikoAdapters
         SaikoAudio
         SaikoModels
+        SaikoStorage
 )
 set_target_properties(SaikoManagers PROPERTIES UNITY_BUILD ON)
 
@@ -171,6 +176,7 @@ target_link_libraries(SaikoSoundboardCore INTERFACE
     SaikoAdapters
     SaikoDomain
     SaikoLogging
+    SaikoStorage
 )
 
 # --- Precompiled Headers ---

@@ -1,4 +1,5 @@
 #include "soundplayerslotmodel.h"
+#include "storage/StoragePaths.h"
 #include <QFile>
 #include "managers/soundboardmanager.h"
 
@@ -49,7 +50,7 @@ QVariant SoundPlayerSlotModel::data(const QModelIndex &index, int role) const
     case StartTimeMsRole:   return slot.startTimeMs;
     case EndTimeMsRole:     return slot.endTimeMs;
     case IsTemporaryRole:
-        return !slot.filePath.isEmpty() && slot.filePath.startsWith(QDir::tempPath());
+        return !slot.filePath.isEmpty() && StoragePaths::isTemporaryPath(slot.filePath);
     case DurationSecRole: {
         WaveformData wf = m_manager->getWaveformData(slot.id);
         return wf.isValid ? (static_cast<double>(wf.durationMs) / 1000.0) : 0.0;

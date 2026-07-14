@@ -2,6 +2,7 @@
 #include "managers/soundboardmanager.h"
 #include "managers/recordingmanager.h"
 #include "managers/settingsmanager.h"
+#include "storage/StoragePaths.h"
 #include "logging/LogMacros.h"
 #include <QDateTime>
 #include <QDir>
@@ -55,7 +56,7 @@ void ActionManager::handleAssignReplayToPlayer(const QString &playerId)
     if (!slot || slot->locked) return;
 
     QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss_zzz");
-    QString path = QDir::tempPath() + QString("/SaikoReplay_%1.wav").arg(timestamp);
+    QString path = StoragePaths::temporaryReplayFilePath(timestamp);
 
     if (m_rec->saveReplay(path)) {
         m_sb->loadReplayToPlayer(playerId, path);
@@ -113,13 +114,13 @@ void ActionManager::handleMakePermanent(const QString &playerId, const QString &
     if (!slot || slot->locked || slot->filePath.isEmpty()) return;
 
     // Check if it's currently in the temp path
-    if (!slot->filePath.startsWith(QDir::tempPath())) return;
+    if (!StoragePaths::isTemporaryPath(slot->filePath)) return;
 
     QFileInfo fileInfo(slot->filePath);
     if (!fileInfo.exists()) return;
 
     QString dirPath = m_settings->replayDirectory();
-    QDir().mkpath(dirPath);
+    StoragePaths::ensureDirectoryExists(dirPath);
 
     QString targetName = customFileName.isEmpty() ? fileInfo.fileName() : customFileName;
     if (!targetName.contains('.'))

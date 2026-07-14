@@ -2,7 +2,6 @@
 #define SOUNDPLAYERSLOTMODEL_H
 
 #include <QAbstractListModel>
-#include <QDir>
 #include "models/soundplayerslot.h"
 
 class SoundboardManager;
