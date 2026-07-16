@@ -20,6 +20,7 @@ ApplicationWindow {
     property string captureMode: "global"
     property string lastRecordingPath: ""
     property int lastPlaybackType: Backend.PlaybackNone
+    property bool isWindowMoving: false
 
     property int normalWidth: 1100
     property int normalHeight: 900

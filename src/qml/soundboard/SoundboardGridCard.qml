@@ -28,6 +28,14 @@ Rectangle {
         }
     }
 
+    readonly property bool animationsEnabled: (typeof app !== "undefined" ? !app.isWindowMoving : true) && Qt.application.active
+
+    onAnimationsEnabledChanged: {
+        if (!animationsEnabled) {
+            idleFxAnimation.stop();
+        }
+    }
+
     property real pulseOpacity: 1.0
 
     onPlayStateChanged: {
@@ -37,7 +45,7 @@ Rectangle {
     }
 
     SequentialAnimation on pulseOpacity {
-        running: playState !== 0
+        running: playState !== 0 && card.animationsEnabled
         loops: Animation.Infinite
         NumberAnimation {
             to: 0.3
@@ -214,7 +222,7 @@ Rectangle {
                 // --- RANDOM INTERVAL & SPEED ENGINE ---
                 Timer {
                     id: fxTimer
-                    running: !modeBadge.hovered // Only run when idle
+                    running: !modeBadge.hovered && card.animationsEnabled // Only run when idle and animations are enabled
                     repeat: true
                     triggeredOnStart: false
                     interval: 5000 // Initial delay

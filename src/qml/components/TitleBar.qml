@@ -37,9 +37,12 @@ Rectangle {
         enabled: Qt.platform.os !== "windows"
         grabPermissions: PointerHandler.CanTakeOverFromAnything
         onActiveChanged: {
+            var win = titleBar.targetWindow;
+            if (!win) return;
             if (active) {
-                var win = titleBar.targetWindow;
-                if (!win) return;
+                if (win.isWindowMoving !== undefined) {
+                    win.isWindowMoving = true;
+                }
                 if (win.visibility === Window.Maximized) {
                     // Map local cursor point to global screen coordinates
                     var localPoint = centroid.position;
@@ -64,6 +67,10 @@ Rectangle {
                     win.setY(newY);
                 }
                 win.startSystemMove();
+            } else {
+                if (win.isWindowMoving !== undefined) {
+                    win.isWindowMoving = false;
+                }
             }
         }
     }

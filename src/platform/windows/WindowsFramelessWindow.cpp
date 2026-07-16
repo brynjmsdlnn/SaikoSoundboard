@@ -74,6 +74,12 @@ bool WindowsFramelessWindow::nativeEventFilter(const QByteArray &eventType,
     case WM_NCCALCSIZE:     return handleNcCalcSize(msg, result);
     case WM_NCHITTEST:      return handleNcHitTest(msg, result);
     case WM_GETMINMAXINFO:  return handleGetMinMaxInfo(msg, result);
+    case WM_ENTERSIZEMOVE:
+        m_window->setProperty("isWindowMoving", true);
+        return false;
+    case WM_EXITSIZEMOVE:
+        m_window->setProperty("isWindowMoving", false);
+        return false;
     default:                return false;
     }
 }
