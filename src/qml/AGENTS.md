@@ -15,12 +15,14 @@ All QML UI components for the SaikoSoundboard application. This is the presentat
 
 ```
 src/qml/
-├── components/       # Reusable UI building blocks (SaikoButton, SaikoCheckBox, SaikoComboBox, SaikoTooltip, SaikoMenu, SaikoMenuItem, SaikoDialog)
+├── components/       # Reusable UI building blocks (SaikoButton, SaikoCheckBox, SaikoComboBox, SaikoTooltip, SaikoMenu, SaikoMenuItem, SaikoDialog, SaikoFramelessPopup)
 ├── shared/           # Shared singleton and utilities (Theme.qml, utils.js)
-├── dialogs/          # Standalone windows & popups (SettingsDialog, HotkeyDialog, RoutingDialog, SourceSelectionPopup)
-├── recording/        # Recording panel sub-components (RecordingPanel, RecordingHeader, RecordingSection, ReplayBufferSection)
-├── soundboard/       # Soundboard grid & card editor (SoundboardGridView, SoundboardGridCard, ItemEditor, HotkeyCard)
-├── sources/          # Audio source management (SourcesPanel, WaveformView)
+├── dialogs/          # Standalone windows & popups (AboutDialog, LogWindow)
+├── settings/         # Settings dialogs (SettingsSidebar, SettingsPanelHeader, SettingsPanelWrapper, StorageSettingsPanel, AudioSettingsPanel, RoutingSettingsPanel, SettingsDialog)
+├── recording/        # Recording panel sub-components + assign-to-slot dialog (RecordingPanel, RecordingHeader, RecordingSection, ReplayBufferSection, AssignToSlotDialog)
+├── soundboard/       # Soundboard grid & card editor (SoundboardGridView, SoundboardGridCard, SlotEditor) + editor/ sub-components
+├── soundboard/hotkeys/  # Hotkey components (HotkeyCard, HotkeyDialog)
+├── sources/          # Audio source management (SourcesPanel, SourceSelectionPopup, WaveformView)
 └── Main.qml          # Application entry point
 ```
 
@@ -54,13 +56,16 @@ Reusable UI primitives — SaikoButton, SaikoCheckBox, SaikoComboBox, SaikoToolt
 Shared singleton and utilities — Theme.qml (singleton), utils.js (JS utility functions). Owned by this doc.
 
 ### `dialogs/`
-Standalone windows and popups — SettingsDialog, HotkeyDialog, RoutingDialog, SourceSelectionPopup, AboutDialog. Owned by this doc.
+Standalone windows and popups — AboutDialog, LogWindow. Owned by this doc.
+
+### `settings/`
+Settings dialog components — SettingsDialog (shell), SettingsSidebar (tab navigation), SettingsPanelHeader (reusable title/subtitle header), SettingsPanelWrapper (standardized panel container), StorageSettingsPanel (directory paths), AudioSettingsPanel (sample rate), RoutingSettingsPanel (soundboard routing + voice passthrough). Owned by this doc.
 
 ### `recording/`
-Recording panel sub-components — RecordingPanel, RecordingHeader, RecordingSection, ReplayBufferSection, ReplayDurationEditor. Owned by this doc.
+Recording panel sub-components — RecordingPanel, RecordingHeader, RecordingSection, ReplayBufferSection, ReplayDurationEditor, AssignToSlotDialog. Owned by this doc.
 
 ### `soundboard/`
-Soundboard grid and card editor — SoundboardGridView, SoundboardGridCard, SlotEditor, HotkeyCard, and editor/ sub-components (SectionLabel, EditorHeader, SlotNameEditor, AudioSourceSelector, TrimEditor, VolumeSlider, RoutingSelector, HotkeyDisplay, ActionButtons). Owned by this doc.
+Soundboard grid and card editor — SoundboardGridView, SoundboardGridCard, SlotEditor, and editor/ sub-components (SectionLabel, EditorHeader, SlotNameEditor, AudioSourceSelector, TrimEditor, VolumeSlider, RoutingSelector, HotkeyDisplay, ActionButtons). Owned by this doc.
 
 ### `sources/`
-Audio source management — SourcesPanel (expandable card with live volume slider, mute/unmute toggle, solo monitor, responsive text elision), WaveformView. Owned by this doc.
+Audio source management — SourcesPanel (expandable card with live volume slider, mute/unmute toggle, solo monitor, responsive text elision), SourceSelectionPopup (process/device picker with search and refresh), WaveformView. Owned by this doc.

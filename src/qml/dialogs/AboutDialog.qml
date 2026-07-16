@@ -1,27 +1,24 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Window 2.15
 import Saiko 1.0
 
-Window {
+SaikoFramelessPopup {
     id: root
     width: 480
     height: 520
-    minimumWidth: 460
-    minimumHeight: 500
-    maximumWidth: 540
-    maximumHeight: 560
-    color: Theme.appBackground
-    title: "About SaikoSoundboard"
-    modality: Qt.ApplicationModal
-    flags: Qt.Dialog | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
 
     signal devModeTriggered()
 
     // ── Type "saiko" to reveal the developer log viewer button ──────────────
     property string __typedSequence: ""
 
+    onOpened: {
+        root.__typedSequence = "";
+        keyHandler.forceActiveFocus();
+    }
+
+    // Keystroke interceptor — sits over the content so it can grab keys
     Item {
         id: keyHandler
         anchors.fill: parent
@@ -38,14 +35,12 @@ Window {
                 root.devModeTriggered();
             }
         }
-
-        // Grab focus when the dialog opens so typing starts immediately
-        Component.onCompleted: forceActiveFocus()
     }
 
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 24
+        anchors.topMargin: 20
         spacing: 20
 
         // --- App Header & Logo Badge ---
@@ -61,12 +56,10 @@ Window {
                 border.color: Theme.accentPurple
                 border.width: 1
 
-                Text {
+                Image {
                     anchors.centerIn: parent
-                    text: "((\u2022))"
-                    color: Theme.accentPurple
-                    font.pixelSize: 22
-                    font.bold: true
+                    source: "image://icons/radio?color=" + Theme.accentPurple
+                    sourceSize: Qt.size(44, 44)
                 }
             }
 
@@ -181,24 +174,11 @@ Window {
 
         Item { Layout.fillHeight: true }
 
-        // --- Bottom Action Row ---
-        RowLayout {
-            Layout.fillWidth: true
-
-            Text {
-                text: "\u00a9 2026 Saiko Interactive"
-                color: Theme.textDim
-                font.pixelSize: Theme.fontSizeSmall
-            }
-
-            Item { Layout.fillWidth: true }
-
-            SaikoButton {
-                text: "Close"
-                implicitWidth: 90
-                implicitHeight: 32
-                onClicked: root.close()
-            }
+        // --- Bottom Copyright ---
+        Text {
+            text: "\u00a9 2026 Saiko Interactive"
+            color: Theme.textDim
+            font.pixelSize: Theme.fontSizeSmall
         }
     }
 }

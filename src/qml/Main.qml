@@ -10,7 +10,7 @@ ApplicationWindow {
     id: app
     visible: true
     width: 1100
-    height: 900
+    height: 950
     minimumWidth: 1100
     minimumHeight: 600
     title: "Saiko Soundboard"
@@ -299,6 +299,13 @@ ApplicationWindow {
                     id: soundboardGrid
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+                    onRoutingSettingsRequested: {
+                        settingsDialog.activeTab = "routing"
+                        settingsDialog.show()
+                    }
+                    onOpenHotkeyRequested: function(slotId, playKey, assignKey) {
+                        hotkeyDialog.openForSlot(slotId, playKey, assignKey);
+                    }
                 }
             }
         }
@@ -389,6 +396,13 @@ ApplicationWindow {
         filePath: app.lastRecordingPath
         onAccepted: {
             recordingPanel.setStatusText("Assigned to: " + selectedSlotName);
+        }
+    }
+
+    HotkeyDialog {
+        id: hotkeyDialog
+        onAccepted: {
+            Backend.soundboard.setHotkeys(hotkeyDialog.slotId, hotkeyDialog.playKey, hotkeyDialog.assignKey);
         }
     }
 

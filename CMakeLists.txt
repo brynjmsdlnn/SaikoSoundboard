@@ -271,31 +271,36 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/components/SaikoMenu.qml
         src/qml/components/SaikoMenuItem.qml
         src/qml/components/SaikoSectionLabel.qml
+        src/qml/components/SaikoFramelessPopup.qml
         src/qml/components/LogViewer.qml
         src/qml/components/TitleBar.qml
         src/qml/components/WindowResizeHandlers.qml
 
         # --- Dialogs ---
-        src/qml/dialogs/SettingsDialog.qml
-        src/qml/dialogs/HotkeyDialog.qml
-        src/qml/dialogs/RoutingDialog.qml
-        src/qml/dialogs/SourceSelectionPopup.qml
         src/qml/dialogs/AboutDialog.qml
-        src/qml/dialogs/AssignToSlotDialog.qml
         src/qml/dialogs/LogWindow.qml
 
-        # --- Recording panel ---
+        # --- Settings ---
+        src/qml/settings/SettingsDialog.qml
+        src/qml/settings/SettingsSidebar.qml
+        src/qml/settings/SettingsPanelHeader.qml
+        src/qml/settings/SettingsPanelWrapper.qml
+        src/qml/settings/StorageSettingsPanel.qml
+        src/qml/settings/AudioSettingsPanel.qml
+        src/qml/settings/RoutingSettingsPanel.qml
+
+        # --- Recording ---
         src/qml/recording/RecordingPanel.qml
         src/qml/recording/RecordingHeader.qml
         src/qml/recording/RecordingSection.qml
         src/qml/recording/ReplayBufferSection.qml
         src/qml/recording/ReplayDurationEditor.qml
+        src/qml/recording/AssignToSlotDialog.qml
 
         # --- Soundboard ---
         src/qml/soundboard/SoundboardGridView.qml
         src/qml/soundboard/SoundboardGridCard.qml
         src/qml/soundboard/SlotEditor.qml
-        src/qml/soundboard/HotkeyCard.qml
         src/qml/soundboard/editor/EditorHeader.qml
         src/qml/soundboard/editor/AudioSourceSelector.qml
         src/qml/soundboard/editor/TrimEditor.qml
@@ -304,8 +309,13 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/soundboard/editor/HotkeyDisplay.qml
         src/qml/soundboard/editor/ActionButtons.qml
 
+        # --- Hotkeys ---
+        src/qml/soundboard/hotkeys/HotkeyCard.qml
+        src/qml/soundboard/hotkeys/HotkeyDialog.qml
+
         # --- Sources ---
         src/qml/sources/SourcesPanel.qml
+        src/qml/sources/SourceSelectionPopup.qml
         src/qml/sources/WaveformView.qml
 )
 

@@ -1,30 +1,13 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Window 2.15
 import Saiko 1.0
 
-Window {
-    id: root
-    width: 520
-    height: 680
-    minimumWidth: 520
-    minimumHeight: 650
-    maximumWidth: 520
-    maximumHeight: 750
-    color: Theme.appBackground
-    title: "Audio Routing & Settings"
-    modality: Qt.ApplicationModal
-    flags: Qt.Dialog | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
+SettingsPanelWrapper {
+    title: "Audio Routing Settings"
+    subtitle: "Configure output routes and voice passthrough devices."
 
     property bool initialized: false
-
-    signal accepted
-    signal rejected
-
-    Component.onDestruction: {
-        audioSource.stopMonitoring();
-    }
 
     function buildDeviceList(devices, showAll) {
         var virtualDevices = [];
@@ -62,33 +45,65 @@ Window {
         combo.currentIndex = 0;
     }
 
-    // --- Main Layout ---
+    function initializeRouting() {
+        if (initialized)
+            return;
+
+        micCombo.model = buildDeviceList(Backend.getAudioOutputDevices(), false);
+        localCombo.model = buildDeviceList(Backend.getAudioOutputDevices(), true);
+
+        var inputs = Backend.getAudioInputDevices();
+        var voiceItems = [
+            {
+                text: "Default Microphone",
+                value: ""
+            }
+        ];
+        for (var i = 0; i < inputs.length; i++) {
+            voiceItems.push({
+                text: inputs[i].description,
+                value: inputs[i].description
+            });
+        }
+        voiceCombo.model = voiceItems;
+
+        selectDevice(micCombo, Backend.settings.micOutputDevice);
+        selectDevice(localCombo, Backend.settings.localMonitorDevice);
+        selectDevice(voiceCombo, Backend.settings.voiceInputDevice);
+
+        initialized = true;
+    }
+
+    function startVoiceMonitoring() {
+        if (voiceCombo.currentValue !== undefined) {
+            audioSource.startMonitoring(voiceCombo.currentValue);
+        }
+    }
+
+    function stopVoiceMonitoring() {
+        audioSource.stopMonitoring();
+    }
+
+    onVisibleChanged: {
+        if (visible) {
+            initializeRouting();
+            startVoiceMonitoring();
+        } else {
+            stopVoiceMonitoring();
+        }
+    }
+
+    Component.onDestruction: {
+        stopVoiceMonitoring();
+    }
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 24
-        spacing: 20
+        spacing: 12
 
-        // Title Header
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 6
-            Text {
-                text: "Audio Routing & Settings"
-                color: Theme.textPrimary
-                font.pixelSize: 22
-                font.weight: Font.Bold
-            }
-            Text {
-                text: "Configure output routes and voice passthrough devices."
-                color: Theme.textDim
-                font.pixelSize: Theme.fontSizeHeading || 14
-            }
-        }
-
-        // --- Soundboard Outputs Group ---
+        // Soundboard Outputs Card
         Rectangle {
-            id: outputsGroup
+            id: outputsCard
             Layout.fillWidth: true
             implicitHeight: outputsLayout.implicitHeight + 28
             color: Theme.cardBackground
@@ -99,32 +114,28 @@ Window {
             ColumnLayout {
                 id: outputsLayout
                 anchors.fill: parent
-                anchors.margins: 16
-                spacing: 14
+                anchors.margins: 14
+                spacing: 10
 
                 SaikoSectionLabel {
                     text: "SOUNDBOARD OUTPUTS"
                 }
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 8
-                    SaikoCheckBox {
-                        id: micCb
-                        text: "Enable Broadcast Output (to virtual mic)"
-                        checked: Backend.soundboard.micOutputEnabled
-                        onToggled: Backend.soundboard.setMicOutputEnabled(checked)
-                    }
+                SaikoCheckBox {
+                    text: "Enable Broadcast Output (to virtual mic)"
+                    checked: Backend.soundboard.micOutputEnabled
+                    onToggled: Backend.soundboard.setMicOutputEnabled(checked)
                 }
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 12
+                    spacing: 8
+
                     Text {
                         text: "Broadcast Device:"
                         color: Theme.textDim
                         font.pixelSize: Theme.fontSizeNormal || 13
-                        Layout.preferredWidth: 130
+                        Layout.preferredWidth: 110
                         Layout.alignment: Qt.AlignVCenter
                     }
                     SaikoComboBox {
@@ -137,25 +148,21 @@ Window {
                     }
                 }
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 8
-                    SaikoCheckBox {
-                        id: localCb
-                        text: "Enable Local Monitoring (hear soundboard)"
-                        checked: Backend.soundboard.localMonitoringEnabled
-                        onToggled: Backend.soundboard.setLocalMonitoringEnabled(checked)
-                    }
+                SaikoCheckBox {
+                    text: "Enable Local Monitoring (hear soundboard)"
+                    checked: Backend.soundboard.localMonitoringEnabled
+                    onToggled: Backend.soundboard.setLocalMonitoringEnabled(checked)
                 }
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 12
+                    spacing: 8
+
                     Text {
                         text: "Monitoring Device:"
                         color: Theme.textDim
                         font.pixelSize: Theme.fontSizeNormal || 13
-                        Layout.preferredWidth: 130
+                        Layout.preferredWidth: 110
                         Layout.alignment: Qt.AlignVCenter
                     }
                     SaikoComboBox {
@@ -170,45 +177,33 @@ Window {
             }
         }
 
-        // --- Voice Passthrough Group ---
+        // Voice Passthrough Card
         Rectangle {
-            id: inputGroup
             Layout.fillWidth: true
             Layout.fillHeight: true
-
-            // CRITICAL FIX: Forces the card background to always expand
-            // enough to wrap its children, preventing the waveform from overflowing.
-            Layout.minimumHeight: inputLayout.implicitHeight + 32
-
             color: Theme.cardBackground
             radius: Theme.cardRadius || 8
             border.color: Theme.borderDefault
             border.width: 1
 
             ColumnLayout {
-                id: inputLayout
                 anchors.fill: parent
-                anchors.margins: 16
-                spacing: 14
+                anchors.margins: 14
+                spacing: 10
 
                 SaikoSectionLabel {
                     text: "VOICE PASSTHROUGH (MIC INPUT)"
                 }
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 8
-                    SaikoCheckBox {
-                        id: feedMicCb
-                        text: "Feed Voice to Broadcast (Mix Soundboard + Voice)"
-                        checked: Backend.soundboard.micPassthroughEnabled
-                        onToggled: Backend.soundboard.setMicPassthroughEnabled(checked)
-                    }
+                SaikoCheckBox {
+                    id: feedMicCb
+                    text: "Feed Voice to Broadcast (Mix Soundboard + Voice)"
+                    checked: Backend.soundboard.micPassthroughEnabled
+                    onToggled: Backend.soundboard.setMicPassthroughEnabled(checked)
                 }
 
-                // Warning when broadcast device is the default output (speakers)
+                // Feedback warning
                 Rectangle {
-                    id: feedbackWarning
                     Layout.fillWidth: true
                     visible: feedMicCb.checked && micCombo.currentValue === ""
                     radius: Theme.borderRadius || 6
@@ -216,16 +211,15 @@ Window {
                     border.color: Qt.alpha(Theme.accentRed || "#FF5252", 0.25)
                     border.width: 1
 
-                    // Derives height dynamically from text without causing a binding loop
-                    implicitHeight: warningLayout.implicitHeight + 24
+                    implicitHeight: warningLayout.implicitHeight + 20
 
                     RowLayout {
                         id: warningLayout
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
-                        anchors.margins: 12
-                        spacing: 10
+                        anchors.margins: 10
+                        spacing: 8
 
                         Image {
                             source: "image://icons/triangle-alert?color=%23e35d5d"
@@ -234,25 +228,25 @@ Window {
                             Layout.alignment: Qt.AlignTop
                         }
                         Text {
-                            id: warningText
                             Layout.fillWidth: true
                             wrapMode: Text.WordWrap
                             color: Theme.textPrimary
                             font.pixelSize: Theme.fontSizeSmall || 11
                             lineHeight: 1.15
-                            text: "Your microphone will play through your speakers because the Broadcast Device is set to \"Default\" (your main audio output). To avoid this, select a virtual audio cable as the Broadcast Device above."
+                            text: "Microphone will play through speakers because Broadcast Device is set to \"Default\". Select a virtual audio cable above to avoid this."
                         }
                     }
                 }
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 12
+                    spacing: 8
+
                     Text {
                         text: "Voice Input Source:"
                         color: Theme.textDim
                         font.pixelSize: Theme.fontSizeNormal || 13
-                        Layout.preferredWidth: 130
+                        Layout.preferredWidth: 110
                         Layout.alignment: Qt.AlignVCenter
                     }
                     SaikoComboBox {
@@ -267,10 +261,11 @@ Window {
                     }
                 }
 
+                // Waveform visualizer
                 ColumnLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    spacing: 8
+                    spacing: 4
 
                     Text {
                         text: "Live Voice Input Level / Waveform:"
@@ -278,16 +273,9 @@ Window {
                         font.pixelSize: Theme.fontSizeSmall || 11
                     }
 
-                    // Pure QML Waveform Visualizer
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-
-                        // CRITICAL FIX: Give it a baseline implicitHeight so
-                        // the layout can calculate bounds correctly.
-                        implicitHeight: 80
-                        Layout.minimumHeight: 60
-
                         color: Theme.appBackground
                         radius: Theme.borderRadius || 6
                         border.color: Theme.borderDefault
@@ -371,36 +359,6 @@ Window {
                     }
                 }
             }
-        }
-    }
-
-    Component.onCompleted: {
-        micCombo.model = buildDeviceList(Backend.getAudioOutputDevices(), false);
-        localCombo.model = buildDeviceList(Backend.getAudioOutputDevices(), true);
-
-        var inputs = Backend.getAudioInputDevices();
-        var voiceItems = [
-            {
-                text: "Default Microphone",
-                value: ""
-            }
-        ];
-        for (var i = 0; i < inputs.length; i++) {
-            voiceItems.push({
-                text: inputs[i].description,
-                value: inputs[i].description
-            });
-        }
-        voiceCombo.model = voiceItems;
-
-        selectDevice(micCombo, Backend.settings.micOutputDevice);
-        selectDevice(localCombo, Backend.settings.localMonitorDevice);
-        selectDevice(voiceCombo, Backend.settings.voiceInputDevice);
-
-        initialized = true;
-
-        if (voiceCombo.currentValue !== undefined) {
-            audioSource.startMonitoring(voiceCombo.currentValue);
         }
     }
 }

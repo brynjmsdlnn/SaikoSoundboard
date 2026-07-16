@@ -41,5 +41,6 @@
         <file>power.svg</file>
         <file>trash.svg</file>
         <file>list.svg</file>
+        <file>route.svg</file>
     </qresource>
 </RCC>

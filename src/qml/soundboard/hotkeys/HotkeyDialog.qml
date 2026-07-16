@@ -1,21 +1,12 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Window 2.15
 import Saiko 1.0
 
-Window {
+SaikoFramelessPopup {
     id: root
     width: 520
-    height: 340
-    minimumWidth: 520
-    minimumHeight: 340
-    maximumWidth: 520
-    maximumHeight: 340
-    color: Theme.appBackground
-    title: "Hotkey Configuration"
-    modality: Qt.ApplicationModal
-    flags: Qt.Dialog | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
+    height: 380
 
     property string slotId: ""
     property string playKey: "SPACE"
@@ -27,6 +18,8 @@ Window {
 
     signal accepted()
     signal rejected()
+
+    property bool hotkeysWereOn: true
 
     function updateUnsavedFlags() {
         playCard.hasUnsavedChanges = (root.playKey !== root.initialPlayKey)
@@ -47,20 +40,24 @@ Window {
         return false
     }
 
-    property bool hotkeysWereOn: true
-
     function restoreHotkeys() {
         Backend.settings.hotkeysEnabled = hotkeysWereOn
     }
 
-    Component.onCompleted: {
-        initialPlayKey = root.playKey
-        initialAssignKey = root.assignKey
-        hotkeysWereOn = Backend.settings.hotkeysEnabled
+    function openForSlot(slotId, playKey, assignKey) {
+        root.slotId = slotId
+        root.playKey = playKey
+        root.assignKey = assignKey
+        root.initialPlayKey = playKey
+        root.initialAssignKey = assignKey
+        root.activeField = ""
+        root.hotkeysWereOn = Backend.settings.hotkeysEnabled
         Backend.settings.hotkeysEnabled = false
+        root.updateUnsavedFlags()
+        root.open()
     }
 
-    Component.onDestruction: {
+    onClosed: {
         restoreHotkeys()
     }
 
@@ -132,17 +129,15 @@ Window {
             SaikoButton {
                 text: "Cancel"
                 Layout.fillWidth: true
-                onClicked: { root.restoreHotkeys(); root.rejected() }
+                onClicked: { root.restoreHotkeys(); root.rejected(); root.close() }
             }
 
             SaikoButton {
                 text: "Save bindings"
                 Layout.fillWidth: true
                 accentColor: Theme.accentPurple
-                onClicked: { root.restoreHotkeys(); root.accepted() }
+                onClicked: { root.restoreHotkeys(); root.accepted(); root.close() }
             }
         }
     }
-
-
 }

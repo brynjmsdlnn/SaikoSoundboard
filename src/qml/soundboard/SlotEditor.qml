@@ -3,10 +3,11 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Dialogs
 import Saiko 1.0
-import "../shared/utils.js" as Utils
 
 Rectangle {
     id: editor
+
+    signal openHotkeyRequested(string slotId, string playKey, string assignKey)
 
     // ── Appearance ──────────────────────────────────────────────────────────
     color: Theme.cardBackground
@@ -448,14 +449,7 @@ Rectangle {
     }
 
     function openHotkeyDialog() {
-        Utils.openDialog("../dialogs/HotkeyDialog.qml", {
-            slotId: editor.slotId,
-            playKey: editor.playHotkey || "",
-            assignKey: editor.assignHotkey || ""
-        }, function (win) {
-            Backend.soundboard.setHotkeys(editor.slotId, win.playKey, win.assignKey);
-            win.close();
-        });
+        editor.openHotkeyRequested(editor.slotId, editor.playHotkey || "", editor.assignHotkey || "");
     }
 
     function updateProperties() {

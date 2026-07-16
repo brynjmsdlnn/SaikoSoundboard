@@ -1,21 +1,12 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Window 2.15
 import Saiko 1.0
 
-Window {
+SaikoFramelessPopup {
     id: root
     width: 440
     height: 480
-    minimumWidth: 440
-    minimumHeight: 480
-    maximumWidth: 440
-    maximumHeight: 480
-    color: Theme.appBackground
-    title: "Assign to Soundboard Slot"
-    modality: Qt.ApplicationModal
-    flags: Qt.Dialog | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
 
     property string filePath: ""
     property string selectedSlotId: ""

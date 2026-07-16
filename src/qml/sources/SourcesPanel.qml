@@ -337,7 +337,6 @@ Rectangle {
 
     SourceSelectionPopup {
         id: processPopup
-        parent: Overlay.overlay
         sourceModel: root.sourceModel
         onProcessSelected: (name, executableName, executablePath) => {
             root.sourceAdded(name, executableName, executablePath)

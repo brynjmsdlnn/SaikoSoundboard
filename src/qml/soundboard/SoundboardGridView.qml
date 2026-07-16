@@ -2,12 +2,14 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import Saiko 1.0
-import "../shared/utils.js" as Utils
 
 Rectangle {
     id: root
     color: Theme.appBackground
     property int selectedIndex: 0
+
+    signal routingSettingsRequested()
+    signal openHotkeyRequested(string slotId, string playKey, string assignKey)
 
     // Global playback mode data (matches EditorHeader but without "Default" mode)
     readonly property var globalModeList: [
@@ -172,7 +174,7 @@ Rectangle {
                         isActive: true
                         tooltipText: "Routing Settings"
                         iconSource: "image://icons/cog?color=%23b0b0b0"
-                        onClicked: Utils.openDialog("../dialogs/RoutingDialog.qml")
+                        onClicked: root.routingSettingsRequested()
                     }
                 }
             }
@@ -241,6 +243,9 @@ Rectangle {
             Layout.fillWidth: false
             slotModel: SlotModel
             slotIndex: root.selectedIndex
+            onOpenHotkeyRequested: function(slotId, playKey, assignKey) {
+                root.openHotkeyRequested(slotId, playKey, assignKey);
+            }
         }
     }
 }
