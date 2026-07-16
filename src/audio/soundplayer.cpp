@@ -172,6 +172,7 @@ void SoundPlayer::play(PlaybackMode mode)
 
 void SoundPlayer::playInternal()
 {
+    m_isPreviewMode = false;
     m_stoppingInternal = true;
     m_micPlayer->stop();
     m_localPlayer->stop();

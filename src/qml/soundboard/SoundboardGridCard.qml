@@ -424,7 +424,7 @@ Rectangle {
                 MouseArea {
                     id: playMouse
                     anchors.fill: parent
-                    hoverEnabled: card.fileExists || card.filePath === ""
+                    hoverEnabled: (card.fileExists || card.filePath === "") && !(card.playState === 2 && card.effectivePlaybackMode !== 2)
                     cursorShape: (!card.fileExists && card.filePath !== "") ? Qt.ArrowCursor : Qt.PointingHandCursor
                     onClicked: {
                         if (slotId && (card.fileExists || card.filePath === "")) {

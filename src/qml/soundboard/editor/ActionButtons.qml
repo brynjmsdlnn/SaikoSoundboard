@@ -74,6 +74,7 @@ RowLayout {
             enabled: {
                 if (root.isLocked) return false
                 if (isAction && (!root.fileExists || root.filePath === "")) return false
+                if (index === 0 && root.playState === 2 && root.effectivePlaybackMode !== 2) return false
                 return true
             }
 
