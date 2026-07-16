@@ -74,6 +74,7 @@ public:
     Q_INVOKABLE void playFile(const QString &path);
     Q_INVOKABLE void stopPlayback();
     Q_INVOKABLE QString renameRecordingFile(const QString &oldPath, const QString &dir, const QString &newName);
+    Q_INVOKABLE bool deleteRecordingFile(const QString &path);
     Q_INVOKABLE void loadRecordingWaveform(const QString &filePath);
     Q_INVOKABLE void toggleMaximize(QQuickWindow *window);
 

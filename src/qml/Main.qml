@@ -133,6 +133,8 @@ ApplicationWindow {
         }
 
         onRejected: {
+            Backend.deleteRecordingFile(lastRecordingPath);
+            lastRecordingPath = "";
             resetAfterStop();
         }
 

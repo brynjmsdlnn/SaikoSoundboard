@@ -4,6 +4,7 @@
 #include "audio/wasapirecorder.h"
 #include "storage/StoragePaths.h"
 #include <QDateTime>
+#include <QFile>
 #include <QFileInfo>
 #include <QUrl>
 #include <QMediaDevices>
@@ -171,6 +172,13 @@ QString QmlBackend::renameRecordingFile(const QString &oldPath, const QString &d
     if (QFile::rename(oldPath, finalPath))
         return finalPath;
     return oldPath;
+}
+
+bool QmlBackend::deleteRecordingFile(const QString &path)
+{
+    if (path.isEmpty())
+        return false;
+    return QFile::remove(path);
 }
 
 QVariantList QmlBackend::getRunningProcesses() const
