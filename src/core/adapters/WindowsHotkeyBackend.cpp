@@ -41,7 +41,7 @@ bool WindowsHotkeyBackend::registerHotkey(int id, const std::string& keySequence
 
     if (!RegisterHotKey(NULL, id, modifiers, vk)) {
         LOG_WARN(LogCategory::Hotkeys,
-                 QStringLiteral("WindowsHotkeyBackend: Failed to register hotkey %1 Error: %2")
+                 QStringLiteral("[HotkeyBackend] Failed to register hotkey (key: \"%1\", error: %2)")
                      .arg(QString::fromStdString(keySequence))
                      .arg(GetLastError()));
         return false;

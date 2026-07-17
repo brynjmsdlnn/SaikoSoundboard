@@ -1,4 +1,5 @@
 #include "ui/qmlbackend.h"
+#include "logging/LogMacros.h"
 #include "ui/realtimewaveformitem.h"
 #include "ui/waveformitem.h"
 #include "audio/wasapirecorder.h"
@@ -29,6 +30,9 @@
 QmlBackend::QmlBackend(QObject *parent)
     : QObject(parent)
 {
+    LOG_INFO(LogCategory::General,
+             QStringLiteral("[QmlBackend] Initializing application backend"));
+
     m_settings = new SettingsManager(this);
     m_settings->load();
 
@@ -97,6 +101,9 @@ QmlBackend::QmlBackend(QObject *parent)
         emit playbackStateChanged();
     });
 
+    LOG_INFO(LogCategory::General,
+             QStringLiteral("[QmlBackend] Backend initialization complete"));
+
     // Wire up recording PCM capture and state signals
     connect(m_recordingManager->mixer(), &AudioMixer::mixedPcmReady, this, [this](const QByteArray &data) {
         if (m_recordingManager->isRecording()) {
@@ -144,13 +151,22 @@ void QmlBackend::updateReplayWaveform()
 void QmlBackend::playFile(const QString &path)
 {
     QFileInfo fi(path);
-    if (!fi.exists() || fi.size() <= 100) return;
+    if (!fi.exists() || fi.size() <= 100) {
+        LOG_DEBUG(LogCategory::Playback,
+                  QStringLiteral("[QmlBackend] Play file skipped — missing or too small (path: \"%1\", size: %2)")
+                      .arg(path).arg(fi.size()));
+        return;
+    }
+    LOG_DEBUG(LogCategory::Playback,
+              QStringLiteral("[QmlBackend] Playing file (path: \"%1\")").arg(path));
     m_player->setSource(QUrl::fromLocalFile(path));
     m_player->play();
 }
 
 void QmlBackend::stopPlayback()
 {
+    LOG_DEBUG(LogCategory::Playback,
+              QStringLiteral("[QmlBackend] Stopping playback"));
     m_player->stop();
 }
 
@@ -261,6 +277,8 @@ CaptureState QmlBackend::captureState() const
 
 void QmlBackend::loadRecordingWaveform(const QString &filePath)
 {
+    LOG_DEBUG(LogCategory::Waveform,
+              QStringLiteral("[QmlBackend] Loading recording waveform (path: \"%1\")").arg(filePath));
     m_recordingPcm.clear();
     m_recordingWaveform = WaveformGenerator::generate(filePath, 256);
     emit recordingWaveformChanged();

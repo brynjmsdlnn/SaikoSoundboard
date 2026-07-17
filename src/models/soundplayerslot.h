@@ -81,7 +81,7 @@ inline PlaybackMode stringToPlaybackMode(const QString& str) {
     if (str == "LayeredCutAll") return PlaybackMode::LayeredCutAll;
     if (str == "LayeredRingOut") return PlaybackMode::LayeredRingOut;
     LOG_WARN(LogCategory::Settings,
-             QStringLiteral("Unknown PlaybackMode string: %1 \u2014 falling back to Default").arg(str));
+             QStringLiteral("[Settings] Unknown PlaybackMode string (string: \"%1\") \u2014 falling back to Default").arg(str));
     return PlaybackMode::Default;
 }
 

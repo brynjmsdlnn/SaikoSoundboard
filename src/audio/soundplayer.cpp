@@ -43,6 +43,8 @@ void SoundPlayer::load(const QString &filePath)
 {
     m_filePath = filePath;
     if (filePath.isEmpty() || !QFile::exists(filePath)) {
+        LOG_DEBUG(LogCategory::Playback,
+                  QStringLiteral("[SoundPlayer] Load skipped — file is empty or missing (path: \"%1\")").arg(filePath));
         m_micPlayer->setSource(QUrl());
         m_localPlayer->setSource(QUrl());
         return;
@@ -50,6 +52,8 @@ void SoundPlayer::load(const QString &filePath)
     QUrl url = QUrl::fromLocalFile(filePath);
     m_micPlayer->setSource(url);
     m_localPlayer->setSource(url);
+    LOG_DEBUG(LogCategory::Playback,
+              QStringLiteral("[SoundPlayer] Loaded audio file (path: \"%1\")").arg(filePath));
 }
 
 void SoundPlayer::setPlaybackMode(PlaybackMode mode)
@@ -69,7 +73,7 @@ void SoundPlayer::play(PlaybackMode mode)
 
     if (m_playbackMode == PlaybackMode::ToggleStop) {
         LOG_DEBUG(LogCategory::Playback,
-                 QStringLiteral("[SoundPlayer] play mode=Toggle file=\"%1\" alreadyPlaying=%2")
+                 QStringLiteral("[SoundPlayer] Playing audio in Toggle mode (file: \"%1\", alreadyPlaying: %2)")
                      .arg(fileLeaf)
                      .arg(playbackState() == QMediaPlayer::PlayingState));
         if (playbackState() == QMediaPlayer::PlayingState) {
@@ -81,7 +85,7 @@ void SoundPlayer::play(PlaybackMode mode)
     }
     else if (m_playbackMode == PlaybackMode::QueuedSequential) {
         LOG_DEBUG(LogCategory::Playback,
-                 QStringLiteral("[SoundPlayer] play mode=Continuous file=\"%1\" alreadyPlaying=%2 loops=%3")
+                 QStringLiteral("[SoundPlayer] Playing audio in Continuous mode (file: \"%1\", alreadyPlaying: %2, loops: %3)")
                      .arg(fileLeaf)
                      .arg(playbackState() == QMediaPlayer::PlayingState)
                      .arg(m_remainingLoops));
@@ -95,7 +99,7 @@ void SoundPlayer::play(PlaybackMode mode)
     else if (m_playbackMode == PlaybackMode::LayeredCutAll || m_playbackMode == PlaybackMode::LayeredRingOut) {
         bool alreadyPlaying = (playbackState() == QMediaPlayer::PlayingState);
         LOG_DEBUG(LogCategory::Playback,
-                 QStringLiteral("[SoundPlayer] play mode=%1 file=\"%2\" alreadyPlaying=%3 activeTransients=%4")
+                 QStringLiteral("[SoundPlayer] Playing audio in %1 mode (file: \"%2\", alreadyPlaying: %3, activeTransients: %4)")
                      .arg(m_playbackMode == PlaybackMode::LayeredCutAll ? QStringLiteral("LayeredCutAll") : QStringLiteral("LayeredRingOut"))
                      .arg(fileLeaf)
                      .arg(alreadyPlaying)
@@ -111,9 +115,9 @@ void SoundPlayer::play(PlaybackMode mode)
 
             m_transientPlayers.append(transient);
             LOG_DEBUG(LogCategory::Playback,
-                     QStringLiteral("[SoundPlayer] overlapping spawned transient=0x%1 totalActive=%2")
-                         .arg(QString::number(reinterpret_cast<quintptr>(transient), 16))
-                         .arg(m_transientPlayers.size()));
+                      QStringLiteral("[SoundPlayer] Overlapping spawned transient (transient: 0x%1, totalActive: %2)")
+                          .arg(QString::number(reinterpret_cast<quintptr>(transient), 16))
+                          .arg(m_transientPlayers.size()));
 
             connect(transient, &SoundPlayer::positionChanged, this, [this]() {
                 emit layerPositionsChanged();
@@ -121,14 +125,14 @@ void SoundPlayer::play(PlaybackMode mode)
 
             connect(transient, &SoundPlayer::stateChanged, this, [this, transient](QMediaPlayer::PlaybackState state) {
                 LOG_DEBUG(LogCategory::Playback,
-                         QStringLiteral("[SoundPlayer] overlapping transient=0x%1 state=%2")
-                             .arg(QString::number(reinterpret_cast<quintptr>(transient), 16))
-                             .arg(static_cast<int>(state)));
+                          QStringLiteral("[SoundPlayer] Overlapping transient state changed (transient: 0x%1, state: %2)")
+                              .arg(QString::number(reinterpret_cast<quintptr>(transient), 16))
+                              .arg(static_cast<int>(state)));
                 if (state == QMediaPlayer::StoppedState) {
                     m_transientPlayers.removeOne(transient);
                     transient->deleteLater();
                     LOG_DEBUG(LogCategory::Playback,
-                             QStringLiteral("[SoundPlayer] overlapping transient cleaned up remaining=%1")
+                             QStringLiteral("[SoundPlayer] Overlapping transient cleaned up (remaining: %1)")
                                  .arg(m_transientPlayers.size()));
                     emit layerPositionsChanged();
                 }
@@ -162,7 +166,7 @@ void SoundPlayer::play(PlaybackMode mode)
     }
     else { // Mode 1 (Restart) or Default
         LOG_DEBUG(LogCategory::Playback,
-                 QStringLiteral("[SoundPlayer] play mode=Restart/Default file=\"%1\" alreadyPlaying=%2")
+                 QStringLiteral("[SoundPlayer] Playing audio in Restart/Default mode (file: \"%1\", alreadyPlaying: %2)")
                      .arg(fileLeaf)
                      .arg(playbackState() == QMediaPlayer::PlayingState));
         updateRemainingLoops(0);
@@ -172,6 +176,12 @@ void SoundPlayer::play(PlaybackMode mode)
 
 void SoundPlayer::playInternal()
 {
+    QString fileLeaf = m_filePath.section('/', -1, -1, QString::SectionIncludeTrailingSep).section('\\', -1, -1);
+    LOG_DEBUG(LogCategory::Playback,
+              QStringLiteral("[SoundPlayer] Starting internal playback (file: \"%1\", startMs: %2, endMs: %3)")
+                  .arg(fileLeaf)
+                  .arg(m_startTimeMs)
+                  .arg(m_endTimeMs));
     m_isPreviewMode = false;
     m_stoppingInternal = true;
     m_micPlayer->stop();
@@ -193,6 +203,9 @@ void SoundPlayer::playInternal()
 
 void SoundPlayer::playPreview()
 {
+    QString fileLeaf = m_filePath.section('/', -1, -1, QString::SectionIncludeTrailingSep).section('\\', -1, -1);
+    LOG_DEBUG(LogCategory::Playback,
+              QStringLiteral("[SoundPlayer] Preview playback started (file: \"%1\")").arg(fileLeaf));
     stop(); // Reset and align
     m_isPreviewMode = true;
 
@@ -206,7 +219,7 @@ void SoundPlayer::stop()
 {
     QString fileLeaf = m_filePath.section('/', -1, -1, QString::SectionIncludeTrailingSep).section('\\', -1, -1);
     LOG_DEBUG(LogCategory::Playback,
-             QStringLiteral("[SoundPlayer] stop file=\"%1\" cleaningTransients=%2")
+             QStringLiteral("[SoundPlayer] Stopping audio (file: \"%1\", cleaningTransients: %2)")
                  .arg(fileLeaf)
                  .arg(m_transientPlayers.size()));
 
@@ -236,6 +249,8 @@ void SoundPlayer::stop()
 
 void SoundPlayer::setVolume(float volume)
 {
+    LOG_DEBUG(LogCategory::Playback,
+              QStringLiteral("[SoundPlayer] Volume set (volume: %1)").arg(volume));
     m_volume = volume;
     m_micOutput->setVolume(volume);
     m_localOutput->setVolume(volume);
@@ -269,6 +284,8 @@ QMediaPlayer::PlaybackState SoundPlayer::playbackState() const
 
 void SoundPlayer::setRouting(OutputRouting routing)
 {
+    LOG_DEBUG(LogCategory::Playback,
+              QStringLiteral("[SoundPlayer] Routing set (routing: %1)").arg(static_cast<int>(routing)));
     m_routing = routing;
     applyRoutingAndOverrides();
     for (SoundPlayer *tp : std::as_const(m_transientPlayers)) {
@@ -278,6 +295,10 @@ void SoundPlayer::setRouting(OutputRouting routing)
 
 void SoundPlayer::setGlobalOverrides(bool micEnabled, bool localEnabled)
 {
+    LOG_DEBUG(LogCategory::Playback,
+              QStringLiteral("[SoundPlayer] Global overrides updated (micEnabled: %1, localEnabled: %2)")
+                  .arg(micEnabled)
+                  .arg(localEnabled));
     m_globalMicEnabled = micEnabled;
     m_globalLocalEnabled = localEnabled;
     applyRoutingAndOverrides();
@@ -288,6 +309,9 @@ void SoundPlayer::setGlobalOverrides(bool micEnabled, bool localEnabled)
 
 void SoundPlayer::setDevices(const QAudioDevice &micDevice, const QAudioDevice &localDevice)
 {
+    LOG_DEBUG(LogCategory::Playback,
+              QStringLiteral("[SoundPlayer] Output devices updated (micDevice: \"%1\", localDevice: \"%2\")")
+                  .arg(micDevice.description(), localDevice.description()));
     m_micDevice = micDevice;
     m_localDevice = localDevice;
     m_micOutput->setDevice(micDevice);
@@ -299,6 +323,8 @@ void SoundPlayer::setDevices(const QAudioDevice &micDevice, const QAudioDevice &
 
 void SoundPlayer::setClipRange(qint64 startMs, qint64 endMs)
 {
+    LOG_DEBUG(LogCategory::Playback,
+              QStringLiteral("[SoundPlayer] Clip range set (startMs: %1, endMs: %2)").arg(startMs).arg(endMs));
     m_startTimeMs = startMs;
     m_endTimeMs = endMs;
     applyRoutingAndOverrides();
@@ -323,12 +349,18 @@ void SoundPlayer::handlePlayerStateChanged(QMediaPlayer::PlaybackState state)
 
     QMediaPlayer::PlaybackState current = playbackState();
     if (current == QMediaPlayer::StoppedState && m_remainingLoops > 0) {
+        LOG_DEBUG(LogCategory::Playback,
+                  QStringLiteral("[SoundPlayer] Auto-replay triggered (loopsRemaining: %1)").arg(m_remainingLoops - 1));
         updateRemainingLoops(m_remainingLoops - 1);
         playInternal();
         return;
     }
 
     if (current != m_lastOverallState) {
+        LOG_DEBUG(LogCategory::Playback,
+                  QStringLiteral("[SoundPlayer] Overall state changed (newState: %1, loopsRemaining: %2)")
+                      .arg(static_cast<int>(current))
+                      .arg(m_remainingLoops));
         m_lastOverallState = current;
         emit stateChanged(current);
         if (current == QMediaPlayer::StoppedState) {
@@ -384,23 +416,31 @@ void SoundPlayer::applyRoutingAndOverrides()
     if (isCurrentlyPlaying) {
         // Dynamic Sync: Mic path should play but is stopped/paused
         if (playMic && m_micPlayer->playbackState() != QMediaPlayer::PlayingState) {
+            LOG_DEBUG(LogCategory::Playback,
+                      QStringLiteral("[SoundPlayer] Dynamic sync: starting mic player"));
             qint64 pos = m_localPlayer->position();
             m_micPlayer->setPosition(pos);
             m_micPlayer->play();
         }
         // Mic path should NOT play but is playing
         else if (!playMic && m_micPlayer->playbackState() == QMediaPlayer::PlayingState) {
+            LOG_DEBUG(LogCategory::Playback,
+                      QStringLiteral("[SoundPlayer] Dynamic sync: stopping mic player"));
             m_micPlayer->stop();
         }
 
         // Dynamic Sync: Local path should play but is stopped/paused
         if (playLocal && m_localPlayer->playbackState() != QMediaPlayer::PlayingState) {
+            LOG_DEBUG(LogCategory::Playback,
+                      QStringLiteral("[SoundPlayer] Dynamic sync: starting local player"));
             qint64 pos = m_micPlayer->position();
             m_localPlayer->setPosition(pos);
             m_localPlayer->play();
         }
         // Local path should NOT play but is playing
         else if (!playLocal && m_localPlayer->playbackState() == QMediaPlayer::PlayingState) {
+            LOG_DEBUG(LogCategory::Playback,
+                      QStringLiteral("[SoundPlayer] Dynamic sync: stopping local player"));
             m_localPlayer->stop();
         }
     } else {

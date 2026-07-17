@@ -1,4 +1,5 @@
 #include "managers/settingsmanager.h"
+#include "logging/LogMacros.h"
 #include "storage/StoragePaths.h"
 #include <QDir>
 #include <QFileInfo>
@@ -14,8 +15,13 @@ SettingsManager::SettingsManager(QObject *parent)
 
 void SettingsManager::load()
 {
-    QFile file(getSettingsFilePath());
-    if (!file.open(QIODevice::ReadOnly)) return;
+    QString settingsPath = getSettingsFilePath();
+    QFile file(settingsPath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        LOG_WARN(LogCategory::Settings,
+                 QStringLiteral("[SettingsManager] Settings file not found, loading defaults (path: \"%1\")").arg(settingsPath));
+        return;
+    }
 
     QByteArray data = file.readAll();
     QJsonDocument doc = QJsonDocument::fromJson(data);
@@ -160,6 +166,9 @@ void SettingsManager::load()
     StoragePaths::ensureDirectoryExists(recordingDirectory());
     StoragePaths::ensureDirectoryExists(replayDirectory());
 
+    LOG_INFO(LogCategory::Settings,
+             QStringLiteral("[SettingsManager] Configuration settings loaded (path: \"%1\")").arg(settingsPath));
+
     if (sourcesDirty)          emit sourcesChanged();
     if (slotsDirty)            emit soundBoardSlotsChanged();
     if (replayEnabledDirty)    emit replayEnabledChanged();
@@ -212,9 +221,15 @@ void SettingsManager::save()
     root["defaultPlaybackMode"] = playbackModeToString(m_defaultPlaybackMode);
 
     QJsonDocument doc(root);
-    QFile file(getSettingsFilePath());
+    QString settingsPath = getSettingsFilePath();
+    QFile file(settingsPath);
     if (file.open(QIODevice::WriteOnly)) {
         file.write(doc.toJson());
+        LOG_INFO(LogCategory::Settings,
+                 QStringLiteral("[SettingsManager] Saving user preferences (path: \"%1\")").arg(settingsPath));
+    } else {
+        LOG_ERROR(LogCategory::Settings,
+                  QStringLiteral("[SettingsManager] Failed to write settings file (path: \"%1\")").arg(settingsPath));
     }
 }
 

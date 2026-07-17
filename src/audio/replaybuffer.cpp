@@ -13,6 +13,10 @@ void ReplayBuffer::setFormat(const WAVEFORMATEXTENSIBLE& format)
 {
     QMutexLocker locker(&m_mutex);
     m_format = format;
+    LOG_DEBUG(LogCategory::Replay,
+              QStringLiteral("[ReplayBuffer] Format set (sampleRate: %1, channels: %2)")
+                  .arg(format.Format.nSamplesPerSec)
+                  .arg(format.Format.nChannels));
     updateMaxBytes();
     
     m_ringBuffer.clear();
@@ -21,8 +25,12 @@ void ReplayBuffer::setFormat(const WAVEFORMATEXTENSIBLE& format)
 void ReplayBuffer::setDuration(int seconds)
 {
     QMutexLocker locker(&m_mutex);
-    m_durationSeconds = seconds;
-    updateMaxBytes();
+    if (m_durationSeconds != seconds) {
+        LOG_DEBUG(LogCategory::Replay,
+                  QStringLiteral("[ReplayBuffer] Duration changed (old: %1s, new: %2s)").arg(m_durationSeconds).arg(seconds));
+        m_durationSeconds = seconds;
+        updateMaxBytes();
+    }
 }
 
 void ReplayBuffer::updateMaxBytes()
@@ -39,7 +47,7 @@ void ReplayBuffer::updateMaxBytes()
     qint64 maxBytes = bytesPerSec * m_durationSeconds;
     m_ringBuffer.setMaxBytes(static_cast<size_t>(maxBytes));
     LOG_DEBUG(LogCategory::Replay,
-             QStringLiteral("ReplayBuffer: Max size updated to %1 bytes (%2s)")
+             QStringLiteral("[ReplayBuffer] Max size updated (bytes: %1, duration: %2s)")
                  .arg(maxBytes).arg(m_durationSeconds));
 }
 
@@ -59,5 +67,8 @@ QByteArray ReplayBuffer::getBufferData()
 void ReplayBuffer::clear()
 {
     QMutexLocker locker(&m_mutex);
+    size_t prevSize = m_ringBuffer.data().size();
     m_ringBuffer.clear();
+    LOG_DEBUG(LogCategory::Replay,
+              QStringLiteral("[ReplayBuffer] Buffer cleared (previousBytes: %1)").arg(prevSize));
 }

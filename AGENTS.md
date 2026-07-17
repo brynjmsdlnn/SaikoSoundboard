@@ -104,16 +104,16 @@ Filesystem path utility — stateless `StoragePaths` class for all path construc
 Platform-specific windowing — `WindowMetrics.h` (cross-platform named constants for frameless window dimensions), `windows/WindowsFramelessWindow.h/.cpp` (Win32 WM_NCHITTEST/WM_NCCALCSIZE/WM_GETMINMAXINFO hit-testing + DPI scaling). Owned by root.
 
 ### `src/audio/`
-Audio engine — mixer, WASAPI recorder, WASAPI passthrough, sound player, replay buffer, waveform generator, WAV writer. Standard C++ with Qt Multimedia and WASAPI. No child AGENTS.md — owned by root.
+Audio engine — mixer, WASAPI recorder, WASAPI passthrough, sound player, replay buffer, waveform generator, WAV writer. Standard C++ with Qt Multimedia and WASAPI. All components include lifecycle, state-change, and error logging via `LOG_INFO`/`LOG_DEBUG`/`LOG_WARN`/`LOG_ERROR`. No child AGENTS.md — owned by root.
 
 ### `src/managers/`
-Orchestration layer — ActionManager, HotkeyManager, RecordingManager, SettingsManager, SoundboardManager. Bridges domain logic to UI. No child AGENTS.md — owned by root.
+Orchestration layer — ActionManager, HotkeyManager, RecordingManager, SettingsManager, SoundboardManager. Bridges domain logic to UI. All five managers include lifecycle, state-change, and error logging via `LOG_INFO`/`LOG_DEBUG`/`LOG_WARN`/`LOG_ERROR`. No child AGENTS.md — owned by root.
 
 ### `src/models/`
 Data models — `QAbstractListModel` subclasses (`SoundPlayerSlotModel`, `AudioSourceListModel`) and value types (`AudioSource`, `SoundPlayerSlot`, `CaptureState`). No child AGENTS.md — owned by root.
 
 ### `src/ui/`
-C++ UI backend — QmlBackend (singleton exposed to QML), WaveformItem (QQuickPaintedItem), RealtimeWaveformItem. No child AGENTS.md — owned by root.
+C++ UI backend — QmlBackend (singleton exposed to QML), WaveformItem (QQuickPaintedItem), RealtimeWaveformItem. QmlBackend includes init lifecycle and playback logging via `LOG_INFO`/`LOG_DEBUG`. RealtimeWaveformItem includes monitoring start/stop logging via `LOG_DEBUG`/`LOG_WARN`. No child AGENTS.md — owned by root.
 
 ### `tests/`
 Automated test suite — unit tests in `tests/unit/`, integration tests in `tests/integration/`. CTest + Qt Test framework. See `tests/AGENTS.md` for registration conventions.

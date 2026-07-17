@@ -16,7 +16,7 @@ bool WindowsAudioSessionController::setAbsoluteMuteExcept(const QSet<QString>& e
     hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
     if (FAILED(hr)) {
         LOG_WARN(LogCategory::Audio,
-                 QStringLiteral("WASAPI: CoCreateInstance MMDeviceEnumerator failed. hr = 0x%1")
+                 QStringLiteral("[WASAPI] CoCreateInstance MMDeviceEnumerator failed (hr: 0x%1)")
                      .arg(QString::number(hr, 16)));
         return false;
     }
@@ -26,7 +26,7 @@ bool WindowsAudioSessionController::setAbsoluteMuteExcept(const QSet<QString>& e
     pEnumerator->Release();
     if (FAILED(hr)) {
         LOG_WARN(LogCategory::Audio,
-                 QStringLiteral("WASAPI: GetDefaultAudioEndpoint failed. hr = 0x%1")
+                 QStringLiteral("[WASAPI] GetDefaultAudioEndpoint failed (hr: 0x%1)")
                      .arg(QString::number(hr, 16)));
         return false;
     }
@@ -36,7 +36,7 @@ bool WindowsAudioSessionController::setAbsoluteMuteExcept(const QSet<QString>& e
     pDevice->Release();
     if (FAILED(hr)) {
         LOG_WARN(LogCategory::Audio,
-                 QStringLiteral("WASAPI: Activate IAudioSessionManager2 failed. hr = 0x%1")
+                 QStringLiteral("[WASAPI] Activate IAudioSessionManager2 failed (hr: 0x%1)")
                      .arg(QString::number(hr, 16)));
         return false;
     }
@@ -46,7 +46,7 @@ bool WindowsAudioSessionController::setAbsoluteMuteExcept(const QSet<QString>& e
     pSessionManager->Release();
     if (FAILED(hr)) {
         LOG_WARN(LogCategory::Audio,
-                 QStringLiteral("WASAPI: GetSessionEnumerator failed. hr = 0x%1")
+                 QStringLiteral("[WASAPI] GetSessionEnumerator failed (hr: 0x%1)")
                      .arg(QString::number(hr, 16)));
         return false;
     }
@@ -99,7 +99,7 @@ bool WindowsAudioSessionController::setAbsoluteMuteExcept(const QSet<QString>& e
                         hr = pSimpleVolume->SetMute(shouldMute, NULL);
                         if (FAILED(hr)) {
                             LOG_WARN(LogCategory::Audio,
-                                     QStringLiteral("WASAPI: Failed to set mute state for PID %1 to %2")
+                                     QStringLiteral("[WASAPI] Failed to set mute state (pid: %1, shouldMute: %2)")
                                          .arg(sessionPid).arg(shouldMute));
                         }
                         pSimpleVolume->Release();

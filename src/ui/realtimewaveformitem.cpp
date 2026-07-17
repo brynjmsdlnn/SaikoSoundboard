@@ -28,7 +28,7 @@ void RealtimeWaveformItem::startMonitoring(const QString &deviceDescription)
 {
     stopMonitoring();
     LOG_DEBUG(LogCategory::Waveform,
-             QStringLiteral("startMonitoring called with: %1").arg(deviceDescription));
+             QStringLiteral("[Waveform] Started monitoring (device: \"%1\")").arg(deviceDescription));
 
     QAudioDevice targetDev;
     if (deviceDescription.isEmpty()) {
@@ -48,7 +48,7 @@ void RealtimeWaveformItem::startMonitoring(const QString &deviceDescription)
 
     if (targetDev.isNull()) {
         LOG_WARN(LogCategory::Waveform,
-                 QStringLiteral("No valid audio input device found!"));
+                 QStringLiteral("[Waveform] No valid audio input device found"));
         return;
     }
 
@@ -65,7 +65,7 @@ void RealtimeWaveformItem::startMonitoring(const QString &deviceDescription)
     m_audioSource->setBufferSize(1024);
     m_audioDevice = m_audioSource->start();
     LOG_DEBUG(LogCategory::Waveform,
-             QStringLiteral("audioDevice valid: %1").arg(m_audioDevice != nullptr ? "true" : "false"));
+             QStringLiteral("[Waveform] Audio device validation complete (isValid: %1)").arg(m_audioDevice != nullptr ? "true" : "false"));
     if (m_audioDevice) {
         connect(m_audioDevice, &QIODevice::readyRead, this, &RealtimeWaveformItem::onReadyRead);
     }
@@ -74,6 +74,8 @@ void RealtimeWaveformItem::startMonitoring(const QString &deviceDescription)
 void RealtimeWaveformItem::stopMonitoring()
 {
     if (m_audioSource) {
+        LOG_DEBUG(LogCategory::Waveform,
+                  QStringLiteral("[Waveform] Stopped monitoring"));
         m_audioSource->stop();
         delete m_audioSource;
         m_audioSource = nullptr;

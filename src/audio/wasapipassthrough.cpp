@@ -1,4 +1,5 @@
 #include "audio/wasapipassthrough.h"
+#include "logging/LogMacros.h"
 #include <initguid.h>
 
 #include <QtConcurrent>
@@ -162,6 +163,9 @@ void WasapiPassthrough::setVolume(float volume)
 void WasapiPassthrough::start(const QString &inputDeviceDesc, const QString &outputDeviceDesc)
 {
     if (m_running) return;
+    LOG_INFO(LogCategory::Audio,
+             QStringLiteral("[Passthrough] Starting microphone loopback passthrough (input: \"%1\", output: \"%2\")")
+                 .arg(inputDeviceDesc, outputDeviceDesc));
     m_running = true;
     m_future = QtConcurrent::run([this, inputDeviceDesc, outputDeviceDesc]() {
         runPassthrough(inputDeviceDesc, outputDeviceDesc);
@@ -170,6 +174,8 @@ void WasapiPassthrough::start(const QString &inputDeviceDesc, const QString &out
 
 void WasapiPassthrough::stop()
 {
+    LOG_INFO(LogCategory::Audio,
+             QStringLiteral("[Passthrough] Stopping loopback passthrough"));
     m_running = false;
     if (m_future.isRunning())
         m_future.waitForFinished();
@@ -228,6 +234,9 @@ void WasapiPassthrough::runPassthrough(const QString &inputDeviceDesc, const QSt
         hr = pOutClient->GetMixFormat(&pwfxOut);
 
     if (FAILED(hr) || !pwfxIn || !pwfxOut) {
+        LOG_ERROR(LogCategory::Audio,
+                  QStringLiteral("[Passthrough] Initialization failed (hr: 0x%1)")
+                      .arg(static_cast<quint32>(hr), 0, 16));
         emit error("Failed to initialize audio clients.");
         if (pwfxIn) CoTaskMemFree(pwfxIn);
         if (pwfxOut) CoTaskMemFree(pwfxOut);
@@ -285,6 +294,9 @@ void WasapiPassthrough::runPassthrough(const QString &inputDeviceDesc, const QSt
         return;
     }
 
+    LOG_DEBUG(LogCategory::Audio,
+              QStringLiteral("[Passthrough] Initializing output client and source capture client"));
+
     pInClient->Start();
     pOutClient->Start();
 
@@ -305,6 +317,9 @@ void WasapiPassthrough::runPassthrough(const QString &inputDeviceDesc, const QSt
 
     std::vector<float> tempConvertedFrames;
     double resamplePos = 0.0;
+
+    LOG_INFO(LogCategory::Audio,
+             QStringLiteral("[Passthrough] Native audio routing loop started"));
 
     while (m_running) {
         // --- 1. CAPTURE DATA FROM INPUT CLIENT ---

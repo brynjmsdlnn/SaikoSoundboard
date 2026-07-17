@@ -1,4 +1,5 @@
 #include "audio/audiomixer.h"
+#include "logging/LogMacros.h"
 #include <algorithm>
 
 AudioMixer::AudioMixer(QObject *parent) : QObject(parent), m_running(false)
@@ -20,12 +21,16 @@ void AudioMixer::addSource(const QString &sourceId, float volume)
     m_sourceQueues[sourceId] = QByteArray();
     m_sourceVolumes[sourceId] = volume;
     m_sourceMuted[sourceId] = false;
+    LOG_DEBUG(LogCategory::Audio,
+              QStringLiteral("[AudioMixer] Source added (sourceId: \"%1\", volume: %2)").arg(sourceId).arg(volume));
 }
 
 void AudioMixer::setSourceMuted(const QString &sourceId, bool muted)
 {
     QMutexLocker lock(&m_mutex);
     m_sourceMuted[sourceId] = muted;
+    LOG_DEBUG(LogCategory::Audio,
+              QStringLiteral("[AudioMixer] Source mute status changed (sourceId: \"%1\", muted: %2)").arg(sourceId).arg(muted));
 }
 
 void AudioMixer::updateVolume(const QString &sourceId, float volume)
@@ -33,6 +38,8 @@ void AudioMixer::updateVolume(const QString &sourceId, float volume)
     QMutexLocker lock(&m_mutex);
     if (m_sourceVolumes.contains(sourceId)) {
         m_sourceVolumes[sourceId] = volume;
+        LOG_DEBUG(LogCategory::Audio,
+                  QStringLiteral("[AudioMixer] Source volume updated (sourceId: \"%1\", volume: %2)").arg(sourceId).arg(volume));
     }
 }
 
@@ -48,6 +55,8 @@ void AudioMixer::start()
 {
     m_running = true;
     m_mixTimer->start();
+    LOG_INFO(LogCategory::Audio,
+             QStringLiteral("[AudioMixer] Mixing engine started"));
 }
 
 void AudioMixer::stop()
@@ -56,15 +65,23 @@ void AudioMixer::stop()
     m_mixTimer->stop();
     
     QMutexLocker lock(&m_mutex);
+    int queueCount = m_sourceQueues.size();
     for (auto it = m_sourceQueues.begin(); it != m_sourceQueues.end(); ++it) {
         it.value().clear();
     }
+    LOG_INFO(LogCategory::Audio,
+             QStringLiteral("[AudioMixer] Mixing engine stopped (cleared %1 source queues)").arg(queueCount));
 }
 
 void AudioMixer::setOutputFormat(const WAVEFORMATEXTENSIBLE &format)
 {
     QMutexLocker lock(&m_mutex);
     m_outputFormat = format;
+    LOG_DEBUG(LogCategory::Audio,
+              QStringLiteral("[AudioMixer] Output format set (sampleRate: %1, channels: %2, blockAlign: %3)")
+                  .arg(format.Format.nSamplesPerSec)
+                  .arg(format.Format.nChannels)
+                  .arg(format.Format.nBlockAlign));
 }
 
 void AudioMixer::onMixTimer()

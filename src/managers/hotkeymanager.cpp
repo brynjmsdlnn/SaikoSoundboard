@@ -1,4 +1,5 @@
 #include "hotkeymanager.h"
+#include "logging/LogMacros.h"
 #include <QCoreApplication>
 #include "core/adapters/WindowsHotkeyBackend.h"
 
@@ -33,6 +34,8 @@ bool HotkeyManager::registerHotkey(const QString &keySequence, const Action &act
 
     if (m_backend->registerHotkey(id, keySequence.toStdString())) {
         m_idToAction[id] = action;
+        LOG_INFO(LogCategory::Hotkeys,
+                 QStringLiteral("[HotkeyManager] Registering system-wide hotkey (sequence: \"%1\")").arg(keySequence));
         return true;
     } else {
         m_store.removeBindingById(id);
@@ -48,6 +51,8 @@ void HotkeyManager::unregisterAll()
     }
     m_store.clear();
     m_idToAction.clear();
+    LOG_INFO(LogCategory::Hotkeys,
+             QStringLiteral("[HotkeyManager] Unregistered all system hotkeys"));
 }
 
 bool HotkeyManager::unregisterHotkey(const QString &keySequence)
@@ -59,6 +64,8 @@ bool HotkeyManager::unregisterHotkey(const QString &keySequence)
         if (m_backend) {
             m_backend->unregisterHotkey(id);
         }
+        LOG_INFO(LogCategory::Hotkeys,
+                 QStringLiteral("[HotkeyManager] Unregistering hotkey (sequence: \"%1\")").arg(keySequence));
         return true;
     }
     return false;
@@ -90,6 +97,8 @@ bool HotkeyManager::nativeEventFilter(const QByteArray &eventType, void *message
                     m_actionManager->dispatch(m_idToAction[id]);
                 }
                 QString seq = QString::fromStdString(m_store.getSequence(id));
+                LOG_DEBUG(LogCategory::Hotkeys,
+                          QStringLiteral("[HotkeyManager] Native hotkey activated (id: %1)").arg(id));
                 emit hotkeyActivated(seq);
                 return true;
             }

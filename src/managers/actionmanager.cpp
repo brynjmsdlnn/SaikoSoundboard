@@ -14,6 +14,11 @@ ActionManager::ActionManager(SoundboardManager *sb, RecordingManager *rec, Setti
 
 void ActionManager::dispatch(const Action &action)
 {
+    LOG_DEBUG(LogCategory::General,
+              QStringLiteral("[ActionManager] Dispatching action (type: %1, playerId: \"%2\")")
+                  .arg(static_cast<int>(action.type))
+                  .arg(action.parameters.value("playerId").toString()));
+
     switch (action.type) {
     case ActionType::PlayPlayer:
         handlePlayPlayer(action.parameters.value("playerId").toString());
@@ -37,6 +42,8 @@ void ActionManager::dispatch(const Action &action)
 void ActionManager::handlePlayPlayer(const QString &playerId)
 {
     if (m_sb) {
+        LOG_DEBUG(LogCategory::General,
+                  QStringLiteral("[ActionManager] Handling PlayPlayer action (playerId: \"%1\")").arg(playerId));
         m_sb->playPlayer(playerId);
     }
 }
@@ -44,6 +51,8 @@ void ActionManager::handlePlayPlayer(const QString &playerId)
 void ActionManager::handleStopPlayer(const QString &playerId)
 {
     if (m_sb) {
+        LOG_DEBUG(LogCategory::General,
+                  QStringLiteral("[ActionManager] Handling StopPlayer action (playerId: \"%1\")").arg(playerId));
         m_sb->stopPlayer(playerId);
     }
 }
@@ -62,20 +71,24 @@ void ActionManager::handleAssignReplayToPlayer(const QString &playerId)
         m_sb->loadReplayToPlayer(playerId, path);
     } else {
         LOG_WARN(LogCategory::General,
-                 QStringLiteral("ActionManager: Failed to save replay for assignment to player %1").arg(playerId));
+                 QStringLiteral("[ActionManager] Failed to save replay for assignment to player (playerId: %1)").arg(playerId));
     }
 }
 
 void ActionManager::handleSaveReplay()
 {
-    if (!m_rec || !m_settings) return;
+    if (!m_rec || !m_settings) {
+        LOG_WARN(LogCategory::General,
+                 QStringLiteral("[ActionManager] Cannot save replay — recording manager or settings unavailable"));
+        return;
+    }
 
     QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
     QString path = m_settings->replayDirectory() + QString("/Replay_%1.wav").arg(timestamp);
     
     if (!m_rec->saveReplay(path)) {
         LOG_WARN(LogCategory::General,
-                 QStringLiteral("ActionManager: Failed to save replay"));
+                 QStringLiteral("[ActionManager] Failed to save replay (path: \"%1\")").arg(path));
     }
 }
 
@@ -108,10 +121,18 @@ void ActionManager::dispatchMakePermanent(const QString &playerId, const QString
 
 void ActionManager::handleMakePermanent(const QString &playerId, const QString &customFileName)
 {
-    if (!m_sb || !m_settings) return;
+    if (!m_sb || !m_settings) {
+        LOG_WARN(LogCategory::General,
+                 QStringLiteral("[ActionManager] Cannot make replay permanent — soundboard or settings unavailable"));
+        return;
+    }
 
     SoundPlayerSlot* slot = m_sb->getSlot(playerId);
-    if (!slot || slot->locked || slot->filePath.isEmpty()) return;
+    if (!slot || slot->locked || slot->filePath.isEmpty()) {
+        LOG_DEBUG(LogCategory::General,
+                  QStringLiteral("[ActionManager] MakePermanent skipped — slot not found, locked, or empty (playerId: \"%1\")").arg(playerId));
+        return;
+    }
 
     // Check if it's currently in the temp path
     if (!StoragePaths::isTemporaryPath(slot->filePath)) return;
@@ -135,9 +156,9 @@ void ActionManager::handleMakePermanent(const QString &playerId, const QString &
     if (QFile::copy(slot->filePath, permanentPath)) {
         m_sb->promoteTempFile(playerId, permanentPath);
         LOG_DEBUG(LogCategory::General,
-                  QStringLiteral("ActionManager: Replay made permanent at %1").arg(permanentPath));
+                  QStringLiteral("[ActionManager] Replay made permanent (path: \"%1\")").arg(permanentPath));
     } else {
         LOG_WARN(LogCategory::General,
-                 QStringLiteral("ActionManager: Failed to copy temporary replay to permanent path"));
+                 QStringLiteral("[ActionManager] Failed to copy temporary replay to permanent path"));
     }
 }

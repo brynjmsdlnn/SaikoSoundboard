@@ -1,4 +1,5 @@
 #include "audio/waveformgenerator.h"
+#include "logging/LogMacros.h"
 #include <QFile>
 #include <QDataStream>
 #include <cmath>
@@ -16,6 +17,8 @@ WaveformData WaveformGenerator::generate(const QString &filePath, int resolution
 
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly)) {
+        LOG_WARN(LogCategory::Waveform,
+                 QStringLiteral("[WaveformGenerator] Failed to open file for waveform generation (path: \"%1\")").arg(filePath));
         return data;
     }
 
@@ -166,6 +169,14 @@ WaveformData WaveformGenerator::generate(const QString &filePath, int resolution
         return generateDummyWaveform(data.durationMs, sampleRate, channels, resolution);
     }
 
+    LOG_DEBUG(LogCategory::Waveform,
+              QStringLiteral("[WaveformGenerator] Generating waveform (path: \"%1\", resolution: %2, sampleRate: %3, channels: %4, durationMs: %5)")
+                  .arg(filePath)
+                  .arg(resolution)
+                  .arg(sampleRate)
+                  .arg(channels)
+                  .arg(data.durationMs));
+
     double chunkSizeDouble = static_cast<double>(totalPcmSamples) / resolution;
     float maxVal = 0.0f;
 
@@ -207,6 +218,8 @@ WaveformData WaveformGenerator::generateFromPcm(const QByteArray &pcmData, const
     data.resolution = resolution;
 
     if (format.Format.nSamplesPerSec == 0 || format.Format.nChannels == 0) {
+        LOG_WARN(LogCategory::Waveform,
+                 QStringLiteral("[WaveformGenerator] generateFromPcm called with invalid format, falling back to dummy"));
         return generateDummyWaveform(0, 44100, 2, resolution);
     }
 
@@ -310,6 +323,10 @@ WaveformData WaveformGenerator::generateFromPcm(const QByteArray &pcmData, const
 
     data.peaks = peaks;
     data.isValid = true;
+    LOG_DEBUG(LogCategory::Waveform,
+              QStringLiteral("[WaveformGenerator] Waveform generated from PCM data (resolution: %1, peaks: %2)")
+                  .arg(resolution)
+                  .arg(peaks.size()));
     return data;
 }
 
@@ -322,6 +339,9 @@ WaveformData WaveformGenerator::generateDummyWaveform(qint64 durationMs, int sam
     data.channels = channels > 0 ? channels : 2;
     data.isValid = true;
 
+    LOG_DEBUG(LogCategory::Waveform,
+              QStringLiteral("[WaveformGenerator] Generating dummy waveform (durationMs: %1, sampleRate: %2, channels: %3, resolution: %4)")
+                  .arg(durationMs).arg(sampleRate).arg(channels).arg(resolution));
     QList<float> peaks;
     for (int i = 0; i < resolution; ++i) {
         float t = static_cast<float>(i) / resolution;

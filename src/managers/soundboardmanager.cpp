@@ -38,6 +38,10 @@ QString SoundboardManager::addPlayer(const QString &name)
     
     updatePlayerEngine(slot);
     
+    LOG_INFO(LogCategory::Playback,
+             QStringLiteral("[SoundboardManager] Added new player slot (id: \"%1\", defaultName: \"%2\")")
+                 .arg(slot.id, name));
+    
     emit slotsChanged();
     return slot.id;
 }
@@ -53,6 +57,8 @@ void SoundboardManager::removePlayer(const QString &id)
             if (m_players.contains(id)) {
                 delete m_players.take(id);
             }
+            LOG_INFO(LogCategory::Playback,
+                     QStringLiteral("[SoundboardManager] Removed player slot (id: \"%1\")").arg(id));
             emit slotsChanged();
             return;
         }
@@ -63,6 +69,9 @@ void SoundboardManager::renamePlayer(const QString &id, const QString &newName)
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
         if (slot->locked) return;
+        LOG_INFO(LogCategory::Playback,
+                 QStringLiteral("[SoundboardManager] Player slot renamed (id: \"%1\", newName: \"%2\")")
+                     .arg(id, newName));
         slot->name = newName;
         emit slotsChanged();
     }
@@ -80,6 +89,10 @@ void SoundboardManager::assignAudioFile(const QString &id, const QString &filePa
         slot->filePath = localPath;
         slot->startTimeMs = 0;
         slot->endTimeMs = -1;
+
+        LOG_INFO(LogCategory::Playback,
+                 QStringLiteral("[SoundboardManager] Audio file assigned to slot (id: \"%1\", path: \"%2\")")
+                     .arg(id, localPath));
 
         if (SoundPlayer *player = getPlayer(id)) {
             player->load(localPath);
@@ -101,6 +114,10 @@ void SoundboardManager::promoteTempFile(const QString &id, const QString &newPat
         if (slot->locked) return;
         slot->filePath = newPath;
 
+        LOG_INFO(LogCategory::Playback,
+                 QStringLiteral("[SoundboardManager] Promoted temp recording to slot (id: \"%1\", permanentPath: \"%2\")")
+                     .arg(id, newPath));
+
         if (SoundPlayer *player = getPlayer(id)) {
             player->load(newPath);
             player->setRouting(slot->outputRouting);
@@ -120,6 +137,10 @@ void SoundboardManager::setVolume(const QString &id, float volume)
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
         if (slot->locked) return;
+        LOG_DEBUG(LogCategory::Playback,
+                  QStringLiteral("[SoundboardManager] Slot volume updated (id: \"%1\", volume: %2)")
+                      .arg(id)
+                      .arg(volume));
         slot->volume = volume;
         if (SoundPlayer *player = getPlayer(id)) {
             player->setVolume(volume);
@@ -130,6 +151,10 @@ void SoundboardManager::setVolume(const QString &id, float volume)
 void SoundboardManager::setSlotLocked(const QString &id, bool locked)
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
+        LOG_INFO(LogCategory::Playback,
+                 QStringLiteral("[SoundboardManager] Slot lock status changed (id: \"%1\", locked: %2)")
+                     .arg(id)
+                     .arg(locked));
         slot->locked = locked;
         emit slotsChanged();
         saveToSettings();
@@ -148,6 +173,9 @@ void SoundboardManager::setHotkeys(const QString &id, const QString &playHotkey,
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
         if (slot->locked) return;
+        LOG_DEBUG(LogCategory::Playback,
+                  QStringLiteral("[SoundboardManager] Hotkeys configured for slot (id: \"%1\", play: \"%2\", assign: \"%3\")")
+                      .arg(id, playHotkey, assignHotkey));
         slot->playHotkey = playHotkey;
         slot->assignHotkey = assignHotkey;
         emit slotsChanged();
@@ -169,7 +197,7 @@ void SoundboardManager::playPlayer(const QString &id)
             }
 
             LOG_DEBUG(LogCategory::Playback,
-                     QStringLiteral("[SoundboardManager] playPlayer id=%1 name=\"%2\" slotMode=%3 effectiveMode=%4")
+                     QStringLiteral("[SoundboardManager] Playing slot (id: %1, name: \"%2\", slotMode: %3, effectiveMode: %4)")
                          .arg(id)
                          .arg(slot->name)
                          .arg(static_cast<int>(slot->playbackMode))
@@ -188,6 +216,9 @@ void SoundboardManager::playPlayerPreview(const QString &id)
             player->setGlobalOverrides(m_settings->enableMicOutput(), m_settings->enableLocalMonitoring());
             player->setDevices(m_micDevice, m_localDevice);
             player->setClipRange(slot->startTimeMs, slot->endTimeMs);
+            LOG_DEBUG(LogCategory::Playback,
+                      QStringLiteral("[SoundboardManager] Preview playback started (id: \"%1\", name: \"%2\")")
+                          .arg(id, slot->name));
             player->playPreview();
         }
     }
@@ -196,12 +227,16 @@ void SoundboardManager::playPlayerPreview(const QString &id)
 void SoundboardManager::stopPlayer(const QString &id)
 {
     if (SoundPlayer *player = getPlayer(id)) {
+        LOG_DEBUG(LogCategory::Playback,
+                  QStringLiteral("[SoundboardManager] Stopping player (id: \"%1\")").arg(id));
         player->stop();
     }
 }
 
 void SoundboardManager::stopAll()
 {
+    LOG_INFO(LogCategory::Playback,
+             QStringLiteral("[SoundboardManager] Stop all playback triggered"));
     for (SoundPlayer *player : m_players) {
         player->stop();
     }
@@ -214,6 +249,9 @@ void SoundboardManager::loadReplayToPlayer(const QString &id, const QString &rep
 
 void SoundboardManager::loadFromSettings()
 {
+    LOG_INFO(LogCategory::Playback,
+             QStringLiteral("[SoundboardManager] Loading slots from settings (%1 slots)").arg(m_settings->soundBoardSlots().size()));
+
     m_slots = m_settings->soundBoardSlots();
     
     // Refresh device caches
@@ -221,8 +259,11 @@ void SoundboardManager::loadFromSettings()
     m_localDevice = findAudioDevice(m_settings->localMonitorDevice());
 
     // Clean up old engines
+    int prevCount = m_players.size();
     qDeleteAll(m_players);
     m_players.clear();
+    LOG_DEBUG(LogCategory::Playback,
+              QStringLiteral("[SoundboardManager] Cleaned up %1 previous player engines").arg(prevCount));
 
     // Create new engines
     for (const auto &slot : m_slots) {
@@ -237,6 +278,8 @@ void SoundboardManager::loadFromSettings()
 
 void SoundboardManager::saveToSettings()
 {
+    LOG_DEBUG(LogCategory::Playback,
+              QStringLiteral("[SoundboardManager] Saving %1 slots to settings").arg(m_slots.size()));
     m_settings->setSoundBoardSlots(m_slots);
     m_settings->save();
 }
@@ -278,6 +321,8 @@ bool SoundboardManager::isLocalMonitoringEnabled() const
 
 void SoundboardManager::setMicOutputEnabled(bool enabled)
 {
+    LOG_INFO(LogCategory::Playback,
+             QStringLiteral("[SoundboardManager] Mic output %1").arg(enabled ? QStringLiteral("enabled") : QStringLiteral("disabled")));
     m_settings->setEnableMicOutput(enabled);
     m_settings->save();
     for (auto *player : m_players) {
@@ -288,6 +333,8 @@ void SoundboardManager::setMicOutputEnabled(bool enabled)
 
 void SoundboardManager::setLocalMonitoringEnabled(bool enabled)
 {
+    LOG_INFO(LogCategory::Playback,
+             QStringLiteral("[SoundboardManager] Local monitoring %1").arg(enabled ? QStringLiteral("enabled") : QStringLiteral("disabled")));
     m_settings->setEnableLocalMonitoring(enabled);
     m_settings->save();
     for (auto *player : m_players) {
@@ -298,6 +345,8 @@ void SoundboardManager::setLocalMonitoringEnabled(bool enabled)
 
 void SoundboardManager::setMicOutputDevice(const QString &description)
 {
+    LOG_INFO(LogCategory::Playback,
+             QStringLiteral("[SoundboardManager] Mic output device set (device: \"%1\")").arg(description));
     m_settings->setMicOutputDevice(description);
     m_settings->save();
     m_micDevice = findAudioDevice(description);
@@ -309,6 +358,8 @@ void SoundboardManager::setMicOutputDevice(const QString &description)
 
 void SoundboardManager::setLocalMonitorDevice(const QString &description)
 {
+    LOG_INFO(LogCategory::Playback,
+             QStringLiteral("[SoundboardManager] Local monitor device set (device: \"%1\")").arg(description));
     m_settings->setLocalMonitorDevice(description);
     m_settings->save();
     m_localDevice = findAudioDevice(description);
@@ -321,6 +372,10 @@ void SoundboardManager::setPlayerRouting(const QString &id, OutputRouting routin
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
         if (slot->locked) return;
+        LOG_DEBUG(LogCategory::Playback,
+                  QStringLiteral("[SoundboardManager] Player routing set (id: \"%1\", routing: %2)")
+                      .arg(id)
+                      .arg(static_cast<int>(routing)));
         slot->outputRouting = routing;
         if (SoundPlayer *player = getPlayer(id)) {
             player->setRouting(routing);
@@ -334,10 +389,10 @@ void SoundboardManager::setPlayerPlaybackMode(const QString &id, PlaybackMode mo
     if (SoundPlayerSlot *slot = getSlot(id)) {
         if (slot->locked) return;
         LOG_DEBUG(LogCategory::Playback,
-                 QStringLiteral("[SoundboardManager] setPlayerPlaybackMode id=%1 name=\"%2\" newMode=%3")
-                     .arg(id)
-                     .arg(slot->name)
-                     .arg(static_cast<int>(mode)));
+                  QStringLiteral("[SoundboardManager] Set slot playback mode (id: %1, name: \"%2\", newMode: %3)")
+                      .arg(id)
+                      .arg(slot->name)
+                      .arg(static_cast<int>(mode)));
         slot->playbackMode = mode;
         if (SoundPlayer *player = getPlayer(id)) {
             PlaybackMode effective = (mode == PlaybackMode::Default) ? m_settings->defaultPlaybackMode() : mode;
@@ -351,6 +406,11 @@ void SoundboardManager::setPlayerClipRange(const QString &id, qint64 startMs, qi
 {
     if (SoundPlayerSlot *slot = getSlot(id)) {
         if (slot->locked) return;
+        LOG_DEBUG(LogCategory::Playback,
+                  QStringLiteral("[SoundboardManager] Player clip range set (id: \"%1\", startMs: %2, endMs: %3)")
+                      .arg(id)
+                      .arg(startMs)
+                      .arg(endMs));
         slot->startTimeMs = startMs;
         slot->endTimeMs = endMs;
         if (SoundPlayer *player = getPlayer(id)) {
@@ -365,6 +425,10 @@ void SoundboardManager::setPlayerClipRange(const QString &id, qint64 startMs, qi
 void SoundboardManager::loadWaveformData(const QString &playerId, const QString &filePath)
 {
     if (filePath.isEmpty()) return;
+
+    LOG_INFO(LogCategory::Playback,
+             QStringLiteral("[SoundboardManager] Waveform data generation started (id: \"%1\", file: \"%2\")")
+                 .arg(playerId, filePath));
 
     if (m_waveformCache.contains(filePath)) {
         emit waveformGenerated(playerId, m_waveformCache[filePath]);
@@ -416,6 +480,9 @@ QVariantList SoundboardManager::getPlayerLayerPositions(const QString &id) const
 void SoundboardManager::updatePlayerEngine(const SoundPlayerSlot &slot)
 {
     if (!m_players.contains(slot.id)) {
+        LOG_DEBUG(LogCategory::Playback,
+                  QStringLiteral("[SoundboardManager] Creating player engine for slot (id: \"%1\", name: \"%2\", file: \"%3\")")
+                      .arg(slot.id, slot.name, slot.filePath));
         SoundPlayer *player = new SoundPlayer(this);
         player->setVolume(slot.volume);
         player->setRouting(slot.outputRouting);
@@ -475,6 +542,8 @@ bool SoundboardManager::isMicPassthroughEnabled() const
 
 void SoundboardManager::setMicPassthroughEnabled(bool enabled)
 {
+    LOG_INFO(LogCategory::Playback,
+             QStringLiteral("[SoundboardManager] Mic passthrough %1").arg(enabled ? QStringLiteral("enabled") : QStringLiteral("disabled")));
     m_settings->setEnableMicPassthrough(enabled);
     m_settings->save();
     updatePassthroughEngine();
@@ -483,6 +552,8 @@ void SoundboardManager::setMicPassthroughEnabled(bool enabled)
 
 void SoundboardManager::setVoiceInputDevice(const QString &description)
 {
+    LOG_INFO(LogCategory::Playback,
+             QStringLiteral("[SoundboardManager] Voice input device set (device: \"%1\")").arg(description));
     m_settings->setVoiceInputDevice(description);
     m_settings->save();
     updatePassthroughEngine();
@@ -519,7 +590,7 @@ void SoundboardManager::updatePassthroughEngine()
     m_passthrough = new WasapiPassthrough(this);
     connect(m_passthrough, &WasapiPassthrough::error, this, [](const QString &msg) {
         LOG_WARN(LogCategory::Audio,
-                 QStringLiteral("Passthrough: %1").arg(msg));
+                 QStringLiteral("[Passthrough] Error occurred (message: \"%1\")").arg(msg));
     });
     m_passthrough->start(voiceDevName, outputDevName);
 }

@@ -1,4 +1,5 @@
 #include "audio/wavwriter.h"
+#include "logging/LogMacros.h"
 #include <QDataStream>
 
 WavWriter::WavWriter(QObject *parent)
@@ -23,12 +24,20 @@ bool WavWriter::open(const QString &fileName, const WAVEFORMATEXTENSIBLE &format
 
     m_file.setFileName(fileName);
     if (!m_file.open(QIODevice::WriteOnly)) {
+        LOG_ERROR(LogCategory::Recording,
+                  QStringLiteral("[WavWriter] Failed to open WAV file (file: \"%1\")").arg(fileName));
         return false;
     }
 
     m_fileName = fileName;
     m_format = format;
     m_headerWritten = false;
+
+    LOG_INFO(LogCategory::Recording,
+             QStringLiteral("[WavWriter] Opening WAV file for writing (file: \"%1\", sampleRate: %2, channels: %3)")
+                 .arg(m_fileName)
+                 .arg(m_format.Format.nSamplesPerSec)
+                 .arg(m_format.Format.nChannels));
 
     if (m_format.Format.nSamplesPerSec > 0) {
         writeHeader();
@@ -52,10 +61,16 @@ void WavWriter::close()
 {
     if (!m_file.isOpen()) return;
 
+    qint64 finalSize = m_file.size();
     if (m_headerWritten) {
         updateHeader();
     }
     m_file.close();
+
+    LOG_INFO(LogCategory::Recording,
+             QStringLiteral("[WavWriter] Closing WAV file (file: \"%1\", finalSize: %2 bytes)")
+                 .arg(m_fileName)
+                 .arg(finalSize));
     m_headerWritten = false;
 }
 

@@ -34,6 +34,8 @@ Lightweight logging foundation for Saiko Soundboard. Routes structured log recor
 - **FileSink failure**: Silently disables itself if the log file cannot be created. Never crashes the application.
 - **LogModel** connects to `Logger::logRecordCreated` signal for in-app log viewing.
 - **No sink hierarchy or interfaces** — sinks are concrete classes owned directly by Logger.
+- **Log Message Format**: Every log message must follow the convention: `[Component] Message content in sentence case (key1: val1, key2: "val2").`
+  - E.g., `LOG_DEBUG(LogCategory::Audio, QStringLiteral("[WASAPI] Attempting per-process audio capture (pid: %1)").arg(pid));`
 
 ## Verification
 

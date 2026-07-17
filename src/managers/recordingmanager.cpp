@@ -83,7 +83,7 @@ void RecordingManager::updateState()
         m_state = newState;
         emit stateChanged(m_state);
         LOG_DEBUG(LogCategory::Recording,
-                  QStringLiteral("RecordingManager: State changed to %1").arg(static_cast<int>(m_state)));
+                  QStringLiteral("[RecordingManager] State changed (state: %1)").arg(static_cast<int>(m_state)));
     }
 
     bool newEngine = !m_activeRecorders.isEmpty();
@@ -98,6 +98,8 @@ void RecordingManager::updateState()
 
 void RecordingManager::stopEngine()
 {
+    LOG_INFO(LogCategory::Recording,
+             QStringLiteral("[RecordingManager] Stopping audio recording engine"));
     m_mixer->stop();
     
     // Restore system volumes for all tracked PIDs
@@ -121,6 +123,9 @@ void RecordingManager::stopEngine()
 void RecordingManager::startEngine(const QString &mode)
 {
     if (isEngineRunning()) return;
+
+    LOG_INFO(LogCategory::Recording,
+             QStringLiteral("[RecordingManager] Starting audio recording engine (mode: \"%1\")").arg(mode));
 
     WAVEFORMATEXTENSIBLE format;
     memset(&format, 0, sizeof(format));
@@ -164,6 +169,9 @@ bool RecordingManager::startRecording(const QString &path)
         return false;
     }
 
+    LOG_INFO(LogCategory::Recording,
+             QStringLiteral("[RecordingManager] Recording session started (path: \"%1\")").arg(path));
+
     updateState();
     emit recordingStarted(path);
     return true;
@@ -173,6 +181,9 @@ void RecordingManager::stopRecording()
 {
     QString path = m_wavWriter->fileName();
     m_wavWriter->close();
+
+    LOG_INFO(LogCategory::Recording,
+             QStringLiteral("[RecordingManager] Recording session stopped (path: \"%1\")").arg(path));
 
     if (!m_replayEnabled) {
         stopEngine();
@@ -185,6 +196,8 @@ void RecordingManager::stopRecording()
 void RecordingManager::setReplayEnabled(bool enabled, const QString &mode)
 {
     if (enabled == m_replayEnabled) return;
+    LOG_INFO(LogCategory::Recording,
+             QStringLiteral("[RecordingManager] Replay buffer %1").arg(enabled ? QStringLiteral("enabled") : QStringLiteral("disabled")));
     m_replayEnabled = enabled;
     if (enabled) {
         if (!isEngineRunning()) {
@@ -202,13 +215,22 @@ void RecordingManager::setReplayEnabled(bool enabled, const QString &mode)
 
 void RecordingManager::setReplayDuration(int seconds)
 {
+    LOG_DEBUG(LogCategory::Recording,
+              QStringLiteral("[RecordingManager] Replay buffer duration set (seconds: %1)").arg(seconds));
     m_replayBuffer->setDuration(seconds);
 }
 
 bool RecordingManager::saveReplay(const QString &path)
 {
     QByteArray data = m_replayBuffer->getBufferData();
-    if (data.isEmpty()) return false;
+    if (data.isEmpty()) {
+        LOG_WARN(LogCategory::Recording,
+                 QStringLiteral("[RecordingManager] Replay buffer empty, cannot save (path: \"%1\")").arg(path));
+        return false;
+    }
+
+    LOG_INFO(LogCategory::Recording,
+             QStringLiteral("[RecordingManager] Saving replay buffer (path: \"%1\")").arg(path));
 
     WAVEFORMATEXTENSIBLE fmt = m_mixer->getOutputFormat();
     if (fmt.Format.nSamplesPerSec == 0) return false;
@@ -294,12 +316,20 @@ void RecordingManager::setSourceSolo(const QString &sourceId, bool solo)
     } else {
         m_soloedSources.remove(sourceId);
     }
+    LOG_DEBUG(LogCategory::Recording,
+              QStringLiteral("[RecordingManager] Source solo status changed (sourceId: \"%1\", soloed: %2)")
+                  .arg(sourceId)
+                  .arg(solo));
     updateMuteStates();
     emit soloChanged(sourceId, solo);
 }
 
 void RecordingManager::setSourceVolume(const QString &sourceId, float volume)
 {
+    LOG_DEBUG(LogCategory::Recording,
+              QStringLiteral("[RecordingManager] Source volume updated (sourceId: \"%1\", volume: %2)")
+                  .arg(sourceId)
+                  .arg(volume));
     if (m_mixer) {
         m_mixer->updateVolume(sourceId, volume);
     }
@@ -310,6 +340,10 @@ void RecordingManager::setSourceVolume(const QString &sourceId, float volume)
 
 void RecordingManager::setSourceMuted(const QString &sourceId, bool muted)
 {
+    LOG_DEBUG(LogCategory::Recording,
+              QStringLiteral("[RecordingManager] Source mute status changed (sourceId: \"%1\", muted: %2)")
+                  .arg(sourceId)
+                  .arg(muted));
     if (m_mixer) {
         m_mixer->setSourceMuted(sourceId, muted);
     }
