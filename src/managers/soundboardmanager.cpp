@@ -426,20 +426,32 @@ void SoundboardManager::loadWaveformData(const QString &playerId, const QString 
 {
     if (filePath.isEmpty()) return;
 
-    LOG_INFO(LogCategory::Playback,
-             QStringLiteral("[SoundboardManager] Waveform data generation started (id: \"%1\", file: \"%2\")")
-                 .arg(playerId, filePath));
-
     if (m_waveformCache.contains(filePath)) {
         emit waveformGenerated(playerId, m_waveformCache[filePath]);
         return;
     }
 
+    if (m_pendingWaveformRequests.contains(filePath)) {
+        m_pendingWaveformRequests[filePath].append(playerId);
+        return;
+    }
+
+    m_pendingWaveformRequests.insert(filePath, { playerId });
+
+    LOG_INFO(LogCategory::Playback,
+             QStringLiteral("[SoundboardManager] Waveform data generation started (id: \"%1\", file: \"%2\")")
+                 .arg(playerId, filePath));
+
     QFutureWatcher<WaveformData> *watcher = new QFutureWatcher<WaveformData>(this);
-    connect(watcher, &QFutureWatcher<WaveformData>::finished, this, [this, watcher, playerId, filePath]() {
+    connect(watcher, &QFutureWatcher<WaveformData>::finished, this, [this, watcher, filePath]() {
         WaveformData data = watcher->result();
         m_waveformCache.insert(filePath, data);
-        emit waveformGenerated(playerId, data);
+        
+        const QList<QString> playerIds = m_pendingWaveformRequests.take(filePath);
+        for (const QString &pid : playerIds) {
+            emit waveformGenerated(pid, data);
+        }
+        
         watcher->deleteLater();
     });
 

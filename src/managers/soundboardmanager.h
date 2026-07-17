@@ -99,6 +99,7 @@ private:
     QList<SoundPlayerSlot> m_slots;
     QMap<QString, SoundPlayer*> m_players;
     QMap<QString, WaveformData> m_waveformCache;
+    QMap<QString, QList<QString>> m_pendingWaveformRequests;
 
     QAudioDevice m_micDevice;
     QAudioDevice m_localDevice;

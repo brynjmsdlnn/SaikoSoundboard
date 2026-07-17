@@ -80,6 +80,7 @@ inline PlaybackMode stringToPlaybackMode(const QString& str) {
     if (str == "QueuedSequential") return PlaybackMode::QueuedSequential;
     if (str == "LayeredCutAll") return PlaybackMode::LayeredCutAll;
     if (str == "LayeredRingOut") return PlaybackMode::LayeredRingOut;
+    if (str == "Default") return PlaybackMode::Default;
     LOG_WARN(LogCategory::Settings,
              QStringLiteral("[Settings] Unknown PlaybackMode string (string: \"%1\") \u2014 falling back to Default").arg(str));
     return PlaybackMode::Default;

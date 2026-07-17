@@ -124,7 +124,6 @@ QmlBackend::QmlBackend(QObject *parent)
 QmlBackend::~QmlBackend()
 {
     m_soundboardManager->saveToSettings();
-    m_settings->save();
     delete static_cast<Saiko::Adapters::WindowsHotkeyBackend*>(m_hotkeyBackend);
 }
 
