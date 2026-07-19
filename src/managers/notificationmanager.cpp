@@ -3,7 +3,8 @@
 #include "managers/settingsmanager.h"
 #include "managers/soundboardmanager.h"
 #include "managers/recordingmanager.h"
-#include <QFileInfo>
+#include "models/soundplayerslot.h"
+#include "storage/StoragePaths.h"
 
 NotificationManager::NotificationManager(SettingsManager *settings, 
                                          SoundboardManager *soundboard, 
@@ -45,10 +46,39 @@ NotificationManager::NotificationManager(SettingsManager *settings,
                         }
                     }
 
-                    // In QueuedSequential mode, stack durations cumulatively;
-                    // in layered/overlapping modes, reset duration on each play
-                    bool stackDuration = (slot->playbackMode == PlaybackMode::QueuedSequential);
-                    postNotification(slot->name, details, QStringLiteral("play"), notificationDuration, id, stackDuration);
+                    // Resolve the effective playback mode
+                    PlaybackMode effectiveMode = slot->playbackMode;
+                    if (effectiveMode == PlaybackMode::Default) {
+                        effectiveMode = m_settings->defaultPlaybackMode();
+                    }
+                    bool stackDuration = (effectiveMode == PlaybackMode::QueuedSequential);
+
+                    // Extend details with playback mode status indicator
+                    QString extendedDetails = details;
+                    QString modeStr = playbackModeToString(effectiveMode);
+                    if (!extendedDetails.isEmpty()) {
+                        extendedDetails += QStringLiteral(" \u2022 ");
+                    }
+                    // Human-friendly mode label for the subtitle
+                    switch (effectiveMode) {
+                        case PlaybackMode::QueuedSequential:
+                            extendedDetails += QStringLiteral("Queued");
+                            break;
+                        case PlaybackMode::ToggleStop:
+                            extendedDetails += QStringLiteral("Press to Stop");
+                            break;
+                        case PlaybackMode::LayeredCutAll:
+                            extendedDetails += QStringLiteral("Overlaps, Cuts Others");
+                            break;
+                        case PlaybackMode::LayeredRingOut:
+                            extendedDetails += QStringLiteral("Overlaps, Rings Out");
+                            break;
+                        default:
+                            extendedDetails += QStringLiteral("Restarts");
+                            break;
+                    }
+
+                    postNotification(slot->name, extendedDetails, QStringLiteral("play"), notificationDuration, id, stackDuration, modeStr);
                 }
             } else if (state == PlayState::Stopped) {
                 // Instantly collapse the notification for this slot
@@ -61,12 +91,19 @@ NotificationManager::NotificationManager(SettingsManager *settings,
             emit notificationQueueCountChanged(id, count);
         });
 
-        // Slot assignment notifications — from either recording dialog or soundboard file picker
+        // Slot assignment notifications — from either replay assignment, recording dialog, or file picker
         connect(m_soundboard, &SoundboardManager::audioFileAssigned, this, [this](const QString &slotName, const QString &filePath) {
-            Q_UNUSED(filePath)
+            QString title;
+            if (StoragePaths::isTemporaryPath(filePath)) {
+                // Instant replay assignment (temp file was just saved and assigned in one action)
+                title = QStringLiteral("Replay Saved & Assigned");
+            } else {
+                // Standard slot assignment (from recording dialog, file picker, or make-permanent)
+                title = QStringLiteral("Slot Assigned");
+            }
             LOG_DEBUG(LogCategory::General,
-                      QStringLiteral("[NotificationManager] Audio file assigned notification (slot: \"%1\")").arg(slotName));
-            postNotification(QStringLiteral("Recording Saved"),
+                      QStringLiteral("[NotificationManager] Audio file assigned notification (slot: \"%1\", title: \"%2\")").arg(slotName, title));
+            postNotification(title,
                              QStringLiteral("Assigned to %1").arg(slotName),
                              QStringLiteral("save"));
         });
@@ -75,25 +112,32 @@ NotificationManager::NotificationManager(SettingsManager *settings,
     // Auto-notifications on recording / replay actions
     if (m_recording) {
         connect(m_recording, &RecordingManager::replaySaved, this, [this](const QString &path) {
-            QString name = QFileInfo(path).fileName();
+            // Suppress notification for temporary paths — those are immediately assigned to a slot
+            // and will show a unified "Replay Saved & Assigned" notification instead.
+            if (StoragePaths::isTemporaryPath(path)) {
+                LOG_DEBUG(LogCategory::General,
+                          QStringLiteral("[NotificationManager] Suppressing replaySaved notification for temporary path"));
+                return;
+            }
+            // Permanent save (from QML Save button or SaveReplay action)
             LOG_DEBUG(LogCategory::General,
-                      QStringLiteral("[NotificationManager] Replay saved auto-notification triggered (file: \"%1\")").arg(name));
-            postNotification(QStringLiteral("Replay Saved"), name, QStringLiteral("save"));
+                      QStringLiteral("[NotificationManager] Replay saved auto-notification triggered (permanent path)"));
+            postNotification(QStringLiteral("Replay Saved"), QString(), QStringLiteral("save"));
         });
 
         connect(m_recording, &RecordingManager::recordingStarted, this, [this](const QString &path) {
-            QString name = QFileInfo(path).fileName();
+            Q_UNUSED(path)
             LOG_DEBUG(LogCategory::General,
-                      QStringLiteral("[NotificationManager] Recording started auto-notification (file: \"%1\")").arg(name));
-            postNotification(QStringLiteral("Recording Started"), name, QStringLiteral("circle"));
+                      QStringLiteral("[NotificationManager] Recording started auto-notification"));
+            postNotification(QStringLiteral("Recording Started"), QString(), QStringLiteral("circle"));
         });
 
         connect(m_recording, &RecordingManager::recordingStopped, this, [this](const QString &path) {
-            QString name = QFileInfo(path).fileName();
+            Q_UNUSED(path)
             LOG_DEBUG(LogCategory::General,
-                      QStringLiteral("[NotificationManager] Recording finished auto-notification (file: \"%1\")").arg(name));
+                      QStringLiteral("[NotificationManager] Recording finished auto-notification"));
             // Use "Recording Stopped" with square icon since saving is deferred to the dialog
-            postNotification(QStringLiteral("Recording Stopped"), name, QStringLiteral("square"));
+            postNotification(QStringLiteral("Recording Stopped"), QString(), QStringLiteral("square"));
         });
     }
 }
@@ -154,7 +198,7 @@ void NotificationManager::setPosition(const QString &position)
     m_settings->setNotificationsPosition(position);
 }
 
-void NotificationManager::postNotification(const QString &title, const QString &message, const QString &icon, int customDurationMs, const QString &sourceId, bool stackDuration)
+void NotificationManager::postNotification(const QString &title, const QString &message, const QString &icon, int customDurationMs, const QString &sourceId, bool stackDuration, const QString &playbackMode)
 {
     if (!enabled()) {
         LOG_DEBUG(LogCategory::General,
@@ -164,13 +208,14 @@ void NotificationManager::postNotification(const QString &title, const QString &
 
     int duration = (customDurationMs > 0) ? customDurationMs : durationMs();
     LOG_INFO(LogCategory::General,
-             QStringLiteral("[NotificationManager] Posting notification (title: \"%1\", message: \"%2\", icon: \"%3\", duration: %4 ms, sourceId: \"%5\", stackDuration: %6)")
+             QStringLiteral("[NotificationManager] Posting notification (title: \"%1\", message: \"%2\", icon: \"%3\", duration: %4 ms, sourceId: \"%5\", stackDuration: %6, playbackMode: \"%7\")")
                  .arg(title)
                  .arg(message)
                  .arg(icon)
                  .arg(duration)
                  .arg(sourceId)
-                 .arg(stackDuration));
+                 .arg(stackDuration)
+                 .arg(playbackMode));
 
-    emit notificationPosted(title, message, icon, duration, sourceId, stackDuration);
+    emit notificationPosted(title, message, icon, duration, sourceId, stackDuration, playbackMode);
 }

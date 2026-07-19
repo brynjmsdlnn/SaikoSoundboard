@@ -1,7 +1,12 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import Saiko 1.0
+import "helpers.js" as NotifHelpers
 
+// ---------------------------------------------------------------------------
+// NotificationList — container managing model data, decay timers, and
+// the "+N more" badge. Uses NotificationCard for each visible card.
+// ---------------------------------------------------------------------------
 Item {
     id: root
     clip: true
@@ -11,6 +16,7 @@ Item {
     property bool isOverlayMode: false
 
     readonly property int count: notificationModel.count
+    property double currentTime: Date.now()
 
     // Preset size lookup mapping
     readonly property var sizeMap: {
@@ -46,7 +52,7 @@ Item {
     implicitHeight: 400
     height: visibleCount > 0 ? (visibleCount * (resolvedSize.height + 8) + badgeHeight + 8) : 0
 
-    // Auto-collapse after 4 seconds when expanded
+    // ── Auto-collapse after 4 seconds when expanded ────────────────────────
     Timer {
         id: collapseTimer
         interval: 4000
@@ -54,20 +60,19 @@ Item {
         onTriggered: root.expanded = false
     }
 
+    // ── Notification model ─────────────────────────────────────────────────
     ListModel {
         id: notificationModel
     }
 
-    function encodeColor(c) {
-        return String(c).replace("#", "%23");
-    }
-
+    // ── Decay timer — lazily initialises expiry and removes expired cards ──
     Timer {
         id: decayTimer
         interval: 100
         repeat: true
         running: notificationModel.count > 0
         onTriggered: {
+            root.currentTime = Date.now();
             var now = Date.now();
             for (var i = notificationModel.count - 1; i >= 0; --i) {
                 var item = notificationModel.get(i);
@@ -101,25 +106,19 @@ Item {
         }
     }
 
+    // ── C++ backend connections ────────────────────────────────────────────
     Connections {
         target: Backend.notifications
 
         function onNotificationCollapsed(sourceId) {
-            // Decrement playCount; only collapse when count reaches 0
             var now = Date.now();
             for (var i = 0; i < notificationModel.count; ++i) {
                 var item = notificationModel.get(i);
                 if (item.sourceId === sourceId && !item.isFadingOut) {
-                    var currentCount = item.playCount || 1;
-                    var newCount = currentCount - 1;
-                    if (newCount <= 0) {
-                        notificationModel.setProperty(i, "playCount", 0);
-                        notificationModel.setProperty(i, "expiryTime", now);
-                        notificationModel.setProperty(i, "isFadingOut", true);
-                    } else {
-                        notificationModel.setProperty(i, "playCount", newCount);
-                    }
-                    return; // Handle exactly one layer stop event
+                    notificationModel.setProperty(i, "playCount", 0);
+                    notificationModel.setProperty(i, "expiryTime", now);
+                    notificationModel.setProperty(i, "isFadingOut", true);
+                    return;
                 }
             }
         }
@@ -134,7 +133,7 @@ Item {
             }
         }
 
-        function onNotificationPosted(title, message, icon, durationMs, sourceId, stackDuration) {
+        function onNotificationPosted(title, message, icon, durationMs, sourceId, stackDuration, playbackMode) {
             // Check global enabled setting
             if (!Backend.notifications.enabled) {
                 return;
@@ -153,6 +152,18 @@ Item {
 
             var now = Date.now();
 
+            // Cut-All clearance: if the incoming notification is LayeredCutAll,
+            // immediately collapse all other active playback notifications
+            if (playbackMode === "LayeredCutAll") {
+                for (var ci = 0; ci < notificationModel.count; ++ci) {
+                    var candidate = notificationModel.get(ci);
+                    if (candidate.sourceId !== sourceId && !candidate.isFadingOut && candidate.icon === "play") {
+                        notificationModel.setProperty(ci, "expiryTime", now);
+                        notificationModel.setProperty(ci, "isFadingOut", true);
+                    }
+                }
+            }
+
             // Merge with an existing active card for this sourceId
             if (sourceId && sourceId !== "") {
                 for (var i = 0; i < notificationModel.count; ++i) {
@@ -169,8 +180,11 @@ Item {
                         if (stackDuration) {
                             var currentExpiry = item.expiryTime || now;
                             notificationModel.setProperty(i, "expiryTime", Math.max(currentExpiry, now) + durationMs);
+                            var currentDuration = item.durationMs || 0;
+                            notificationModel.setProperty(i, "durationMs", currentDuration + durationMs);
                         } else {
                             notificationModel.setProperty(i, "expiryTime", now + durationMs);
+                            notificationModel.setProperty(i, "durationMs", durationMs);
                         }
                         return;
                     }
@@ -182,17 +196,19 @@ Item {
                 "title": title,
                 "message": message,
                 "icon": icon,
-                "expiryTime": 0,
+                "expiryTime": stackDuration ? (now + durationMs) : 0,
                 "durationMs": durationMs,
                 "isFadingOut": false,
                 "createdTime": now,
                 "sourceId": sourceId || "",
                 "playCount": 1,
-                "stackDuration": stackDuration
+                "stackDuration": stackDuration,
+                "playbackMode": playbackMode || ""
             });
         }
     }
 
+    // ── Visual layout ──────────────────────────────────────────────────────
     ColumnLayout {
         id: listLayout
         anchors.left: parent.left
@@ -221,124 +237,26 @@ Item {
 
         Repeater {
             model: notificationModel
-            delegate: Rectangle {
-                id: card
+            delegate: NotificationCard {
                 // Only cards within the viewport are visible; queued cards collapse to 0 height
                 // When expanded, all cards become visible up to displayCount
                 visible: index < root.displayCount
+                Layout.fillWidth: true
 
-                property int cardPlayCount: playCount
+                cardTitle: model.title
+                cardMessage: model.message
+                cardIcon: model.icon
+                cardExpiryTime: model.expiryTime
+                cardDurationMs: model.durationMs
+                cardIsFadingOut: model.isFadingOut
+                cardPlayCount: model.playCount
+                cardStackDuration: model.stackDuration
+                cardPlaybackMode: model.playbackMode
+                cardCurrentTime: root.currentTime
 
-                Layout.preferredWidth: parent.width
-                Layout.preferredHeight: root.resolvedSize.height
-                color: Theme.cardBackground
-                radius: Theme.cardRadius
-                border.color: Theme.borderDefault
-                border.width: 1
-                opacity: isFadingOut ? 0.0 : 1.0
-
-                // Slide offset: starts at ±100, animates to 0 on creation
-                // Right-side positions slide from right (+100), left-side from left (-100)
-                property real slideOffset: root.isRightSide ? 100 : -100
-
-                transform: Translate {
-                    x: card.slideOffset
-                }
-
-                Behavior on opacity {
-                    NumberAnimation { duration: 250; easing.type: Easing.OutQuad }
-                }
-
-                Behavior on slideOffset {
-                    NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
-                }
-
-                Component.onCompleted: {
-                    slideOffset = 0;
-                }
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: 12
-                    spacing: 12
-
-                    Rectangle {
-                        width: 32
-                        height: 32
-                        radius: 16
-                        color: Qt.rgba(Theme.accentPurple.r, Theme.accentPurple.g, Theme.accentPurple.b, 0.1)
-                        Layout.preferredWidth: 32
-                        Layout.preferredHeight: 32
-
-                        Image {
-                            source: "image://icons/" + (icon || "info") + "?color=" + encodeColor(Theme.accentPurple)
-                            sourceSize: Qt.size(16, 16)
-                            anchors.centerIn: parent
-                        }
-                    }
-
-                    ColumnLayout {
-                        spacing: 2
-                        Layout.fillWidth: true
-
-                        RowLayout {
-                            spacing: 6
-                            Layout.fillWidth: true
-
-                            Text {
-                                text: title
-                                color: Theme.textPrimary
-                                font.pixelSize: Theme.fontSizeHeading
-                                font.weight: Font.Bold
-                                elide: Text.ElideRight
-                                Layout.fillWidth: true
-                            }
-
-                            // xN combo badge — shown when a slot has been triggered multiple times
-                            // In a Repeater delegate, model roles (like playCount) are exposed
-                            // as direct properties in the delegate scope — use bare name, not model.
-                            Rectangle {
-                                id: comboBadge
-                                visible: card.cardPlayCount > 1
-                                implicitWidth: comboText.implicitWidth + 10
-                                implicitHeight: 18
-                                radius: 9
-                                color: Qt.rgba(Theme.accentPurple.r, Theme.accentPurple.g, Theme.accentPurple.b, 0.15)
-                                border.color: Theme.accentPurple
-                                border.width: 1
-                                Layout.alignment: Qt.AlignVCenter
-
-                                Text {
-                                    id: comboText
-                                    anchors.centerIn: parent
-                                    text: "x" + card.cardPlayCount
-                                    color: Theme.accentPurple
-                                    font.pixelSize: 10
-                                    font.weight: Font.Bold
-                                }
-                            }
-                        }
-
-                        Text {
-                            text: message
-                            color: Theme.textSecondary
-                            font.pixelSize: Theme.fontSizeNormal
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                            visible: text !== ""
-                        }
-                    }
-                }
-
-                // Accent sidebar indicator
-                Rectangle {
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    width: 3
-                    color: Theme.accentPurple
-                    radius: Theme.borderRadius
-                }
+                cardResolvedWidth: root.resolvedSize.width
+                cardResolvedHeight: root.resolvedSize.height
+                cardIsRightSide: root.isRightSide
             }
         }
 
@@ -350,10 +268,14 @@ Item {
             Layout.preferredHeight: 32
             Layout.topMargin: 4
             radius: 16
+            // Use the first visible card's accent color, or default to purple if none visible
+            readonly property color badgeAccentColor: root.visibleCount > 0 && notificationModel.get(0)
+                ? NotifHelpers.resolveAccentColor(notificationModel.get(0).icon, notificationModel.get(0).playbackMode, Theme)
+                : Theme.accentPurple
             color: badgeMouse.containsMouse
-                ? Qt.rgba(Theme.accentPurple.r, Theme.accentPurple.g, Theme.accentPurple.b, 0.15)
-                : Qt.rgba(Theme.accentPurple.r, Theme.accentPurple.g, Theme.accentPurple.b, 0.08)
-            border.color: badgeMouse.containsMouse ? Theme.accentPurple : Theme.borderDefault
+                ? Qt.rgba(badge.badgeAccentColor.r, badge.badgeAccentColor.g, badge.badgeAccentColor.b, 0.15)
+                : Qt.rgba(badge.badgeAccentColor.r, badge.badgeAccentColor.g, badge.badgeAccentColor.b, 0.08)
+            border.color: badgeMouse.containsMouse ? badge.badgeAccentColor : Theme.borderDefault
             border.width: 1
 
             Behavior on color {
@@ -380,7 +302,7 @@ Item {
 
                 // Stacking layers icon
                 Image {
-                    source: "image://icons/layers?color=" + encodeColor(Theme.textSecondary)
+                    source: "image://icons/layers?color=" + NotifHelpers.encodeColor(Theme.textSecondary)
                     sourceSize: Qt.size(16, 16)
                     anchors.verticalCenter: parent.verticalCenter
                 }

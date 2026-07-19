@@ -57,7 +57,7 @@ Window {
         }
     }
 
-    SaikoNotificationList {
+    NotificationList {
         id: notificationList
         isOverlayMode: true
         x: 10

@@ -95,6 +95,8 @@ void NotificationManagerTest::testPostNotification()
     QCOMPARE(args.at(2).toString(), QString("play"));
     QCOMPARE(args.at(3).toInt(), 3000);
     QCOMPARE(args.at(4).toString(), QString()); // sourceId default is empty
+    QCOMPARE(args.at(5).toBool(), false);        // stackDuration default is false
+    QCOMPARE(args.at(6).toString(), QString()); // playbackMode default is empty
 }
 
 void NotificationManagerTest::testCustomDurationAndSourceId()
@@ -104,8 +106,8 @@ void NotificationManagerTest::testCustomDurationAndSourceId()
 
     QSignalSpy spy(&notifications, &NotificationManager::notificationPosted);
 
-    // Post with custom duration and sourceId
-    notifications.postNotification("Custom Title", "Custom Msg", "square", 5000, "slot_123");
+    // Post with custom duration, sourceId, stackDuration, and playbackMode
+    notifications.postNotification("Custom Title", "Custom Msg", "square", 5000, "slot_123", true, "QueuedSequential");
     QCOMPARE(spy.count(), 1);
 
     QList<QVariant> args = spy.takeFirst();
@@ -114,6 +116,8 @@ void NotificationManagerTest::testCustomDurationAndSourceId()
     QCOMPARE(args.at(2).toString(), QString("square"));
     QCOMPARE(args.at(3).toInt(), 5000);
     QCOMPARE(args.at(4).toString(), QString("slot_123"));
+    QCOMPARE(args.at(5).toBool(), true);
+    QCOMPARE(args.at(6).toString(), QString("QueuedSequential"));
 
     // Verify notificationCollapsed signal
     QSignalSpy collapseSpy(&notifications, &NotificationManager::notificationCollapsed);

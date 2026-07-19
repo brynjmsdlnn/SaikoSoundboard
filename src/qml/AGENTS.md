@@ -6,10 +6,10 @@ All QML UI components for the SaikoSoundboard application. This is the presentat
 
 ## Ownership
 
-- 24 `.qml` files + 1 `utils.js`, organized into feature-based subdirectories
+- 25 `.qml` files + 2 JS utilities (`utils.js`, `helpers.js`), organized into feature-based subdirectories
 - All files are part of the `Saiko` 1.0 QML module (declared in root CMakeLists.txt via `qt_add_qml_module`)
 - `Theme.qml` is a registered singleton (`QT_QML_SINGLETON_TYPE`)
-- The JS file `utils.js` is imported as `import "../shared/utils.js" as Utils` (or `import "shared/utils.js" as Utils` from root-level files)
+- JS utility files are imported with a namespace alias (e.g. `import "helpers.js" as NotifHelpers`)
 
 ### Directory Structure
 
@@ -22,6 +22,7 @@ src/qml/
 ├── recording/        # Recording panel sub-components + assign-to-slot dialog (RecordingPanel, RecordingHeader, RecordingSection, ReplayBufferSection, AssignToSlotDialog)
 ├── soundboard/       # Soundboard grid & card editor (SoundboardGridView, SoundboardGridCard, SlotEditor) + editor/ sub-components
 ├── soundboard/hotkeys/  # Hotkey components (HotkeyCard, HotkeyDialog)
+├── notifications/    # Notification list, card delegate, and helpers (NotificationList.qml, NotificationCard.qml, helpers.js)
 ├── sources/          # Audio source management (SourcesPanel, SourceSelectionPopup, WaveformView)
 └── Main.qml          # Application entry point
 ```
@@ -35,7 +36,7 @@ src/qml/
 - Card-style wrappers use `SectionCard` with `heading` property
 - New standalone components that extract inline blocks must be added to `QML_FILES` in root CMakeLists.txt
 - Components within the same `Saiko` module can reference each other without explicit file-path imports
-- `utils.js` is the only JS file — add shared utility functions here, not in individual QML files
+- Notification-specific utility functions live in `notifications/helpers.js` — shared generic utilities go in `shared/utils.js`
 - When adding a `qrc:/icons/` or `image://icons/` reference in QML, verify the SVG exists in `resources/icons/` and is registered in `resources/icons/icons.qrc`. If missing, download it from Lucide (`https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/<name>.svg`) and register it
 - The main window (`Main.qml`) is frameless (`Qt.FramelessWindowHint`). On Windows, native window dragging, Aero Snap, drop shadows, and edge/corner resizing are handled by `WindowsFramelessWindow` in `src/platform/windows/` (using Win32 WM_NCHITTEST/WM_NCCALCSIZE/WM_GETMINMAXINFO). The title bar height is exposed to QML via `Backend.titleBarHeight` — this is the single source of truth shared between C++ hit-testing and the visual `TitleBar.qml`. For non-Windows platforms, it falls back to the QML `DragHandler` in `TitleBar.qml` and the transparent resizer MouseAreas in `WindowResizeHandlers.qml`. Any window layout edits must keep these QML components intact.
 
@@ -50,7 +51,7 @@ src/qml/
 No children — all files organized under this directory.
 
 ### `components/`
-Reusable UI primitives — SaikoButton, SaikoCheckBox, SaikoComboBox, SaikoTooltip, SaikoMenu, SaikoMenuItem, SaikoDialog, SaikoNotificationList. Owned by this doc.
+Reusable UI primitives — SaikoButton, SaikoCheckBox, SaikoComboBox, SaikoTooltip, SaikoMenu, SaikoMenuItem, SaikoDialog. Owned by this doc.
 
 ### `shared/`
 Shared singleton and utilities — Theme.qml (singleton), utils.js (JS utility functions). Owned by this doc.
@@ -66,6 +67,9 @@ Recording panel sub-components — RecordingPanel, RecordingHeader, RecordingSec
 
 ### `soundboard/`
 Soundboard grid and card editor — SoundboardGridView, SoundboardGridCard, SlotEditor, and editor/ sub-components (SectionLabel, EditorHeader, SlotNameEditor, AudioSourceSelector, TrimEditor, VolumeSlider, RoutingSelector, HotkeyDisplay, ActionButtons). Owned by this doc.
+
+### `notifications/`
+Notification list panel — NotificationList (container with model, decay timers, C++ connections), NotificationCard (animated card delegate with progress bar and combo badge), helpers.js (color/icon/label utility functions). Owned by this doc.
 
 ### `sources/`
 Audio source management — SourcesPanel (expandable card with live volume slider, mute/unmute toggle, solo monitor, responsive text elision), SourceSelectionPopup (process/device picker with search and refresh), WaveformView. Owned by this doc.

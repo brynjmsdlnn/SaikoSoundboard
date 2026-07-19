@@ -70,13 +70,14 @@ void SoundPlayer::play(PlaybackMode mode)
 {
     m_playbackMode = mode;
     QString fileLeaf = m_filePath.section('/', -1, -1, QString::SectionIncludeTrailingSep).section('\\', -1, -1);
+    bool alreadyPlaying = (playbackState() == QMediaPlayer::PlayingState);
 
     if (m_playbackMode == PlaybackMode::ToggleStop) {
         LOG_DEBUG(LogCategory::Playback,
                  QStringLiteral("[SoundPlayer] Playing audio in Toggle mode (file: \"%1\", alreadyPlaying: %2)")
                      .arg(fileLeaf)
-                     .arg(playbackState() == QMediaPlayer::PlayingState));
-        if (playbackState() == QMediaPlayer::PlayingState) {
+                     .arg(alreadyPlaying));
+        if (alreadyPlaying) {
             stop();
             return;
         }
@@ -87,18 +88,16 @@ void SoundPlayer::play(PlaybackMode mode)
         LOG_DEBUG(LogCategory::Playback,
                  QStringLiteral("[SoundPlayer] Playing audio in Continuous mode (file: \"%1\", alreadyPlaying: %2, loops: %3)")
                      .arg(fileLeaf)
-                     .arg(playbackState() == QMediaPlayer::PlayingState)
+                     .arg(alreadyPlaying)
                      .arg(m_remainingLoops));
-        if (playbackState() == QMediaPlayer::PlayingState) {
+        if (alreadyPlaying) {
             updateRemainingLoops(m_remainingLoops + 1);
-            emit stateChanged(QMediaPlayer::PlayingState);
         } else {
             updateRemainingLoops(0);
             playInternal();
         }
     }
     else if (m_playbackMode == PlaybackMode::LayeredCutAll || m_playbackMode == PlaybackMode::LayeredRingOut) {
-        bool alreadyPlaying = (playbackState() == QMediaPlayer::PlayingState);
         LOG_DEBUG(LogCategory::Playback,
                  QStringLiteral("[SoundPlayer] Playing audio in %1 mode (file: \"%2\", alreadyPlaying: %3, activeTransients: %4)")
                      .arg(m_playbackMode == PlaybackMode::LayeredCutAll ? QStringLiteral("LayeredCutAll") : QStringLiteral("LayeredRingOut"))
@@ -169,9 +168,25 @@ void SoundPlayer::play(PlaybackMode mode)
         LOG_DEBUG(LogCategory::Playback,
                  QStringLiteral("[SoundPlayer] Playing audio in Restart/Default mode (file: \"%1\", alreadyPlaying: %2)")
                      .arg(fileLeaf)
-                     .arg(playbackState() == QMediaPlayer::PlayingState));
+                     .arg(alreadyPlaying));
         updateRemainingLoops(0);
         playInternal();
+    }
+
+    if (alreadyPlaying) {
+        emit stateChanged(QMediaPlayer::PlayingState);
+    }
+}
+
+void SoundPlayer::playFromStart()
+{
+    if (shouldPlayMic()) {
+        m_micPlayer->setPosition(m_startTimeMs);
+        m_micPlayer->play();
+    }
+    if (shouldPlayLocal()) {
+        m_localPlayer->setPosition(m_startTimeMs);
+        m_localPlayer->play();
     }
 }
 
@@ -189,17 +204,7 @@ void SoundPlayer::playInternal()
     m_localPlayer->stop();
     m_stoppingInternal = false;
 
-    bool playMic = shouldPlayMic();
-    bool playLocal = shouldPlayLocal();
-
-    if (playMic) {
-        m_micPlayer->setPosition(m_startTimeMs);
-        m_micPlayer->play();
-    }
-    if (playLocal) {
-        m_localPlayer->setPosition(m_startTimeMs);
-        m_localPlayer->play();
-    }
+    playFromStart();
 }
 
 void SoundPlayer::playPreview()
@@ -386,8 +391,13 @@ void SoundPlayer::handlePositionChanged(qint64 position)
     // Check end boundary clipping
     if (m_endTimeMs != -1 && position >= m_endTimeMs) {
         if (m_remainingLoops > 0) {
+            LOG_DEBUG(LogCategory::Playback,
+                      QStringLiteral("[SoundPlayer] Boundary clip loop: seeking back to start position (remaining loops: %1)")
+                          .arg(m_remainingLoops - 1));
             updateRemainingLoops(m_remainingLoops - 1);
-            playInternal();
+            m_stoppingInternal = true;
+            playFromStart();
+            m_stoppingInternal = false;
         } else {
             if (m_playbackMode == PlaybackMode::LayeredRingOut && !m_transientPlayers.isEmpty()) {
                 // Stop main players but let overlapping transients finish naturally

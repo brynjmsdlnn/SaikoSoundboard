@@ -398,7 +398,7 @@ ApplicationWindow {
         id: notificationOverlay
     }
 
-    SaikoNotificationList {
+    NotificationList {
         id: inAppNotificationList
         isOverlayMode: false
         anchors.margins: 20

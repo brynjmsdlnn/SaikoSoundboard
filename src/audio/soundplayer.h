@@ -58,6 +58,7 @@ private slots:
 private:
     void applyRoutingAndOverrides();
     void playInternal();
+    void playFromStart();
     void updateRemainingLoops(int count);
 
     QMediaPlayer *m_micPlayer;

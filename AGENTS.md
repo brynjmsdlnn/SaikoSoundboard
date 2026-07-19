@@ -89,7 +89,7 @@ Default section order:
 ## Child DOX Index
 
 ### `src/qml/`
-QML UI layer — 20 QML files + 1 JS utility. All part of the `Saiko 1.0` module. Uses `Theme` singleton, `SaikoButton`, `utils.js`, `AboutDialog`. See `src/qml/AGENTS.md` for conventions.
+QML UI layer — 25 QML files + 2 JS utilities. All part of the `Saiko 1.0` module. Uses `Theme` singleton, `SaikoButton`, `helpers.js`, `utils.js`, `AboutDialog`. See `src/qml/AGENTS.md` for conventions.
 
 ### `src/logging/`
 Logging subsystem — Logger singleton, ConsoleSink, FileSink (session log with QElapsedTimer timing), LogModel (QML-bound log buffer), LogRecord, LogLevel, LogCategory, LogMacros. See `src/logging/AGENTS.md` for architecture and lifecycle.
@@ -107,7 +107,7 @@ Platform-specific windowing — `WindowMetrics.h` (cross-platform named constant
 Audio engine — mixer, WASAPI recorder, WASAPI passthrough, sound player, replay buffer, waveform generator, WAV writer. Standard C++ with Qt Multimedia and WASAPI. All components include lifecycle, state-change, and error logging via `LOG_INFO`/`LOG_DEBUG`/`LOG_WARN`/`LOG_ERROR`. No child AGENTS.md — owned by root.
 
 ### `src/managers/`
-Orchestration layer — ActionManager, HotkeyManager, RecordingManager, SettingsManager, SoundboardManager. Bridges domain logic to UI. All five managers include lifecycle, state-change, and error logging via `LOG_INFO`/`LOG_DEBUG`/`LOG_WARN`/`LOG_ERROR`. No child AGENTS.md — owned by root.
+Orchestration layer — ActionManager, HotkeyManager, RecordingManager, SettingsManager, SoundboardManager, NotificationManager. Bridges domain logic to UI. All six managers include lifecycle, state-change, and error logging via `LOG_INFO`/`LOG_DEBUG`/`LOG_WARN`/`LOG_ERROR`. NotificationManager depends on `StoragePaths` (from `src/storage/`) for temp-path detection. No child AGENTS.md — owned by root.
 
 ### `src/models/`
 Data models — `QAbstractListModel` subclasses (`SoundPlayerSlotModel`, `AudioSourceListModel`) and value types (`AudioSource`, `SoundPlayerSlot`, `CaptureState`). No child AGENTS.md — owned by root.

@@ -39,7 +39,7 @@ public:
     QString position() const;
     void setPosition(const QString &position);
 
-    Q_INVOKABLE void postNotification(const QString &title, const QString &message, const QString &icon = "info", int customDurationMs = -1, const QString &sourceId = QString(), bool stackDuration = false);
+    Q_INVOKABLE void postNotification(const QString &title, const QString &message, const QString &icon = "info", int customDurationMs = -1, const QString &sourceId = QString(), bool stackDuration = false, const QString &playbackMode = QString());
 
 signals:
     void enabledChanged();
@@ -47,7 +47,7 @@ signals:
     void durationMsChanged();
     void sizeChanged();
     void positionChanged();
-    void notificationPosted(const QString &title, const QString &message, const QString &icon, int durationMs, const QString &sourceId, bool stackDuration);
+    void notificationPosted(const QString &title, const QString &message, const QString &icon, int durationMs, const QString &sourceId, bool stackDuration, const QString &playbackMode);
     void notificationCollapsed(const QString &sourceId);
     void notificationQueueCountChanged(const QString &sourceId, int queueCount);
 
