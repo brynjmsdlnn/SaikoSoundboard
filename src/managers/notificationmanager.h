@@ -49,7 +49,9 @@ signals:
     void positionChanged();
     void notificationPosted(const QString &title, const QString &message, const QString &icon, int durationMs, const QString &sourceId, bool stackDuration, const QString &playbackMode);
     void notificationCollapsed(const QString &sourceId);
-    void notificationQueueCountChanged(const QString &sourceId, int queueCount);
+    void notificationPlaybackStopped(const QString &sourceId, const QString &reason);
+    void notificationPlaybackUpdated(const QString &sourceId, int queueCount, int remainingMs);
+    void notificationActiveVoiceCountChanged(const QString &sourceId, int count);
 
 private:
     SettingsManager *m_settings;

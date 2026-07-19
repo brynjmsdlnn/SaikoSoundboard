@@ -13,13 +13,21 @@ Rectangle {
     property string cardTitle
     property string cardMessage
     property string cardIcon
+    property string cardState
+    property double cardDecayStartTime
     property double cardExpiryTime
     property int cardDurationMs
+    property double cardCreatedTime
     property bool cardIsFadingOut
     property int cardPlayCount
     property bool cardStackDuration
     property string cardPlaybackMode
     property double cardCurrentTime
+    property int cardActiveVoiceCount: 1
+    property string cardSourceId
+
+
+    readonly property bool _showVoiceIndicators: !cardIsFadingOut && cardState === "Playing" && cardActiveVoiceCount > 1
 
     property int cardResolvedWidth
     property int cardResolvedHeight
@@ -28,15 +36,22 @@ Rectangle {
     // ── Computed helpers ───────────────────────────────────────────────────
     readonly property string _resolvedIcon: NotifHelpers.resolveIcon(cardIcon, cardPlaybackMode)
     readonly property color _accentColor: NotifHelpers.resolveAccentColor(cardIcon, cardPlaybackMode, Theme)
-    readonly property int _timeLeftMs: cardExpiryTime === 0
-        ? (cardDurationMs > 0 ? cardDurationMs : Backend.notifications.durationMs)
-        : Math.max(0, cardExpiryTime - cardCurrentTime)
+    readonly property bool isDecayPhase: cardState === "Decay"
+    readonly property bool isPlaybackPlaying: cardSourceId !== "" && cardState === "Playing"
+
+    // Direct expiryTime subtraction naturally tracks active queue durations
+    readonly property int _timeLeftMs: Math.max(0, cardExpiryTime - cardCurrentTime)
+
+    // Total duration for progress bar: audio duration in Playing, settings duration in Decay
+    readonly property real _totalDur: isDecayPhase
+        ? Backend.notifications.durationMs
+        : (cardDurationMs > 0 ? cardDurationMs : Backend.notifications.durationMs)
 
     implicitWidth: cardResolvedWidth
     implicitHeight: cardResolvedHeight
-    color: Theme.cardBackground
+    color: isDecayPhase ? Qt.rgba(Theme.cardBackground.r, Theme.cardBackground.g, Theme.cardBackground.b, 0.85) : Theme.cardBackground
     radius: Theme.cardRadius
-    border.color: Theme.borderDefault
+    border.color: isDecayPhase ? Qt.rgba(card._accentColor.r, card._accentColor.g, card._accentColor.b, 0.3) : Theme.borderDefault
     border.width: 1
     opacity: cardIsFadingOut ? 0.0 : 1.0
 
@@ -59,19 +74,56 @@ Rectangle {
         anchors.margins: 12
         spacing: 12
 
-        // Icon circle
-        Rectangle {
+        // Icon circle with adaptive breathing rings
+        Item {
             width: 32
             height: 32
-            radius: 16
-            color: Qt.rgba(card._accentColor.r, card._accentColor.g, card._accentColor.b, 0.1)
             Layout.preferredWidth: 32
             Layout.preferredHeight: 32
 
-            Image {
-                source: "image://icons/" + card._resolvedIcon + "?color=" + NotifHelpers.encodeColor(card._accentColor)
-                sourceSize: Qt.size(16, 16)
+            // Glowing ring 1 — 2-3 voices
+            Rectangle {
                 anchors.centerIn: parent
+                width: parent.width + 8
+                height: parent.height + 8
+                radius: width / 2
+                color: Qt.rgba(card._accentColor.r, card._accentColor.g, card._accentColor.b, 0.15)
+                visible: cardActiveVoiceCount >= 2 && cardState === "Playing"
+
+                ScaleAnimator on scale {
+                    running: cardActiveVoiceCount >= 2 && !card.cardIsFadingOut
+                    loops: Animation.Infinite
+                    from: 0.95; to: 1.1; duration: 1200; easing.type: Easing.InOutQuad
+                }
+            }
+
+            // Glowing ring 2 — 4+ voices
+            Rectangle {
+                anchors.centerIn: parent
+                width: parent.width + 16
+                height: parent.height + 16
+                radius: width / 2
+                color: Qt.rgba(card._accentColor.r, card._accentColor.g, card._accentColor.b, 0.08)
+                visible: cardActiveVoiceCount >= 4 && cardState === "Playing"
+
+                ScaleAnimator on scale {
+                    running: cardActiveVoiceCount >= 4 && !card.cardIsFadingOut
+                    loops: Animation.Infinite
+                    from: 0.9; to: 1.15; duration: 1600; easing.type: Easing.InOutQuad
+                }
+            }
+
+            // Icon background circle
+            Rectangle {
+                anchors.fill: parent
+                radius: 16
+                color: Qt.rgba(card._accentColor.r, card._accentColor.g, card._accentColor.b, 0.1)
+
+                Image {
+                    source: "image://icons/" + card._resolvedIcon + "?color=" + NotifHelpers.encodeColor(card._accentColor)
+                    sourceSize: Qt.size(16, 16)
+                    anchors.centerIn: parent
+                }
             }
         }
 
@@ -93,10 +145,35 @@ Rectangle {
                     Layout.fillWidth: true
                 }
 
-                // xN combo badge — shown when a slot has been triggered multiple times
+                // LED Voice Indicators — active voice dots
+                Row {
+                    spacing: 4
+                    Layout.alignment: Qt.AlignVCenter
+                    visible: card._showVoiceIndicators
+
+                    Repeater {
+                        model: cardActiveVoiceCount
+                        delegate: Rectangle {
+                            width: index === 0 ? 6 : 5
+                            height: index === 0 ? 6 : 5
+                            radius: width / 2
+                            color: card._accentColor
+                            opacity: index === 0 ? 1.0 : 0.6
+
+                            SequentialAnimation on opacity {
+                                running: index > 0 && !card.cardIsFadingOut
+                                loops: Animation.Infinite
+                                NumberAnimation { from: 0.3; to: 0.8; duration: 800; easing.type: Easing.InOutSine }
+                                NumberAnimation { from: 0.8; to: 0.3; duration: 800; easing.type: Easing.InOutSine }
+                            }
+                        }
+                    }
+                }
+
+                // xN combo badge — shown when a slot has been triggered multiple times (queued sequential only)
                 Rectangle {
                     id: comboBadge
-                    visible: (card.cardStackDuration || card.cardPlaybackMode === "LayeredRingOut") && card.cardPlayCount > 1
+                    visible: card.cardStackDuration && card.cardPlayCount > 1
                     implicitWidth: comboText.implicitWidth + 10
                     implicitHeight: 18
                     radius: 9
@@ -108,20 +185,17 @@ Rectangle {
                     Text {
                         id: comboText
                         anchors.centerIn: parent
-                        text: {
-                            var label = NotifHelpers.comboLabel(card.cardStackDuration, card.cardPlaybackMode);
-                            return label !== "" ? "x" + card.cardPlayCount + " " + label : "x" + card.cardPlayCount;
-                        }
+                        text: "x" + card.cardPlayCount
                         color: card._accentColor
                         font.pixelSize: 10
                         font.weight: Font.Bold
                     }
                 }
 
-                // Exact duration text countdown (e.g. "2.4s")
+                // Exact duration text countdown (e.g. "2.4s") — shown only during active playback and before expiry
                 Text {
                     id: timerText
-                    visible: !card.cardIsFadingOut
+                    visible: card.isPlaybackPlaying && !card.cardIsFadingOut && card._timeLeftMs > 0
                     text: ((card._timeLeftMs / 1000).toFixed(1)) + "s"
                     color: Theme.textSecondary
                     font.pixelSize: Theme.fontSizeSmall
@@ -130,14 +204,15 @@ Rectangle {
                 }
             }
 
-            // Subtitle / message line
+            // Subtitle / message line — shows "Finished" during decay phase
             Text {
-                text: card.cardMessage
-                color: Theme.textSecondary
+                text: card.isDecayPhase ? "Finished" : card.cardMessage
+                color: card.isDecayPhase ? Qt.rgba(card._accentColor.r, card._accentColor.g, card._accentColor.b, 0.6) : Theme.textSecondary
                 font.pixelSize: Theme.fontSizeNormal
+                font.weight: card.isDecayPhase ? Font.Medium : Font.Normal
                 elide: Text.ElideRight
                 Layout.fillWidth: true
-                visible: text !== ""
+                visible: true
             }
         }
     }
@@ -152,7 +227,7 @@ Rectangle {
         radius: Theme.borderRadius
     }
 
-    // ── Smooth horizontal progress bar ─────────────────────────────────────
+    // ── Smooth horizontal progress bar — shown in all states (playing, decay, non-playback) ──
     Rectangle {
         id: progressBar
         anchors.left: parent.left
@@ -160,12 +235,11 @@ Rectangle {
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 1
         height: 2
-        color: card._accentColor
-        opacity: 0.4
+        color: card.isDecayPhase ? Qt.rgba(card._accentColor.r, card._accentColor.g, card._accentColor.b, 0.25) : card._accentColor
+        opacity: 0.5
         visible: !card.cardIsFadingOut
 
-        readonly property real _totalDur: card.cardDurationMs > 0 ? card.cardDurationMs : Backend.notifications.durationMs
-        readonly property real _progressRatio: _totalDur > 0 ? Math.min(1.0, Math.max(0.0, card._timeLeftMs / _totalDur)) : 0
+        readonly property real _progressRatio: card._totalDur > 0 ? Math.min(1.0, Math.max(0.0, card._timeLeftMs / card._totalDur)) : 0
 
         width: Math.max(0, (parent.width - 4) * _progressRatio)
     }

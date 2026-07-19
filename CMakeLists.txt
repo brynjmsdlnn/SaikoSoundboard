@@ -75,6 +75,7 @@ set(AUDIO_SOURCES
     src/audio/soundplayer.h
     src/audio/waveformgenerator.cpp
     src/audio/waveformgenerator.h
+    src/audio/PlaybackDefinitions.h
 )
 
 set(MANAGER_SOURCES

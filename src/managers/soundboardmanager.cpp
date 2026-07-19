@@ -540,7 +540,15 @@ void SoundboardManager::updatePlayerEngine(const SoundPlayerSlot &slot)
         connect(player, &SoundPlayer::layerPositionsChanged, this, [this, id = slot.id]() {
             emit playerLayerPositionsChanged(id, getPlayerLayerPositions(id));
         });
-        
+
+        connect(player, &SoundPlayer::playerStopped, this, [this, id = slot.id](StopReason reason) {
+            emit playerStopped(id, reason);
+        });
+
+        connect(player, &SoundPlayer::activeVoiceCountChanged, this, [this, id = slot.id](int count) {
+            emit playerActiveVoiceCountChanged(id, count);
+        });
+
         m_players.insert(slot.id, player);
     }
 }
@@ -625,4 +633,39 @@ void SoundboardManager::updatePassthroughEngine()
                  QStringLiteral("[Passthrough] Error occurred (message: \"%1\")").arg(msg));
     });
     m_passthrough->start(voiceDevName, outputDevName);
+}
+
+qint64 SoundboardManager::getPlayerRemainingPlayTimeMs(const QString &id) const
+{
+    SoundPlayer *player = const_cast<SoundboardManager*>(this)->getPlayer(id);
+    if (!player) return 0;
+
+    qint64 dur = player->duration();
+    if (dur <= 0) {
+        const SoundPlayerSlot *slot = const_cast<SoundboardManager*>(this)->getSlot(id);
+        if (slot) {
+            WaveformData wf = const_cast<SoundboardManager*>(this)->getWaveformData(id);
+            qint64 startMs = slot->startTimeMs;
+            qint64 endMs = slot->endTimeMs == -1 ? (wf.isValid ? wf.durationMs : 0) : slot->endTimeMs;
+            if (endMs > startMs) {
+                dur = endMs - startMs;
+            }
+        }
+    }
+    if (dur <= 0) {
+        return 0; // Return 0 if duration is unknown (e.g. not loaded/valid yet)
+    }
+
+    qint64 activeRemaining = 0;
+    if (player->playbackState() != QMediaPlayer::StoppedState) {
+        qint64 pos = player->position();
+        if (pos >= 0 && pos < dur) {
+            activeRemaining = dur - pos;
+        } else {
+            activeRemaining = dur;
+        }
+    }
+
+    // Assumption: All queued playbacks for this slot have the same duration (dur)
+    return activeRemaining + (player->remainingLoops() * dur);
 }

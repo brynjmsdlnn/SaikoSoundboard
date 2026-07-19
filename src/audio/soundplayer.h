@@ -3,7 +3,7 @@
 
 #include <QMediaPlayer>
 #include <QAudioDevice>
-#include "models/soundplayerslot.h"
+#include "audio/PlaybackDefinitions.h"
 
 class QAudioOutput;
 
@@ -16,7 +16,7 @@ public:
 
     void play();
     void play(PlaybackMode mode);
-    void stop();
+    void stop(StopReason reason = StopReason::User);
     void setVolume(float volume);
     float volume() const { return m_volume; }
 
@@ -50,6 +50,8 @@ signals:
     void durationChanged(qint64 duration);
     void remainingLoopsChanged(int count);
     void layerPositionsChanged();
+    void playerStopped(StopReason reason);
+    void activeVoiceCountChanged(int count);
 
 private slots:
     void handlePlayerStateChanged(QMediaPlayer::PlaybackState state);
@@ -83,6 +85,10 @@ private:
     QAudioDevice m_micDevice;
     QAudioDevice m_localDevice;
     QList<SoundPlayer*> m_transientPlayers;
+
+    int activeVoiceCount() const;
+    void updateActiveVoiceCount();
+    int m_lastActiveVoiceCount = 0;
 };
 
 #endif // SOUNDPLAYER_H

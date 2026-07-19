@@ -27,6 +27,18 @@ NotificationManager::NotificationManager(SettingsManager *settings,
 
     // Auto-notifications on playback
     if (m_soundboard) {
+        // Forward player stop reasons to the QML layer for two-phase lifecycle
+        connect(m_soundboard, &SoundboardManager::playerStopped, this, [this](const QString &id, StopReason reason) {
+            QString reasonStr;
+            switch (reason) {
+                case StopReason::Natural:     reasonStr = QStringLiteral("Natural"); break;
+                case StopReason::User:        reasonStr = QStringLiteral("User"); break;
+                case StopReason::Interrupted: reasonStr = QStringLiteral("Interrupted"); break;
+                case StopReason::Error:       reasonStr = QStringLiteral("Error"); break;
+            }
+            emit notificationPlaybackStopped(id, reasonStr);
+        });
+
         connect(m_soundboard, &SoundboardManager::playerPlayStateChanged, this, [this](const QString &id, PlayState state) {
             if (state == PlayState::Playing) {
                 SoundPlayerSlot *slot = m_soundboard->getSlot(id);
@@ -79,16 +91,18 @@ NotificationManager::NotificationManager(SettingsManager *settings,
                     }
 
                     postNotification(slot->name, extendedDetails, QStringLiteral("play"), notificationDuration, id, stackDuration, modeStr);
-                }
-            } else if (state == PlayState::Stopped) {
-                // Instantly collapse the notification for this slot
-                emit notificationCollapsed(id);
-            }
+                }                }
         });
 
-        // Forward queue count changes for QueuedSequential badge tracking
-        connect(m_soundboard, &SoundboardManager::playerQueueCountChanged, this, [this](const QString &id, int count) {
-            emit notificationQueueCountChanged(id, count);
+        // Forward active voice count for LED indicators in notifications
+        connect(m_soundboard, &SoundboardManager::playerActiveVoiceCountChanged, this, [this](const QString &id, int count) {
+            emit notificationActiveVoiceCountChanged(id, count);
+        });
+
+        // Forward queue count and remaining time updates for QueuedSequential badge and timeline tracking
+        connect(m_soundboard, &SoundboardManager::playerQueueCountChanged, [this](const QString &id, int count) {
+            int remainingMs = static_cast<int>(m_soundboard->getPlayerRemainingPlayTimeMs(id));
+            emit notificationPlaybackUpdated(id, count, remainingMs);
         });
 
         // Slot assignment notifications — from either replay assignment, recording dialog, or file picker

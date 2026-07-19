@@ -16,6 +16,7 @@ private slots:
     void testPostNotification();
     void testCustomDurationAndSourceId();
     void testGlobalDisable();
+    void testPlaybackUpdatedSignal();
 };
 
 void NotificationManagerTest::initTestCase()
@@ -138,6 +139,30 @@ void NotificationManagerTest::testGlobalDisable()
 
     // Signal should not be emitted when disabled
     QCOMPARE(spy.count(), 0);
+}
+
+void NotificationManagerTest::testPlaybackUpdatedSignal()
+{
+    SettingsManager settings;
+    SoundboardManager soundboard(&settings);
+    NotificationManager notifications(&settings, &soundboard, nullptr);
+
+    QSignalSpy spy(&notifications, &NotificationManager::notificationPlaybackUpdated);
+
+    // Add a test player slot
+    QString slotId = soundboard.addPlayer("Test Player");
+    QVERIFY(!slotId.isEmpty());
+
+    // Trigger queue count changed signal on soundboard
+    emit soundboard.playerQueueCountChanged(slotId, 3);
+
+    // Verify that notificationPlaybackUpdated was emitted
+    QCOMPARE(spy.count(), 1);
+    QList<QVariant> args = spy.takeFirst();
+    QCOMPARE(args.at(0).toString(), slotId);
+    QCOMPARE(args.at(1).toInt(), 3);
+    // Since no media is actually loaded in this test player, the remainingMs should fall back to 0 (unknown)
+    QCOMPARE(args.at(2).toInt(), 0);
 }
 
 QTEST_MAIN(NotificationManagerTest)

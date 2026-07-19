@@ -68,6 +68,7 @@ void SoundPlayer::play()
 
 void SoundPlayer::play(PlaybackMode mode)
 {
+    updateActiveVoiceCount();
     m_playbackMode = mode;
     QString fileLeaf = m_filePath.section('/', -1, -1, QString::SectionIncludeTrailingSep).section('\\', -1, -1);
     bool alreadyPlaying = (playbackState() == QMediaPlayer::PlayingState);
@@ -121,6 +122,10 @@ void SoundPlayer::play(PlaybackMode mode)
 
             connect(transient, &SoundPlayer::positionChanged, this, [this]() {
                 emit layerPositionsChanged();
+            });
+
+            connect(transient, &SoundPlayer::activeVoiceCountChanged, this, [this]() {
+                updateActiveVoiceCount();
             });
 
             connect(transient, &SoundPlayer::stateChanged, this, [this, transient](QMediaPlayer::PlaybackState state) {
@@ -192,6 +197,7 @@ void SoundPlayer::playFromStart()
 
 void SoundPlayer::playInternal()
 {
+    updateActiveVoiceCount();
     QString fileLeaf = m_filePath.section('/', -1, -1, QString::SectionIncludeTrailingSep).section('\\', -1, -1);
     LOG_DEBUG(LogCategory::Playback,
               QStringLiteral("[SoundPlayer] Starting internal playback (file: \"%1\", startMs: %2, endMs: %3)")
@@ -221,12 +227,14 @@ void SoundPlayer::playPreview()
     }
 }
 
-void SoundPlayer::stop()
+void SoundPlayer::stop(StopReason reason)
 {
+    updateActiveVoiceCount();
     QString fileLeaf = m_filePath.section('/', -1, -1, QString::SectionIncludeTrailingSep).section('\\', -1, -1);
     LOG_DEBUG(LogCategory::Playback,
-             QStringLiteral("[SoundPlayer] Stopping audio (file: \"%1\", cleaningTransients: %2)")
+             QStringLiteral("[SoundPlayer] Stopping audio (file: \"%1\", reason: %2, cleaningTransients: %3)")
                  .arg(fileLeaf)
+                 .arg(static_cast<int>(reason))
                  .arg(m_transientPlayers.size()));
 
     updateRemainingLoops(0);
@@ -235,12 +243,14 @@ void SoundPlayer::stop()
     m_localPlayer->stop();
 
     for (SoundPlayer *tp : std::as_const(m_transientPlayers)) {
-        tp->stop();
+        tp->stop(reason);
         tp->deleteLater();
     }
     m_transientPlayers.clear();
     m_isPreviewMode = false;
     m_stoppingInternal = false;
+
+    emit playerStopped(reason);
     emit layerPositionsChanged();
 
     QMediaPlayer::PlaybackState current = playbackState();
@@ -350,15 +360,26 @@ bool SoundPlayer::shouldPlayLocal() const
 
 void SoundPlayer::handlePlayerStateChanged(QMediaPlayer::PlaybackState state)
 {
+    updateActiveVoiceCount();
     (void)state;
     if (m_stoppingInternal) return;
+
+    // If both main players have stopped naturally in LayeredCutAll mode,
+    // cut off all transient/overlapping players immediately.
+    // This handles untrimmed clips that never hit the endTimeMs boundary check.
+    bool mainStopped = (m_micPlayer->playbackState() == QMediaPlayer::StoppedState &&
+                        m_localPlayer->playbackState() == QMediaPlayer::StoppedState);
+    if (mainStopped && m_remainingLoops == 0 && m_playbackMode == PlaybackMode::LayeredCutAll) {
+        stop(StopReason::Natural);
+        return;
+    }
 
     QMediaPlayer::PlaybackState current = playbackState();
     if (current == QMediaPlayer::StoppedState && m_remainingLoops > 0) {
         LOG_DEBUG(LogCategory::Playback,
                   QStringLiteral("[SoundPlayer] Auto-replay triggered (loopsRemaining: %1)").arg(m_remainingLoops - 1));
-        updateRemainingLoops(m_remainingLoops - 1);
         playInternal();
+        updateRemainingLoops(m_remainingLoops - 1);
         return;
     }
 
@@ -370,6 +391,7 @@ void SoundPlayer::handlePlayerStateChanged(QMediaPlayer::PlaybackState state)
         m_lastOverallState = current;
         emit stateChanged(current);
         if (current == QMediaPlayer::StoppedState) {
+            emit playerStopped(StopReason::Natural);
             emit positionChanged(-1);
         }
     }
@@ -406,7 +428,7 @@ void SoundPlayer::handlePositionChanged(qint64 position)
                 m_localPlayer->stop();
                 m_stoppingInternal = false;
             } else {
-                stop();
+                stop(StopReason::Natural);
             }
         }
         return;
@@ -494,6 +516,31 @@ qint64 SoundPlayer::duration() const
     }
     // Fall back to the media player's reported duration
     return m_micPlayer->duration();
+}
+
+int SoundPlayer::activeVoiceCount() const
+{
+    if (playbackState() == QMediaPlayer::StoppedState) return 0;
+    int count = 0;
+    if (m_micPlayer->playbackState() == QMediaPlayer::PlayingState ||
+        m_localPlayer->playbackState() == QMediaPlayer::PlayingState) {
+        count++;
+    }
+    for (const SoundPlayer *tp : m_transientPlayers) {
+        if (tp->playbackState() == QMediaPlayer::PlayingState) {
+            count++;
+        }
+    }
+    return count;
+}
+
+void SoundPlayer::updateActiveVoiceCount()
+{
+    int count = activeVoiceCount();
+    if (m_lastActiveVoiceCount != count) {
+        m_lastActiveVoiceCount = count;
+        emit activeVoiceCountChanged(count);
+    }
 }
 
 void SoundPlayer::updateRemainingLoops(int count)

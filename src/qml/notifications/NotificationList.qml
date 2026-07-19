@@ -66,6 +66,7 @@ Item {
     }
 
     // ── Decay timer — lazily initialises expiry and removes expired cards ──
+    // Two-phase lifecycle: Playing (progress = audio) -> Decay (progress = settings duration)
     Timer {
         id: decayTimer
         interval: 100
@@ -76,24 +77,45 @@ Item {
             var now = Date.now();
             for (var i = notificationModel.count - 1; i >= 0; --i) {
                 var item = notificationModel.get(i);
-                if (i < root.displayCount) {
-                    // QueuedSequential cards: no timer-based expiry; collapse is driven
-                    // entirely by notificationCollapsed from the player state
-                    if (item.stackDuration) {
-                        if (item.isFadingOut && now > item.expiryTime + 300) {
-                            notificationModel.remove(i);
-                        }
-                        continue;
-                    }
-                    // Viewport items: lazily initialize expiry when first visible
-                    if (item.expiryTime === 0) {
-                        var itemDur = item.durationMs > 0 ? item.durationMs : Backend.notifications.durationMs;
-                        notificationModel.setProperty(i, "expiryTime", now + itemDur);
-                    } else if (now > item.expiryTime + 300) {
+
+                // Unified fade-out removal check:
+                // If a card is fading out (manually collapsed or decayed),
+                // remove it from the model 300ms after the fade started.
+                if (item.isFadingOut) {
+                    if (now > item.expiryTime + 300) {
                         notificationModel.remove(i);
-                    } else if (now > item.expiryTime) {
-                        if (!item.isFadingOut) {
+                    }
+                    continue;
+                }
+
+                if (i < root.displayCount) {
+                    if (item.state === "Decay") {
+                        // Decay phase: track configured decay duration
+                        if (now > item.expiryTime) {
                             notificationModel.setProperty(i, "isFadingOut", true);
+                            notificationModel.setProperty(i, "expiryTime", now);
+                        }
+                    } else {
+                        // Playing phase: lazily initialize expiry when first visible
+                        if (item.expiryTime === 0) {
+                            var itemDur = item.durationMs > 0 ? item.durationMs : Backend.notifications.durationMs;
+                            notificationModel.setProperty(i, "expiryTime", now + itemDur);
+                        } else if (item.expiryTime > 0 && now > item.expiryTime) {
+                            // Playing phase expired
+                            if (!item.sourceId || item.sourceId === "") {
+                                // Non-playback notifications (recording, slot-assigned, etc.):
+                                // fade out immediately
+                                notificationModel.setProperty(i, "isFadingOut", true);
+                                notificationModel.setProperty(i, "expiryTime", now);
+                            } else {
+                                // Playback notifications: apply failsafe after 10s grace period
+                                // to handle cases where playerStopped was not emitted
+                                if (now > item.expiryTime + 10000) {
+                                    notificationModel.setProperty(i, "state", "Decay");
+                                    notificationModel.setProperty(i, "decayStartTime", now);
+                                    notificationModel.setProperty(i, "expiryTime", now + Backend.notifications.durationMs);
+                                }
+                            }
                         }
                     }
                 } else {
@@ -110,6 +132,28 @@ Item {
     Connections {
         target: Backend.notifications
 
+        function onNotificationPlaybackStopped(sourceId, reason) {
+            var now = Date.now();
+            for (var i = 0; i < notificationModel.count; ++i) {
+                var item = notificationModel.get(i);
+                if (item.sourceId === sourceId && !item.isFadingOut) {
+                    if (reason === "User" || reason === "Interrupted" || reason === "Error") {
+                        // Collapse immediately
+                        notificationModel.setProperty(i, "playCount", 0);
+                        notificationModel.setProperty(i, "expiryTime", now);
+                        notificationModel.setProperty(i, "isFadingOut", true);
+                    } else if (reason === "Natural") {
+                        // Transition to Decay state for ALL playback modes,
+                        // including QueuedSequential (which now gets a Decay linger phase)
+                        notificationModel.setProperty(i, "state", "Decay");
+                        notificationModel.setProperty(i, "decayStartTime", now);
+                        notificationModel.setProperty(i, "expiryTime", now + Backend.notifications.durationMs);
+                    }
+                    return;
+                }
+            }
+        }
+
         function onNotificationCollapsed(sourceId) {
             var now = Date.now();
             for (var i = 0; i < notificationModel.count; ++i) {
@@ -123,11 +167,31 @@ Item {
             }
         }
 
-        function onNotificationQueueCountChanged(sourceId, queueCount) {
+        function onNotificationActiveVoiceCountChanged(sourceId, count) {
+            for (var i = 0; i < notificationModel.count; ++i) {
+                var item = notificationModel.get(i);
+                if (item.sourceId === sourceId && !item.isFadingOut) {
+                    notificationModel.setProperty(i, "activeVoiceCount", count);
+                    return;
+                }
+            }
+        }
+
+        function onNotificationPlaybackUpdated(sourceId, queueCount, remainingMs) {
+            var now = Date.now();
             for (var i = 0; i < notificationModel.count; ++i) {
                 var item = notificationModel.get(i);
                 if (item.sourceId === sourceId && !item.isFadingOut) {
                     notificationModel.setProperty(i, "playCount", 1 + queueCount);
+
+                    if (item.stackDuration && remainingMs > 0) {
+                        var newExpiry = now + remainingMs;
+                        var elapsed = now - item.createdTime;
+                        var newDuration = remainingMs + elapsed;
+
+                        notificationModel.setProperty(i, "expiryTime", newExpiry);
+                        notificationModel.setProperty(i, "durationMs", newDuration);
+                    }
                     return;
                 }
             }
@@ -152,40 +216,45 @@ Item {
 
             var now = Date.now();
 
-            // Cut-All clearance: if the incoming notification is LayeredCutAll,
-            // immediately collapse all other active playback notifications
-            if (playbackMode === "LayeredCutAll") {
-                for (var ci = 0; ci < notificationModel.count; ++ci) {
-                    var candidate = notificationModel.get(ci);
-                    if (candidate.sourceId !== sourceId && !candidate.isFadingOut && candidate.icon === "play") {
-                        notificationModel.setProperty(ci, "expiryTime", now);
-                        notificationModel.setProperty(ci, "isFadingOut", true);
-                    }
-                }
-            }
-
             // Merge with an existing active card for this sourceId
             if (sourceId && sourceId !== "") {
                 for (var i = 0; i < notificationModel.count; ++i) {
                     var item = notificationModel.get(i);
                     if (String(item.sourceId) === String(sourceId) && !item.isFadingOut) {
-                        // Found existing card — increment playCount
-                        if (!stackDuration) {
-                            var currentCount = item.playCount || 1;
-                            notificationModel.setProperty(i, "playCount", currentCount + 1);
-                        }
+                        // Check if we are re-triggering from the Decay phase
+                        var wasDecaying = (item.state === "Decay");
 
-                        // stackDuration: accumulate expiry for queued sequential mode
-                        // resetDuration: restart expiry from now for layered/overlapping modes
-                        if (stackDuration) {
-                            var currentExpiry = item.expiryTime || now;
-                            notificationModel.setProperty(i, "expiryTime", Math.max(currentExpiry, now) + durationMs);
-                            var currentDuration = item.durationMs || 0;
-                            notificationModel.setProperty(i, "durationMs", currentDuration + durationMs);
-                        } else {
+                        if (wasDecaying) {
+                            // Reset to a brand new playback session
+                            notificationModel.setProperty(i, "playCount", 1);
                             notificationModel.setProperty(i, "expiryTime", now + durationMs);
                             notificationModel.setProperty(i, "durationMs", durationMs);
+                            // Reset createdTime for fresh session
+                            notificationModel.setProperty(i, "createdTime", now);
+                        } else {
+                            // Already playing — accumulate or reset based on mode
+                            if (!stackDuration) {
+                                var currentCount = item.playCount || 1;
+                                notificationModel.setProperty(i, "playCount", currentCount + 1);
+                            }
+
+                            if (stackDuration) {
+                                // Do nothing: durationMs and expiryTime are managed solely by
+                                // onNotificationQueueCountChanged to avoid double-addition bugs.
+                            } else if (playbackMode === "LayeredCutAll") {
+                                // LayeredCutAll: do not reset duration or createdTime
+                            } else {
+                                // Restart/Toggle: reset play window to start from 'now'
+                                notificationModel.setProperty(i, "createdTime", now);
+                                notificationModel.setProperty(i, "expiryTime", now + durationMs);
+                                notificationModel.setProperty(i, "durationMs", durationMs);
+                            }
                         }
+
+                        // Reset card state to Playing on re-trigger (handles Decay->Playing transition)
+                        notificationModel.setProperty(i, "state", "Playing");
+                        notificationModel.setProperty(i, "decayStartTime", 0);
+                        notificationModel.setProperty(i, "isFadingOut", false);
                         return;
                     }
                 }
@@ -196,14 +265,17 @@ Item {
                 "title": title,
                 "message": message,
                 "icon": icon,
-                "expiryTime": stackDuration ? (now + durationMs) : 0,
+                "state": "Playing",
+                "decayStartTime": 0,
+                "expiryTime": now + durationMs,
                 "durationMs": durationMs,
                 "isFadingOut": false,
                 "createdTime": now,
                 "sourceId": sourceId || "",
                 "playCount": 1,
                 "stackDuration": stackDuration,
-                "playbackMode": playbackMode || ""
+                "playbackMode": playbackMode || "",
+                "activeVoiceCount": 1
             });
         }
     }
@@ -246,13 +318,18 @@ Item {
                 cardTitle: model.title
                 cardMessage: model.message
                 cardIcon: model.icon
+                cardState: model.state
+                cardDecayStartTime: model.decayStartTime
                 cardExpiryTime: model.expiryTime
                 cardDurationMs: model.durationMs
+                cardCreatedTime: model.createdTime
                 cardIsFadingOut: model.isFadingOut
                 cardPlayCount: model.playCount
                 cardStackDuration: model.stackDuration
                 cardPlaybackMode: model.playbackMode
+                cardActiveVoiceCount: model.activeVoiceCount
                 cardCurrentTime: root.currentTime
+                cardSourceId: model.sourceId
 
                 cardResolvedWidth: root.resolvedSize.width
                 cardResolvedHeight: root.resolvedSize.height

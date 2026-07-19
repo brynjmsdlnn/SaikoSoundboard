@@ -54,6 +54,7 @@ public:
     QList<SoundPlayerSlot> getSlots() const { return m_slots; }
     SoundPlayerSlot* getSlot(const QString &id);
     SoundPlayer* getPlayer(const QString &id);
+    qint64 getPlayerRemainingPlayTimeMs(const QString &id) const;
     SettingsManager* settings() const { return m_settings; }
     Q_INVOKABLE PlayState getPlayerPlayState(const QString &id) const;
 
@@ -88,11 +89,13 @@ signals:
     void playerDurationChanged(const QString &id, qint64 duration);
     void playerQueueCountChanged(const QString &id, int count);
     void playerLayerPositionsChanged(const QString &id, const QVariantList &positions);
+    void playerStopped(const QString &id, StopReason reason);
     void waveformGenerated(const QString &playerId, const WaveformData &data);
     void micOutputEnabledChanged();
     void localMonitoringEnabledChanged();
     void micPassthroughEnabledChanged();
     void audioFileAssigned(const QString &slotName, const QString &filePath);
+    void playerActiveVoiceCountChanged(const QString &id, int count);
 
 private:
     int getSlotIndex(const QString &id) const;

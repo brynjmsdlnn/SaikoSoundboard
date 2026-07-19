@@ -7,6 +7,7 @@ Window {
     title: "Saiko Notification Overlay"
     flags: Qt.Window | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool | Qt.WindowDoesNotAcceptFocus | Qt.WindowTransparentForInput
     color: "transparent"
+    transientParent: null
 
     // Dynamically fit to the notification list with 10px padding on each side
     width: notificationList.width + 20

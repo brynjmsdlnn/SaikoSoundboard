@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Notification helper functions — color resolution, icon lookup, combo labels
+// Notification helper functions — color resolution, icon lookup
 // ---------------------------------------------------------------------------
 
 function resolveAccentColor(icon, playbackMode, theme) {
@@ -22,12 +22,6 @@ function resolveIcon(icon, playbackMode) {
     if (playbackMode === "LayeredCutAll") return "square-stack";
     if (playbackMode === "LayeredRingOut") return "audio-lines";
     return icon || "info";
-}
-
-function comboLabel(stackDuration, playbackMode) {
-    if (playbackMode === "QueuedSequential") return "queued";
-    if (playbackMode === "LayeredRingOut") return "active";
-    return "";
 }
 
 function encodeColor(c) {

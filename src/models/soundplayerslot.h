@@ -6,46 +6,7 @@
 #include <QJsonObject>
 #include <QUuid>
 #include <QMetaType>
-namespace SaikoOutput {
-
-Q_NAMESPACE
-
-enum OutputRouting {
-    Both = 0,
-    MicOnly = 1,
-    LocalOnly = 2
-};
-Q_ENUM_NS(OutputRouting)
-
-} // namespace SaikoOutput
-
-using SaikoOutput::OutputRouting;
-
-namespace SaikoPlayback {
-
-Q_NAMESPACE
-
-enum PlayState {
-    Stopped = 0,
-    Playing = 1,
-    Preview = 2
-};
-Q_ENUM_NS(PlayState)
-
-enum PlaybackMode {
-    Default          = 0,
-    RestartRetrigger = 1,
-    ToggleStop       = 2,
-    QueuedSequential = 3,
-    LayeredCutAll    = 4,
-    LayeredRingOut   = 5
-};
-Q_ENUM_NS(PlaybackMode)
-
-} // namespace SaikoPlayback
-
-using SaikoPlayback::PlayState;
-using SaikoPlayback::PlaybackMode;
+#include "audio/PlaybackDefinitions.h"
 
 inline QString outputRoutingToString(OutputRouting routing) {
     switch (routing) {
