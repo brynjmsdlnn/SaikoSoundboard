@@ -82,6 +82,8 @@ set(MANAGER_SOURCES
     src/managers/actionmanager.h
     src/managers/hotkeymanager.cpp
     src/managers/hotkeymanager.h
+    src/managers/notificationmanager.cpp
+    src/managers/notificationmanager.h
     src/managers/recordingmanager.cpp
     src/managers/recordingmanager.h
     src/managers/settingsmanager.cpp
@@ -275,10 +277,12 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/components/LogViewer.qml
         src/qml/components/TitleBar.qml
         src/qml/components/WindowResizeHandlers.qml
+        src/qml/components/SaikoNotificationList.qml
 
         # --- Dialogs ---
         src/qml/dialogs/AboutDialog.qml
         src/qml/dialogs/LogWindow.qml
+        src/qml/dialogs/NotificationOverlay.qml
 
         # --- Settings ---
         src/qml/settings/SettingsDialog.qml
@@ -288,6 +292,7 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/settings/StorageSettingsPanel.qml
         src/qml/settings/AudioSettingsPanel.qml
         src/qml/settings/RoutingSettingsPanel.qml
+        src/qml/settings/NotificationSettingsPanel.qml
 
         # --- Recording ---
         src/qml/recording/RecordingPanel.qml

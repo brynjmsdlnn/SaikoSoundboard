@@ -50,16 +50,16 @@ src/qml/
 No children — all files organized under this directory.
 
 ### `components/`
-Reusable UI primitives — SaikoButton, SaikoCheckBox, SaikoComboBox, SaikoTooltip, SaikoMenu, SaikoMenuItem, SaikoDialog. Owned by this doc.
+Reusable UI primitives — SaikoButton, SaikoCheckBox, SaikoComboBox, SaikoTooltip, SaikoMenu, SaikoMenuItem, SaikoDialog, SaikoNotificationList. Owned by this doc.
 
 ### `shared/`
 Shared singleton and utilities — Theme.qml (singleton), utils.js (JS utility functions). Owned by this doc.
 
 ### `dialogs/`
-Standalone windows and popups — AboutDialog, LogWindow. Owned by this doc.
+Standalone windows and popups — AboutDialog, LogWindow, NotificationOverlay. Owned by this doc.
 
 ### `settings/`
-Settings dialog components — SettingsDialog (shell), SettingsSidebar (tab navigation), SettingsPanelHeader (reusable title/subtitle header), SettingsPanelWrapper (standardized panel container), StorageSettingsPanel (directory paths), AudioSettingsPanel (sample rate), RoutingSettingsPanel (soundboard routing + voice passthrough). Owned by this doc.
+Settings dialog components — SettingsDialog (shell), SettingsSidebar (tab navigation), SettingsPanelHeader (reusable title/subtitle header), SettingsPanelWrapper (standardized panel container), StorageSettingsPanel (directory paths), AudioSettingsPanel (sample rate), RoutingSettingsPanel (soundboard routing + voice passthrough), NotificationSettingsPanel. Owned by this doc.
 
 ### `recording/`
 Recording panel sub-components — RecordingPanel, RecordingHeader, RecordingSection, ReplayBufferSection, ReplayDurationEditor, AssignToSlotDialog. Owned by this doc.

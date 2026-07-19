@@ -92,8 +92,11 @@ signals:
     void micOutputEnabledChanged();
     void localMonitoringEnabledChanged();
     void micPassthroughEnabledChanged();
+    void audioFileAssigned(const QString &slotName, const QString &filePath);
 
 private:
+    int getSlotIndex(const QString &id) const;
+
     SettingsManager *m_settings;
     Saiko::Domain::PlayerAllocator m_allocator;
     QList<SoundPlayerSlot> m_slots;

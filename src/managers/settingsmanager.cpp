@@ -42,6 +42,11 @@ void SettingsManager::load()
     bool sampleRateDirty = false;
     bool hotkeysEnabledDirty = false;
     bool defaultPlaybackModeDirty = false;
+    bool notificationsEnabledDirty = false;
+    bool notificationsOverlayEnabledDirty = false;
+    bool notificationsDurationMsDirty = false;
+    bool notificationsSizeDirty = false;
+    bool notificationsPositionDirty = false;
 
     if (doc.isArray()) {
         QList<AudioSource> newSources;
@@ -151,6 +156,36 @@ void SettingsManager::load()
             defaultPlaybackModeDirty = true;
         }
 
+        bool newNotificationsEnabled = obj["notificationsEnabled"].toBool(true);
+        if (newNotificationsEnabled != m_notificationsEnabled) {
+            m_notificationsEnabled = newNotificationsEnabled;
+            notificationsEnabledDirty = true;
+        }
+
+        bool newNotificationsOverlay = obj["notificationsOverlayEnabled"].toBool(true);
+        if (newNotificationsOverlay != m_notificationsOverlayEnabled) {
+            m_notificationsOverlayEnabled = newNotificationsOverlay;
+            notificationsOverlayEnabledDirty = true;
+        }
+
+        int newNotificationsDuration = obj["notificationsDurationMs"].toInt(3000);
+        if (newNotificationsDuration != m_notificationsDurationMs) {
+            m_notificationsDurationMs = newNotificationsDuration;
+            notificationsDurationMsDirty = true;
+        }
+
+        QString newSize = obj["notificationsSize"].toString(QStringLiteral("Medium"));
+        if (newSize != m_notificationsSize) {
+            m_notificationsSize = newSize;
+            notificationsSizeDirty = true;
+        }
+
+        QString newPosition = obj["notificationsPosition"].toString(QStringLiteral("BottomRight"));
+        if (newPosition != m_notificationsPosition) {
+            m_notificationsPosition = newPosition;
+            notificationsPositionDirty = true;
+        }
+
         QList<SoundPlayerSlot> newSlots;
         QJsonArray slotsArr = obj["soundBoardSlots"].toArray();
         for (const QJsonValue& val : std::as_const(slotsArr)) {
@@ -187,6 +222,11 @@ void SettingsManager::load()
     if (sampleRateDirty)       emit recordingSampleRateChanged();
     if (hotkeysEnabledDirty)   emit hotkeysEnabledChanged();
     if (defaultPlaybackModeDirty) emit defaultPlaybackModeChanged();
+    if (notificationsEnabledDirty) emit notificationsEnabledChanged();
+    if (notificationsOverlayEnabledDirty) emit notificationsOverlayEnabledChanged();
+    if (notificationsDurationMsDirty) emit notificationsDurationMsChanged();
+    if (notificationsSizeDirty) emit notificationsSizeChanged();
+    if (notificationsPositionDirty) emit notificationsPositionChanged();
 }
 
 void SettingsManager::save()
@@ -219,6 +259,11 @@ void SettingsManager::save()
     root["recordingSampleRate"] = m_recordingSampleRate;
     root["hotkeysEnabled"] = m_hotkeysEnabled;
     root["defaultPlaybackMode"] = playbackModeToString(m_defaultPlaybackMode);
+    root["notificationsEnabled"] = m_notificationsEnabled;
+    root["notificationsOverlayEnabled"] = m_notificationsOverlayEnabled;
+    root["notificationsDurationMs"] = m_notificationsDurationMs;
+    root["notificationsSize"] = m_notificationsSize;
+    root["notificationsPosition"] = m_notificationsPosition;
 
     QJsonDocument doc(root);
     QString settingsPath = getSettingsFilePath();
@@ -392,5 +437,45 @@ void SettingsManager::setDefaultPlaybackMode(PlaybackMode mode)
     if (m_defaultPlaybackMode != mode) {
         m_defaultPlaybackMode = mode;
         emit defaultPlaybackModeChanged();
+    }
+}
+
+void SettingsManager::setNotificationsEnabled(bool enabled)
+{
+    if (m_notificationsEnabled != enabled) {
+        m_notificationsEnabled = enabled;
+        emit notificationsEnabledChanged();
+    }
+}
+
+void SettingsManager::setNotificationsOverlayEnabled(bool enabled)
+{
+    if (m_notificationsOverlayEnabled != enabled) {
+        m_notificationsOverlayEnabled = enabled;
+        emit notificationsOverlayEnabledChanged();
+    }
+}
+
+void SettingsManager::setNotificationsDurationMs(int durationMs)
+{
+    if (m_notificationsDurationMs != durationMs) {
+        m_notificationsDurationMs = durationMs;
+        emit notificationsDurationMsChanged();
+    }
+}
+
+void SettingsManager::setNotificationsSize(const QString &size)
+{
+    if (m_notificationsSize != size) {
+        m_notificationsSize = size;
+        emit notificationsSizeChanged();
+    }
+}
+
+void SettingsManager::setNotificationsPosition(const QString &position)
+{
+    if (m_notificationsPosition != position) {
+        m_notificationsPosition = position;
+        emit notificationsPositionChanged();
     }
 }

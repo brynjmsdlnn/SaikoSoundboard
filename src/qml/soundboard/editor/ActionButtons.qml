@@ -122,7 +122,7 @@ RowLayout {
                 z: 10
 
                 Text {
-                    text: "×" + root.queueCount
+                    text: "×" + (1 + root.queueCount)
                     color: "white"
                     font.pixelSize: 10
                     font.weight: Font.Bold

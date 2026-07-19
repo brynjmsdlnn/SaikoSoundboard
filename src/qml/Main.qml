@@ -394,6 +394,69 @@ ApplicationWindow {
         onClosed: showLogViewer = false
     }
 
+    NotificationOverlay {
+        id: notificationOverlay
+    }
+
+    SaikoNotificationList {
+        id: inAppNotificationList
+        isOverlayMode: false
+        anchors.margins: 20
+        z: 100
+
+        // Dynamic anchor states based on notification position
+        states: [
+            State {
+                name: "topleft"
+                AnchorChanges {
+                    target: inAppNotificationList
+                    anchors.top: titleBar.bottom
+                    anchors.left: inAppNotificationList.parent.left
+                    anchors.bottom: undefined
+                    anchors.right: undefined
+                }
+            },
+            State {
+                name: "topright"
+                AnchorChanges {
+                    target: inAppNotificationList
+                    anchors.top: titleBar.bottom
+                    anchors.right: inAppNotificationList.parent.right
+                    anchors.bottom: undefined
+                    anchors.left: undefined
+                }
+            },
+            State {
+                name: "bottomleft"
+                AnchorChanges {
+                    target: inAppNotificationList
+                    anchors.bottom: inAppNotificationList.parent.bottom
+                    anchors.left: inAppNotificationList.parent.left
+                    anchors.top: undefined
+                    anchors.right: undefined
+                }
+            },
+            State {
+                name: "bottomright"
+                AnchorChanges {
+                    target: inAppNotificationList
+                    anchors.bottom: inAppNotificationList.parent.bottom
+                    anchors.right: inAppNotificationList.parent.right
+                    anchors.top: undefined
+                    anchors.left: undefined
+                }
+            }
+        ]
+
+        state: {
+            var pos = Backend.notifications.position;
+            if (pos === "TopLeft") return "topleft";
+            if (pos === "TopRight") return "topright";
+            if (pos === "BottomLeft") return "bottomleft";
+            return "bottomright";
+        }
+    }
+
     AssignToSlotDialog {
         id: assignToSlotDialog
         filePath: app.lastRecordingPath

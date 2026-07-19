@@ -24,6 +24,7 @@
 #include "managers/soundboardmanager.h"
 #include "managers/actionmanager.h"
 #include "managers/hotkeymanager.h"
+#include "managers/notificationmanager.h"
 #include "models/soundplayerslotmodel.h"
 #include "models/audiosourcelistmodel.h"
 
@@ -45,6 +46,8 @@ QmlBackend::QmlBackend(QObject *parent)
     auto *backend = new Saiko::Adapters::WindowsHotkeyBackend();
     m_hotkeyBackend = backend;
     m_hotkeyManager = new HotkeyManager(m_actionManager, backend, this);
+
+    m_notificationManager = new NotificationManager(m_settings, m_soundboardManager, m_recordingManager, this);
 
     m_slotModel = new SoundPlayerSlotModel(m_soundboardManager, this);
     m_sourceModel = new AudioSourceListModel(m_settings, this);

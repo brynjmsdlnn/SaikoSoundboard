@@ -66,6 +66,7 @@ signals:
     void recordingChanged();
     void stateChanged(CaptureState newState);
     void replayActiveChanged();
+    void replaySaved(const QString &path);
     void errorOccurred(const QString &msg);
     void soloChanged(const QString &sourceId, bool solo);
 

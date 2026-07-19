@@ -33,6 +33,11 @@ class SettingsManager : public QObject
     Q_PROPERTY(int recordingSampleRate READ recordingSampleRate WRITE setRecordingSampleRate NOTIFY recordingSampleRateChanged)
     Q_PROPERTY(bool hotkeysEnabled READ hotkeysEnabled WRITE setHotkeysEnabled NOTIFY hotkeysEnabledChanged)
     Q_PROPERTY(PlaybackMode defaultPlaybackMode READ defaultPlaybackMode WRITE setDefaultPlaybackMode NOTIFY defaultPlaybackModeChanged)
+    Q_PROPERTY(bool notificationsEnabled READ notificationsEnabled WRITE setNotificationsEnabled NOTIFY notificationsEnabledChanged)
+    Q_PROPERTY(bool notificationsOverlayEnabled READ notificationsOverlayEnabled WRITE setNotificationsOverlayEnabled NOTIFY notificationsOverlayEnabledChanged)
+    Q_PROPERTY(int notificationsDurationMs READ notificationsDurationMs WRITE setNotificationsDurationMs NOTIFY notificationsDurationMsChanged)
+    Q_PROPERTY(QString notificationsSize READ notificationsSize WRITE setNotificationsSize NOTIFY notificationsSizeChanged)
+    Q_PROPERTY(QString notificationsPosition READ notificationsPosition WRITE setNotificationsPosition NOTIFY notificationsPositionChanged)
 public:
     explicit SettingsManager(QObject *parent = nullptr);
 
@@ -58,6 +63,11 @@ public:
     int recordingSampleRate() const { return m_recordingSampleRate; }
     bool hotkeysEnabled() const { return m_hotkeysEnabled; }
     PlaybackMode defaultPlaybackMode() const { return m_defaultPlaybackMode; }
+    bool notificationsEnabled() const { return m_notificationsEnabled; }
+    bool notificationsOverlayEnabled() const { return m_notificationsOverlayEnabled; }
+    int notificationsDurationMs() const { return m_notificationsDurationMs; }
+    QString notificationsSize() const { return m_notificationsSize; }
+    QString notificationsPosition() const { return m_notificationsPosition; }
 
     // Setters
     void setSources(const QList<AudioSource> &sources);
@@ -76,6 +86,11 @@ public:
     void setRecordingSampleRate(int sampleRate);
     void setHotkeysEnabled(bool enabled);
     void setDefaultPlaybackMode(PlaybackMode mode);
+    void setNotificationsEnabled(bool enabled);
+    void setNotificationsOverlayEnabled(bool enabled);
+    void setNotificationsDurationMs(int durationMs);
+    void setNotificationsSize(const QString &size);
+    void setNotificationsPosition(const QString &position);
 
 signals:
     void sourcesChanged();
@@ -96,6 +111,11 @@ signals:
     void recordingSampleRateChanged();
     void hotkeysEnabledChanged();
     void defaultPlaybackModeChanged();
+    void notificationsEnabledChanged();
+    void notificationsOverlayEnabledChanged();
+    void notificationsDurationMsChanged();
+    void notificationsSizeChanged();
+    void notificationsPositionChanged();
 
 private:
     QString getSettingsFilePath() const;
@@ -116,6 +136,11 @@ private:
     int m_recordingSampleRate = 48000;
     bool m_hotkeysEnabled = true;
     PlaybackMode m_defaultPlaybackMode = PlaybackMode::RestartRetrigger;
+    bool m_notificationsEnabled = true;
+    bool m_notificationsOverlayEnabled = true;
+    int m_notificationsDurationMs = 3000;
+    QString m_notificationsSize = QStringLiteral("Medium");
+    QString m_notificationsPosition = QStringLiteral("BottomRight");
 };
 
 #endif // SETTINGSMANAGER_H

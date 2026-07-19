@@ -467,21 +467,21 @@ Rectangle {
                 }
             }
 
-            Rectangle {
-                id: queueBadge
-                visible: card.effectivePlaybackMode === 3 && card.queueCount > 0
-                Layout.preferredWidth: 20
-                Layout.preferredHeight: 16
-                radius: 8
-                color: Theme.accentRed
-                Text {
-                    text: "×" + card.queueCount
-                    color: "white"
-                    font.pixelSize: 10
-                    font.weight: Font.Bold
-                    anchors.centerIn: parent
+                Rectangle {
+                    id: queueBadge
+                    visible: card.effectivePlaybackMode === 3 && card.queueCount > 0
+                    Layout.preferredWidth: 20
+                    Layout.preferredHeight: 16
+                    radius: 8
+                    color: Theme.accentRed
+                    Text {
+                        text: "×" + (1 + card.queueCount)
+                        color: "white"
+                        font.pixelSize: 10
+                        font.weight: Font.Bold
+                        anchors.centerIn: parent
+                    }
                 }
-            }
 
         }
     }

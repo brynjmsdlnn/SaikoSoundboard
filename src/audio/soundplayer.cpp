@@ -91,6 +91,7 @@ void SoundPlayer::play(PlaybackMode mode)
                      .arg(m_remainingLoops));
         if (playbackState() == QMediaPlayer::PlayingState) {
             updateRemainingLoops(m_remainingLoops + 1);
+            emit stateChanged(QMediaPlayer::PlayingState);
         } else {
             updateRemainingLoops(0);
             playInternal();
@@ -473,6 +474,16 @@ QList<qint64> SoundPlayer::activeLayerPositions() const
         }
     }
     return positions;
+}
+
+qint64 SoundPlayer::duration() const
+{
+    // If clipped, return the cropped duration
+    if (m_endTimeMs != -1 && m_endTimeMs > m_startTimeMs) {
+        return m_endTimeMs - m_startTimeMs;
+    }
+    // Fall back to the media player's reported duration
+    return m_micPlayer->duration();
 }
 
 void SoundPlayer::updateRemainingLoops(int count)

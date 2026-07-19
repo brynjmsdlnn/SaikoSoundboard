@@ -103,6 +103,12 @@ void SoundboardManager::assignAudioFile(const QString &id, const QString &filePa
         }
         emit slotsChanged();
 
+        // Notify for slot assignment toast
+        QString slotName = slot->name.isEmpty()
+            ? QStringLiteral("Slot %1").arg(getSlotIndex(id) + 1)
+            : slot->name;
+        emit audioFileAssigned(slotName, localPath);
+
         // Trigger waveform loading/generation
         loadWaveformData(id, filePath);
     }
@@ -127,6 +133,12 @@ void SoundboardManager::promoteTempFile(const QString &id, const QString &newPat
         }
         emit slotsChanged();
         saveToSettings();
+
+        // Notify for slot assignment toast
+        QString slotName = slot->name.isEmpty()
+            ? QStringLiteral("Slot %1").arg(getSlotIndex(id) + 1)
+            : slot->name;
+        emit audioFileAssigned(slotName, newPath);
 
         // Trigger waveform loading/generation
         loadWaveformData(id, newPath);
@@ -583,6 +595,14 @@ QAudioDevice SoundboardManager::findAudioInputDevice(const QString &description)
         }
     }
     return QMediaDevices::defaultAudioInput();
+}
+
+int SoundboardManager::getSlotIndex(const QString &id) const
+{
+    for (int i = 0; i < m_slots.size(); ++i) {
+        if (m_slots[i].id == id) return i;
+    }
+    return -1;
 }
 
 void SoundboardManager::updatePassthroughEngine()

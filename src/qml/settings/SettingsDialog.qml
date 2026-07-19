@@ -52,6 +52,11 @@ SaikoFramelessPopup {
                 id: routingContent
                 visible: root.activeTab === "routing"
             }
+
+            NotificationSettingsPanel {
+                id: notificationContent
+                visible: root.activeTab === "notifications"
+            }
         }
     }
 }

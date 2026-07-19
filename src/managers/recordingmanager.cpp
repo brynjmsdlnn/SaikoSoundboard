@@ -240,6 +240,7 @@ bool RecordingManager::saveReplay(const QString &path)
 
     replayWriter.writePcm(data);
     replayWriter.close();
+    emit replaySaved(path);
     return true;
 }
 

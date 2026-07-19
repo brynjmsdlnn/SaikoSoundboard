@@ -74,6 +74,15 @@ Rectangle {
             onClicked: root.tabSelected("routing")
         }
 
+        // Notifications Tab Button
+        SidebarTabButton {
+            id: notificationsTabBtn
+            iconSource: "image://icons/info?color=" + (root.activeTab === "notifications" ? Theme.accentPurple : Theme.textSecondary)
+            label: "Notifications"
+            isActive: root.activeTab === "notifications"
+            onClicked: root.tabSelected("notifications")
+        }
+
         Item { Layout.fillHeight: true }
     }
 
