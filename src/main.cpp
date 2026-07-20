@@ -11,6 +11,8 @@
 #include "ui/fileiconprovider.h"
 #include "models/soundplayerslotmodel.h"
 
+#include "core/SingleInstanceGuard.h"
+
 #include "logging/Logging.h"
 #include "logging/LogModel.h"
 
@@ -31,6 +33,15 @@ int main(int argc, char *argv[])
     // Application metadata
     QCoreApplication::setOrganizationName("Saiko Interactive");
     QCoreApplication::setApplicationName("Saiko Soundboard");
+
+    // ── Single-instance guard ────────────────────────────────────────────
+    // Uses a hardcoded UUID so the named pipe is unique system-wide.
+    SingleInstanceGuard guard(QStringLiteral("SaikoSoundboard-{ba5e5a1k-0s0u-0n0d-0b0a-0r0d00000000}"));
+    if (!guard.tryStart()) {
+        // Another instance was already running and received our ACTIVATE.
+        return 0;
+    }
+    // ─────────────────────────────────────────────────────────────────────
 
     // Initialize logging
 #ifdef NDEBUG
@@ -66,6 +77,14 @@ int main(int argc, char *argv[])
     if (window) {
         auto *frameless = new WindowsFramelessWindow(window);
         QGuiApplication::instance()->installNativeEventFilter(frameless);
+
+        // Bring window to front when a second instance tries to launch.
+        QObject::connect(&guard, &SingleInstanceGuard::activateRequested, window, [window]() {
+            window->setWindowStates(window->windowStates() & ~Qt::WindowMinimized);
+            window->show();
+            window->raise();
+            window->requestActivate();
+        });
     }
 #endif
 

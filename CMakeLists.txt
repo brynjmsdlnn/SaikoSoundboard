@@ -17,8 +17,8 @@ if(CCACHE_PROGRAM)
     set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
 endif()
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Multimedia Concurrent Quick Qml Test Svg)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia Concurrent Quick Qml Test Svg)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Multimedia Concurrent Quick Qml Test Svg Network)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia Concurrent Quick Qml Test Svg Network)
 
 enable_testing()
 
@@ -225,6 +225,8 @@ endif()
 
 set(APP_SOURCES
     src/main.cpp
+    src/core/SingleInstanceGuard.h
+    src/core/SingleInstanceGuard.cpp
     ${PLATFORM_SOURCES}
     ${ICONS_RESOURCE}
 )
@@ -331,7 +333,7 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/sources/WaveformView.qml
 )
 
-target_link_libraries(SaikoSoundboard PRIVATE SaikoSoundboardCore)
+target_link_libraries(SaikoSoundboard PRIVATE SaikoSoundboardCore Qt${QT_VERSION_MAJOR}::Network)
 
 if(WIN32)
     target_link_libraries(SaikoSoundboard PRIVATE dwmapi)

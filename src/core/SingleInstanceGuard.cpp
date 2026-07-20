@@ -1,0 +1,75 @@
+#include "SingleInstanceGuard.h"
+
+#include <QLocalSocket>
+#include <QDebug>
+
+const QByteArray SingleInstanceGuard::kActivateMessage = "ACTIVATE";
+
+SingleInstanceGuard::SingleInstanceGuard(const QString &serverName, QObject *parent)
+    : QObject(parent)
+    , m_serverName(serverName)
+{
+}
+
+SingleInstanceGuard::~SingleInstanceGuard()
+{
+    if (m_server) {
+        m_server->close();
+    }
+}
+
+bool SingleInstanceGuard::tryStart()
+{
+    // --- Attempt to connect to an existing server ---
+    QLocalSocket socket;
+    socket.connectToServer(m_serverName);
+
+    if (socket.waitForConnected(1000)) {
+        // Another instance is already running — send ACTIVATE and exit.
+        socket.write(kActivateMessage);
+        socket.waitForBytesWritten(1000);
+        socket.disconnectFromServer();
+        qDebug() << "[SingleInstanceGuard] Another instance detected. Sent ACTIVATE.";
+        return false;
+    }
+
+    // --- No existing server — we are the first instance ---
+    m_server = new QLocalServer(this);
+    m_server->setSocketOptions(QLocalServer::UserAccessOption);
+
+    // Remove any stale pipe file that may linger from a previous crash.
+    // On Windows QLocalServer will fail to listen() if the name is already
+    // registered, even if the owning process is gone.
+    QLocalServer::removeServer(m_serverName);
+
+    if (!m_server->listen(m_serverName)) {
+        qWarning() << "[SingleInstanceGuard] Failed to start server:" << m_server->errorString();
+        // Fallback: allow the app to continue anyway. If two instances end
+        // up running it's a minor UX issue, not a crash.
+        return true;
+    }
+
+    connect(m_server, &QLocalServer::newConnection, this, &SingleInstanceGuard::onNewConnection);
+
+    qDebug() << "[SingleInstanceGuard] Listening on:" << m_serverName;
+    return true;
+}
+
+void SingleInstanceGuard::onNewConnection()
+{
+    QLocalSocket *clientSocket = m_server->nextPendingConnection();
+    if (!clientSocket)
+        return;
+
+    // Read the message (non-blocking, small payload expected).
+    if (clientSocket->waitForReadyRead(2000)) {
+        const QByteArray data = clientSocket->readAll().trimmed();
+        if (data == kActivateMessage) {
+            qDebug() << "[SingleInstanceGuard] Got ACTIVATE — raising window.";
+            emit activateRequested();
+        }
+    }
+
+    clientSocket->disconnectFromServer();
+    clientSocket->deleteLater();
+}
