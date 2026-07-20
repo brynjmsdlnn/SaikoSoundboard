@@ -13,6 +13,7 @@
 #include "core/adapters/WindowsAudioSessionController.h"
 #include <QAudioDevice>
 #include "audio/wasapipassthrough.h"
+#include "models/audiosourcelistmodel.h"
 
 static QString mapRenderToCaptureDevice(const QString &renderName)
 {
@@ -94,6 +95,24 @@ void RecordingManager::updateState()
     if (newRecording != prevRecording) {
         emit recordingChanged();
     }
+}
+
+void RecordingManager::setSourceModel(AudioSourceListModel *model)
+{
+    m_sourceModel = model;
+    if (m_sourceModel) {
+        connect(m_sourceModel, &AudioSourceListModel::hasSourcesChanged,
+                this, &RecordingManager::captureReadyChanged);
+    }
+}
+
+bool RecordingManager::isCaptureModeReady(const QString &mode) const
+{
+    if (mode == QStringLiteral("global"))
+        return true;
+    if (mode == QStringLiteral("multi"))
+        return m_sourceModel ? m_sourceModel->hasSources() : false;
+    return false;
 }
 
 void RecordingManager::stopEngine()

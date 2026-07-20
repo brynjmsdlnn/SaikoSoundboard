@@ -307,6 +307,7 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/recording/ReplayBufferSection.qml
         src/qml/recording/ReplayDurationEditor.qml
         src/qml/recording/AssignToSlotDialog.qml
+        src/qml/recording/CaptureSetupOverlay.qml
 
         # --- Soundboard ---
         src/qml/soundboard/SoundboardGridView.qml

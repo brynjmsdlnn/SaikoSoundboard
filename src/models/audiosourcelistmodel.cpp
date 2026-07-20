@@ -216,7 +216,10 @@ bool AudioSourceListModel::setMonitor(const QString &sourceId, bool monitor)
 
 void AudioSourceListModel::onSourcesChanged()
 {
+    const bool wasEmpty = m_sources.isEmpty();
     beginResetModel();
     m_sources = m_settings->sources();
     endResetModel();
+    if (wasEmpty != m_sources.isEmpty())
+        emit hasSourcesChanged();
 }

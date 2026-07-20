@@ -52,6 +52,8 @@ QmlBackend::QmlBackend(QObject *parent)
     m_slotModel = new SoundPlayerSlotModel(m_soundboardManager, this);
     m_sourceModel = new AudioSourceListModel(m_settings, this);
 
+    m_recordingManager->setSourceModel(m_sourceModel);
+
     auto updateActiveHotkeys = [this]() {
         QMap<QString, Action> hotkeyMap;
         if (m_settings->hotkeysEnabled()) {

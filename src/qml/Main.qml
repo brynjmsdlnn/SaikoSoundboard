@@ -235,6 +235,7 @@ ApplicationWindow {
                 onSettingsRequested: settingsDialog.show()
                 onAboutRequested: aboutDialog.show()
                 onAssignToSlotRequested: assignToSlotDialog.show()
+                onOpenSourceSelectionRequested: sourcesPanel.openAddSourceDialog()
             }
 
             // ---------------- SOURCES DOCK ----------------

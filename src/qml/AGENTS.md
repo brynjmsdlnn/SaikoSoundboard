@@ -19,7 +19,7 @@ src/qml/
 ├── shared/           # Shared singleton and utilities (Theme.qml, utils.js)
 ├── dialogs/          # Standalone windows & popups (AboutDialog, LogWindow)
 ├── settings/         # Settings dialogs (SettingsSidebar, SettingsPanelHeader, SettingsPanelWrapper, StorageSettingsPanel, AudioSettingsPanel, RoutingSettingsPanel, SettingsDialog)
-├── recording/        # Recording panel sub-components + assign-to-slot dialog (RecordingPanel, RecordingHeader, RecordingSection, ReplayBufferSection, AssignToSlotDialog)
+├── recording/        # Recording panel sub-components + assign-to-slot dialog (RecordingPanel, RecordingHeader, RecordingSection, ReplayBufferSection, CaptureSetupOverlay, AssignToSlotDialog)
 ├── soundboard/       # Soundboard grid & card editor (SoundboardGridView, SoundboardGridCard, SlotEditor) + editor/ sub-components
 ├── soundboard/hotkeys/  # Hotkey components (HotkeyCard, HotkeyDialog)
 ├── notifications/    # Notification list, card delegate, and helpers (NotificationList.qml, NotificationCard.qml, helpers.js)
@@ -63,7 +63,7 @@ Standalone windows and popups — AboutDialog, LogWindow, NotificationOverlay. O
 Settings dialog components — SettingsDialog (shell), SettingsSidebar (tab navigation), SettingsPanelHeader (reusable title/subtitle header), SettingsPanelWrapper (standardized panel container), StorageSettingsPanel (directory paths), AudioSettingsPanel (sample rate), RoutingSettingsPanel (soundboard routing + voice passthrough), NotificationSettingsPanel. Owned by this doc.
 
 ### `recording/`
-Recording panel sub-components — RecordingPanel, RecordingHeader, RecordingSection, ReplayBufferSection, ReplayDurationEditor, AssignToSlotDialog. Owned by this doc.
+Recording panel sub-components — RecordingPanel, RecordingHeader, RecordingSection, ReplayBufferSection, ReplayDurationEditor, CaptureSetupOverlay, AssignToSlotDialog. Owned by this doc.
 
 ### `soundboard/`
 Soundboard grid and card editor — SoundboardGridView, SoundboardGridCard, SlotEditor, and editor/ sub-components (SectionLabel, EditorHeader, SlotNameEditor, AudioSourceSelector, TrimEditor, VolumeSlider, RoutingSelector, HotkeyDisplay, ActionButtons). Owned by this doc.

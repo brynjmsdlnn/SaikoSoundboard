@@ -9,6 +9,7 @@ class SettingsManager;
 class AudioSourceListModel : public QAbstractListModel
 {
     Q_OBJECT
+    Q_PROPERTY(bool hasSources READ hasSources NOTIFY hasSourcesChanged)
 public:
     enum Roles {
         SourceIdRole = Qt::UserRole + 1,
@@ -39,6 +40,11 @@ public:
     Q_INVOKABLE bool setEnabled(const QString &sourceId, bool enabled);
     Q_INVOKABLE bool setVolume(const QString &sourceId, float volume);
     Q_INVOKABLE bool setMonitor(const QString &sourceId, bool monitor);
+
+    bool hasSources() const { return !m_sources.isEmpty(); }
+
+signals:
+    void hasSourcesChanged();
 
 private slots:
     void onSourcesChanged();

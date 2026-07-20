@@ -7,6 +7,7 @@ Rectangle {
     id: root
 
     property string captureMode: "global"
+    property bool isCaptureReady: true
     property bool replayChecked: false
     property bool saveReplayEnabled: false
     property int pulseDurationMs: 800
@@ -379,12 +380,14 @@ Rectangle {
                     radius: 20
 
                     // When enabled: only show on waveform hover. When disabled: always visible.
-                    opacity: root.replayChecked ?
-                             (containerHover.hovered ? 1.0 : 0.0) :
-                             (btnMouse.containsMouse ? 1.0 : (containerHover.hovered ? 0.8 : 0.5))
+                    opacity: root.isCaptureReady ?
+                             (root.replayChecked ?
+                              (containerHover.hovered ? 1.0 : 0.0) :
+                              (btnMouse.containsMouse ? 1.0 : (containerHover.hovered ? 0.8 : 0.5))) :
+                             0.65
 
                     visible: opacity > 0.0
-                    scale: btnMouse.containsMouse ? 1.1 : 1.0
+                    scale: btnMouse.containsMouse && root.isCaptureReady ? 1.1 : 1.0
 
                     color: root.replayChecked ?
                            (btnMouse.containsMouse ? Qt.rgba(Theme.accentRed.r, Theme.accentRed.g, Theme.accentRed.b, 0.2) : Qt.rgba(30/255, 30/255, 35/255, 0.9)) :
@@ -425,7 +428,7 @@ Rectangle {
                         id: btnMouse
                         anchors.fill: parent
                         hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
+                        cursorShape: root.isCaptureReady ? Qt.PointingHandCursor : Qt.ArrowCursor
 
                         onEntered: {
                             // Only trigger the shockwave when replay is enabled
@@ -439,6 +442,9 @@ Rectangle {
                         }
 
                         onClicked: {
+                            if (!root.isCaptureReady)
+                                return;
+
                             var nextState = !root.replayChecked;
 
                             Backend.settings.replayEnabled = nextState;

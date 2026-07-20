@@ -18,6 +18,7 @@
 #include "models/capturestate.h"
 
 class WasapiPassthrough;
+class AudioSourceListModel;
 
 class RecordingManager : public QObject
 {
@@ -40,6 +41,12 @@ public:
     Q_INVOKABLE void setSourceVolume(const QString &sourceId, float volume);
     Q_INVOKABLE void setSourceMuted(const QString &sourceId, bool muted);
 
+    // Source Model (injected for capture readiness)
+    void setSourceModel(AudioSourceListModel *model);
+
+    // Capture Readiness
+    Q_INVOKABLE bool isCaptureModeReady(const QString &mode) const;
+
     // Recording Control
     Q_INVOKABLE bool startRecording(const QString &path);
     Q_INVOKABLE void stopRecording();
@@ -52,6 +59,7 @@ public:
 
     // Accessors
     bool isReplayActive() const { return m_replayEnabled; }
+
     WavWriter* wavWriter() const { return m_wavWriter; }
     AudioMixer* mixer() const { return m_mixer; }
     ReplayBuffer* replayBuffer() const { return m_replayBuffer; }
@@ -69,8 +77,10 @@ signals:
     void replaySaved(const QString &path);
     void errorOccurred(const QString &msg);
     void soloChanged(const QString &sourceId, bool solo);
+    void captureReadyChanged();
 
 private:
+    AudioSourceListModel *m_sourceModel = nullptr;
     void startProcessRecorder(DWORD pid, const QString& sourceId, float volume);
     void startDeviceRecorder(const QString& deviceName, const QString& sourceId, float volume);
     void setupRecorder(WasapiRecorder *rec, const QString& sourceId, float volume);

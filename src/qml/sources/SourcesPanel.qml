@@ -16,10 +16,55 @@ Rectangle {
     signal deviceAdded(string name, string deviceName)
     signal sourceRemoved(string sourceId)
 
+    /// Opens the add-source popup programmatically (e.g. from the recording empty-state overlay).
+    function openAddSourceDialog() {
+        processPopup.open()
+    }
+
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 14
         spacing: 12
+
+        // Empty-state placeholder shown when no sources exist
+        Rectangle {
+            id: emptyState
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            visible: root.sourceModel && !root.sourceModel.hasSources
+            color: "transparent"
+
+            ColumnLayout {
+                anchors.centerIn: parent
+                width: parent.width - 32
+                spacing: 10
+
+                Image {
+                    source: "image://icons/volume-x?color=%23888888"
+                    sourceSize: Qt.size(36, 36)
+                    Layout.alignment: Qt.AlignHCenter
+                    opacity: 0.6
+                }
+
+                Text {
+                    text: "No audio sources added."
+                    color: Theme.textDim
+                    font.pixelSize: Theme.fontSizeNormal
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                }
+
+                Text {
+                    text: "Click <b>+ Add Source</b> to begin."
+                    color: Theme.textDim
+                    font.pixelSize: Theme.fontSizeSmall
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                }
+            }
+        }
 
         // List of Active Sources
         ListView {
@@ -27,6 +72,7 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
+            visible: root.sourceModel && root.sourceModel.hasSources
             model: root.sourceModel
             currentIndex: -1
             spacing: 6

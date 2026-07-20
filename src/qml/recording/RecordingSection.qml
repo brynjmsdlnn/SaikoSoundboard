@@ -6,6 +6,8 @@ import Saiko 1.0
 Rectangle {
     id: root
 
+    property string captureMode: "global"
+    property bool isCaptureReady: true
     property string lastRecordingPath: ""
     property int lastPlaybackType: Backend.PlaybackNone
     property bool startEnabled: true
@@ -279,8 +281,8 @@ Rectangle {
                 id: recButton
                 implicitWidth: 80
                 Layout.preferredHeight: 80
-                enabled: root.startEnabled || root.stopEnabled
-                opacity: enabled ? 1.0 : 0.4
+                enabled: (root.startEnabled || root.stopEnabled) && root.isCaptureReady
+                opacity: root.isCaptureReady ? (enabled ? 1.0 : 0.4) : 0.65
 
                 Behavior on opacity {
                     NumberAnimation {
