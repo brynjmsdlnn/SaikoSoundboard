@@ -189,19 +189,43 @@ void WasapiPassthrough::runPassthrough(const QString &inputDeviceDesc, const QSt
         return;
     }
 
-    IMMDevice *pInDevice = findDeviceByDesc(eCapture, inputDeviceDesc);
-    IMMDevice *pOutDevice = findDeviceByDesc(eRender, outputDeviceDesc);
+    IMMDevice *pInDevice = nullptr;
+    bool isLoopback = false;
 
-    if (!pInDevice && !inputDeviceDesc.isEmpty())
+    if (!inputDeviceDesc.isEmpty()) {
+        pInDevice = findDeviceByDesc(eCapture, inputDeviceDesc);
+        if (!pInDevice) {
+            pInDevice = findDeviceByDesc(eRender, inputDeviceDesc);
+            if (pInDevice) {
+                isLoopback = true;
+            }
+        }
+    } else {
         pInDevice = findDeviceByDesc(eCapture, {});
-    if (!pInDevice) {
-        IMMDeviceEnumerator *pEnum = nullptr;
-        if (SUCCEEDED(CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
-                                       __uuidof(IMMDeviceEnumerator), (void**)&pEnum))) {
-            pEnum->GetDefaultAudioEndpoint(eCapture, eConsole, &pInDevice);
-            pEnum->Release();
+        if (!pInDevice) {
+            IMMDeviceEnumerator *pEnum = nullptr;
+            if (SUCCEEDED(CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
+                                           __uuidof(IMMDeviceEnumerator), (void**)&pEnum))) {
+                pEnum->GetDefaultAudioEndpoint(eCapture, eConsole, &pInDevice);
+                pEnum->Release();
+            }
         }
     }
+
+    if (!pInDevice) {
+        LOG_WARN(LogCategory::Audio,
+                 QStringLiteral("[Passthrough] Unable to open monitored audio device (name: \"%1\", checked: Capture + Render endpoints)")
+                     .arg(inputDeviceDesc));
+        emit error("Could not find input audio device.");
+        return;
+    }
+
+    LOG_INFO(LogCategory::Audio,
+             QStringLiteral("[Passthrough] Monitored audio device resolved (name: \"%1\", mode: %2)")
+                 .arg(inputDeviceDesc.isEmpty() ? QStringLiteral("Default") : inputDeviceDesc)
+                 .arg(isLoopback ? QStringLiteral("Render loopback") : QStringLiteral("Capture passthrough")));
+
+    IMMDevice *pOutDevice = findDeviceByDesc(eRender, outputDeviceDesc);
     if (!pOutDevice && !outputDeviceDesc.isEmpty())
         pOutDevice = findDeviceByDesc(eRender, {});
     if (!pOutDevice) {
@@ -213,10 +237,12 @@ void WasapiPassthrough::runPassthrough(const QString &inputDeviceDesc, const QSt
         }
     }
 
-    if (!pInDevice || !pOutDevice) {
-        emit error("Could not find input or output audio device.");
-        if (pInDevice) pInDevice->Release();
-        if (pOutDevice) pOutDevice->Release();
+    if (!pOutDevice) {
+        LOG_WARN(LogCategory::Audio,
+                 QStringLiteral("[Passthrough] Unable to open output monitor device (name: \"%1\")")
+                     .arg(outputDeviceDesc));
+        emit error("Could not find output audio device.");
+        pInDevice->Release();
         return;
     }
 
@@ -249,13 +275,17 @@ void WasapiPassthrough::runPassthrough(const QString &inputDeviceDesc, const QSt
 
     REFERENCE_TIME bufDuration = 200000; // 20ms buffer duration
 
-    DWORD flags = AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY;
-    hr = pInClient->Initialize(AUDCLNT_SHAREMODE_SHARED, flags, bufDuration, 0, pwfxIn, nullptr);
+    DWORD inFlags = AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY;
+    if (isLoopback) {
+        inFlags |= AUDCLNT_STREAMFLAGS_LOOPBACK;
+    }
+    hr = pInClient->Initialize(AUDCLNT_SHAREMODE_SHARED, inFlags, bufDuration, 0, pwfxIn, nullptr);
     if (FAILED(hr)) {
-        hr = pInClient->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, bufDuration, 0, pwfxIn, nullptr);
+        hr = pInClient->Initialize(AUDCLNT_SHAREMODE_SHARED, isLoopback ? AUDCLNT_STREAMFLAGS_LOOPBACK : 0, bufDuration, 0, pwfxIn, nullptr);
     }
 
-    HRESULT hrOut = pOutClient->Initialize(AUDCLNT_SHAREMODE_SHARED, flags, bufDuration, 0, pwfxOut, nullptr);
+    DWORD outFlags = AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY;
+    HRESULT hrOut = pOutClient->Initialize(AUDCLNT_SHAREMODE_SHARED, outFlags, bufDuration, 0, pwfxOut, nullptr);
     if (FAILED(hrOut)) {
         hrOut = pOutClient->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, bufDuration, 0, pwfxOut, nullptr);
     }

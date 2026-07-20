@@ -15,16 +15,7 @@
 #include "audio/wasapipassthrough.h"
 #include "models/audiosourcelistmodel.h"
 
-static QString mapRenderToCaptureDevice(const QString &renderName)
-{
-    QString captureName = renderName;
-    if (captureName.contains("Input")) {
-        captureName.replace("Input", "Output");
-    } else if (captureName.contains("input")) {
-        captureName.replace("input", "output");
-    }
-    return captureName;
-}
+// TODO(v0.x): Replace friendly-name lookup with WASAPI endpoint IDs for stable device resolution.
 
 RecordingManager::RecordingManager(SettingsManager *settings, QObject *parent)
     : QObject(parent)
@@ -382,9 +373,8 @@ void RecordingManager::syncDevicePassthroughs()
     QList<AudioSource> sources = m_settings->sources();
     for (const auto &src : std::as_const(sources)) {
         if (src.type == "device" && src.monitor) {
-            QString captureDev = mapRenderToCaptureDevice(src.deviceName);
             WasapiPassthrough *passthrough = new WasapiPassthrough(this);
-            passthrough->start(captureDev, m_settings->localMonitorDevice());
+            passthrough->start(src.deviceName, m_settings->localMonitorDevice());
             passthrough->setVolume(src.volume);
             m_devicePassthroughs.insert(src.id, passthrough);
         }
