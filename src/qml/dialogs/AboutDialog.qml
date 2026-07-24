@@ -86,7 +86,7 @@ SaikoFramelessPopup {
                         Text {
                             id: versionText
                             anchors.centerIn: parent
-                            text: "v0.4.0 Beta"
+                            text: "v0.4.1 Beta"
                             color: Theme.accentTeal
                             font.pixelSize: 11
                             font.weight: Font.Bold

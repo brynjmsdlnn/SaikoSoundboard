@@ -1,4 +1,4 @@
-# PowerShell Deployment Script for SaikoSoundboard Beta v0.4.0
+# PowerShell Deployment Script for SaikoSoundboard Beta v0.4.1
 
 $ErrorActionPreference = "Stop"
 
@@ -8,11 +8,11 @@ $QtBin = "$QtPrefix\bin"
 $WinDeployQt = "$QtBin\windeployqt.exe"
 $BuildDir = "$ProjectRoot\build_release"
 $DistDir = "$ProjectRoot\dist"
-$StagingDir = "$DistDir\SaikoSoundboard-v0.4.0-beta"
+$StagingDir = "$DistDir\SaikoSoundboard-v0.4.1-beta"
 $InstallerScript = "$ProjectRoot\installer\SaikoSoundboard.iss"
 
 Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host " SaikoSoundboard Release Deployment v0.4.0" -ForegroundColor Cyan
+Write-Host " SaikoSoundboard Release Deployment v0.4.1" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 
 # Terminate any running instances of SaikoSoundboard to prevent file locking
@@ -131,7 +131,7 @@ foreach ($dll in $UnusedDlls) {
 
 # 6. Create Zip Archive
 Write-Host "`n[5/5] Creating portable ZIP distribution..." -ForegroundColor Yellow
-$ZipPath = "$DistDir\SaikoSoundboard-v0.4.0-beta-portable.zip"
+$ZipPath = "$DistDir\SaikoSoundboard-v0.4.1-beta-portable.zip"
 if (Test-Path $ZipPath) { Remove-Item -Force $ZipPath }
 Compress-Archive -Path "$StagingDir\*" -DestinationPath $ZipPath
 

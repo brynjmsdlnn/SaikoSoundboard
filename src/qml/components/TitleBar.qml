@@ -121,7 +121,7 @@ Rectangle {
             Text {
                 id: versionText
                 anchors.centerIn: parent
-                text: "v0.4.0"
+                text: "v0.4.1"
                 color: Theme.accentTeal
                 font.pixelSize: 9
                 font.weight: Font.Bold
