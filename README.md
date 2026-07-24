@@ -1,4 +1,4 @@
-# SaikoSoundboard (v0.3.0 Beta)
+# SaikoSoundboard (v0.4.0 Beta)
 
 **SaikoSoundboard** is a modern, low-latency Windows soundboard, audio recorder, and instant replay capture application built with **C++17**, **Qt 6 Quick**, and native **WASAPI** audio sub-systems.
 
@@ -104,8 +104,8 @@ Run the provided PowerShell deployment script:
 This script will:
 1. Compile SaikoSoundboard in `Release` mode.
 2. Run `windeployqt` to bundle required Qt libraries and QML modules.
-3. Package the standalone bundle in `dist/SaikoSoundboard-v0.3.0-beta/`.
-4. Build `SaikoSoundboard-0.3.0-Beta-Setup.exe` if Inno Setup Compiler (`iscc.exe`) is installed.
+3. Package the standalone bundle in `dist/SaikoSoundboard-v0.4.0-beta/`.
+4. Build `SaikoSoundboard-0.4.0-Beta-Setup.exe` if Inno Setup Compiler (`iscc.exe`) is installed.
 
 ### 2. Inno Setup Installer
 

@@ -1,7 +1,7 @@
 #include "SingleInstanceGuard.h"
+#include "logging/LogMacros.h"
 
 #include <QLocalSocket>
-#include <QDebug>
 
 const QByteArray SingleInstanceGuard::kActivateMessage = "ACTIVATE";
 
@@ -29,7 +29,9 @@ bool SingleInstanceGuard::tryStart()
         socket.write(kActivateMessage);
         socket.waitForBytesWritten(1000);
         socket.disconnectFromServer();
-        qDebug() << "[SingleInstanceGuard] Another instance detected. Sent ACTIVATE.";
+        LOG_INFO(LogCategory::General,
+                 "[SingleInstanceGuard] Another instance detected, sent ACTIVATE (server: %1).",
+                 m_serverName);
         return false;
     }
 
@@ -43,7 +45,10 @@ bool SingleInstanceGuard::tryStart()
     QLocalServer::removeServer(m_serverName);
 
     if (!m_server->listen(m_serverName)) {
-        qWarning() << "[SingleInstanceGuard] Failed to start server:" << m_server->errorString();
+        LOG_WARN(LogCategory::General,
+                 "[SingleInstanceGuard] Failed to start server (server: %1, error: %2).",
+                 m_serverName,
+                 m_server->errorString());
         // Fallback: allow the app to continue anyway. If two instances end
         // up running it's a minor UX issue, not a crash.
         return true;
@@ -51,7 +56,9 @@ bool SingleInstanceGuard::tryStart()
 
     connect(m_server, &QLocalServer::newConnection, this, &SingleInstanceGuard::onNewConnection);
 
-    qDebug() << "[SingleInstanceGuard] Listening on:" << m_serverName;
+    LOG_INFO(LogCategory::General,
+             "[SingleInstanceGuard] Single instance server listening (server: %1).",
+             m_serverName);
     return true;
 }
 
@@ -65,7 +72,9 @@ void SingleInstanceGuard::onNewConnection()
     if (clientSocket->waitForReadyRead(2000)) {
         const QByteArray data = clientSocket->readAll().trimmed();
         if (data == kActivateMessage) {
-            qDebug() << "[SingleInstanceGuard] Got ACTIVATE — raising window.";
+            LOG_DEBUG(LogCategory::General,
+                      "[SingleInstanceGuard] Received activate request from second instance (server: %1).",
+                      m_serverName);
             emit activateRequested();
         }
     }
