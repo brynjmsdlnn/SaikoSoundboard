@@ -38,7 +38,10 @@ Window {
         }
     }
 
-    Component.onCompleted: computePosition()
+    Component.onCompleted: {
+        Backend.setupOverlayWindow(overlayWindow);
+        computePosition();
+    }
 
     onWidthChanged: computePosition()
     onHeightChanged: computePosition()
@@ -47,6 +50,7 @@ Window {
 
     onVisibleChanged: {
         if (visible) {
+            Backend.setupOverlayWindow(overlayWindow);
             computePosition();
         }
     }

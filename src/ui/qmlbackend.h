@@ -80,6 +80,7 @@ public:
     Q_INVOKABLE bool deleteRecordingFile(const QString &path);
     Q_INVOKABLE void loadRecordingWaveform(const QString &filePath);
     Q_INVOKABLE void toggleMaximize(QQuickWindow *window);
+    Q_INVOKABLE void setupOverlayWindow(QQuickWindow *window);
 
     // Path helpers (delegates to StoragePaths for QML consumption)
     Q_INVOKABLE QString generateRecordingFilePath() const;

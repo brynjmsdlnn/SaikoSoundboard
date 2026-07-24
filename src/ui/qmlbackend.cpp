@@ -342,3 +342,17 @@ void QmlBackend::toggleMaximize(QQuickWindow *window)
     }
 #endif
 }
+
+void QmlBackend::setupOverlayWindow(QQuickWindow *window)
+{
+    if (!window) return;
+#ifdef Q_OS_WIN
+    HWND hwnd = (HWND)window->winId();
+    if (hwnd) {
+        LONG exStyle = GetWindowLongW(hwnd, GWL_EXSTYLE);
+        exStyle |= WS_EX_TOPMOST | WS_EX_NOACTIVATE;
+        SetWindowLongW(hwnd, GWL_EXSTYLE, exStyle);
+        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+    }
+#endif
+}

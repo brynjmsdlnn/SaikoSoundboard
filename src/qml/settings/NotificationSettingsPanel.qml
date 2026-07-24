@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import Saiko 1.0
+import "../notifications/helpers.js" as NotifHelpers
 
 SettingsPanelWrapper {
     title: "Notifications"
@@ -120,6 +121,42 @@ SettingsPanelWrapper {
                                     Backend.notifications.overlayEnabled = checked;
                                     Backend.settings.save();
                                 }
+                            }
+                        }
+                    }
+
+                    // --- FULLSCREEN GAMES HINT ---
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: gameHintLayout.implicitHeight + 20
+                        visible: enabledSwitch.checked && overlaySwitch.checked
+                        color: Qt.rgba(Theme.accentPurple.r, Theme.accentPurple.g, Theme.accentPurple.b, 0.08)
+                        radius: Theme.cardRadius
+                        border.color: Qt.rgba(Theme.accentPurple.r, Theme.accentPurple.g, Theme.accentPurple.b, 0.3)
+                        border.width: 1
+
+                        RowLayout {
+                            id: gameHintLayout
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.margins: 12
+                            spacing: 10
+
+                            Image {
+                                source: "image://icons/info?color=" + NotifHelpers.encodeColor(Theme.accentPurple)
+                                sourceSize: Qt.size(16, 16)
+                                Layout.alignment: Qt.AlignTop
+                                Layout.topMargin: 2
+                            }
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: "For games running in Exclusive Fullscreen (such as Valorant), please set the game's Display Mode to Borderless Windowed so notifications render on top."
+                                color: Theme.textSecondary
+                                font.pixelSize: Theme.fontSizeSmall
+                                wrapMode: Text.WordWrap
+                                lineHeight: 1.15
                             }
                         }
                     }
