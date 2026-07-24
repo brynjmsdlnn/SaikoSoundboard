@@ -1,4 +1,5 @@
-#include <QGuiApplication>
+#include <QApplication>
+#include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QLoggingCategory>
@@ -10,6 +11,8 @@
 #include "ui/colorediconprovider.h"
 #include "ui/fileiconprovider.h"
 #include "models/soundplayerslotmodel.h"
+#include "managers/settingsmanager.h"
+#include "lifecycle/ApplicationLifecycleManager.h"
 
 #include "core/SingleInstanceGuard.h"
 
@@ -28,11 +31,14 @@ int main(int argc, char *argv[])
     qputenv("QSG_RENDER_LOOP", "basic");
     qputenv("QT_QUICK_CONTROLS_STYLE", "Basic");
 
-    QGuiApplication a(argc, argv);
+    QApplication a(argc, argv);
 
     // Application metadata
     QCoreApplication::setOrganizationName("Saiko Interactive");
     QCoreApplication::setApplicationName("Saiko Soundboard");
+
+    // Application icon (tray icon, taskbar, alt-tab)
+    a.setWindowIcon(QIcon(QStringLiteral(":/icons/radio.svg")));
 
     // ── Single-instance guard ────────────────────────────────────────────
     // Uses a hardcoded UUID so the named pipe is unique system-wide.
@@ -54,6 +60,8 @@ int main(int argc, char *argv[])
 
     qmlRegisterType<RealtimeWaveformItem>("Saiko", 1, 0, "RealtimeWaveform");
     qmlRegisterType<WaveformItem>("Saiko", 1, 0, "WaveformData");
+    qmlRegisterUncreatableType<SettingsManager>("Saiko", 1, 0, "SettingsManager", "SettingsManager cannot be created in QML");
+    qmlRegisterUncreatableType<ApplicationLifecycleManager>("Saiko", 1, 0, "ApplicationLifecycleManager", "ApplicationLifecycleManager cannot be created in QML");
 
     QmlBackend backend;
 
@@ -79,14 +87,11 @@ int main(int argc, char *argv[])
         QGuiApplication::instance()->installNativeEventFilter(frameless);
 
         // Bring window to front when a second instance tries to launch.
-        QObject::connect(&guard, &SingleInstanceGuard::activateRequested, window, [window]() {
-            window->setWindowStates(window->windowStates() & ~Qt::WindowMinimized);
-            window->show();
-            window->raise();
-            window->requestActivate();
-        });
+        QObject::connect(&guard, &SingleInstanceGuard::activateRequested, backend.lifecycle(), &ApplicationLifecycleManager::restoreWindow);
     }
 #endif
 
-    return QGuiApplication::exec();
+    QObject::connect(&a, &QCoreApplication::aboutToQuit, backend.lifecycle(), &ApplicationLifecycleManager::exitApplication);
+
+    return QApplication::exec();
 }

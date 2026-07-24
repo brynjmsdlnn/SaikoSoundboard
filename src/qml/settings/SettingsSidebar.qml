@@ -47,6 +47,15 @@ Rectangle {
             Layout.bottomMargin: 8
         }
 
+        // General Tab Button
+        SidebarTabButton {
+            id: generalTabBtn
+            iconSource: "image://icons/cog?color=" + (root.activeTab === "general" ? Theme.accentPurple : Theme.textSecondary)
+            label: "General"
+            isActive: root.activeTab === "general"
+            onClicked: root.tabSelected("general")
+        }
+
         // Storage Tab Button
         SidebarTabButton {
             id: storageTabBtn

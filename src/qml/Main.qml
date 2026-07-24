@@ -5,6 +5,7 @@ import QtQuick.Window 2.15
 import QtQuick.Dialogs
 import Saiko 1.0
 import "shared/utils.js" as Utils
+import "dialogs"
 
 ApplicationWindow {
     id: app
@@ -16,6 +17,15 @@ ApplicationWindow {
     title: "Saiko Soundboard"
     color: Theme.appBackground
     flags: Qt.Window | Qt.FramelessWindowHint
+
+    Component.onCompleted: {
+        Backend.lifecycle.attachMainWindow(app);
+    }
+
+    onClosing: (close) => {
+        close.accepted = false;
+        Backend.lifecycle.requestClose();
+    }
 
     property string captureMode: "global"
     property string lastRecordingPath: ""
@@ -393,6 +403,17 @@ ApplicationWindow {
         id: logWindow
         onOpened: showLogViewer = true
         onClosed: showLogViewer = false
+    }
+
+    CloseConfirmationDialog {
+        id: closeConfirmationDialog
+    }
+
+    Connections {
+        target: Backend.lifecycle
+        function onRequestCloseConfirmation() {
+            closeConfirmationDialog.open();
+        }
     }
 
     NotificationOverlay {

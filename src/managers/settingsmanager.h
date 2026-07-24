@@ -38,7 +38,16 @@ class SettingsManager : public QObject
     Q_PROPERTY(int notificationsDurationMs READ notificationsDurationMs WRITE setNotificationsDurationMs NOTIFY notificationsDurationMsChanged)
     Q_PROPERTY(QString notificationsSize READ notificationsSize WRITE setNotificationsSize NOTIFY notificationsSizeChanged)
     Q_PROPERTY(QString notificationsPosition READ notificationsPosition WRITE setNotificationsPosition NOTIFY notificationsPositionChanged)
+    Q_PROPERTY(CloseBehavior closeBehavior READ closeBehavior WRITE setCloseBehavior NOTIFY closeBehaviorChanged)
+    Q_PROPERTY(bool hasShownFirstHideNotification READ hasShownFirstHideNotification WRITE setHasShownFirstHideNotification NOTIFY hasShownFirstHideNotificationChanged)
+    Q_PROPERTY(QString trayIconColor READ trayIconColor WRITE setTrayIconColor NOTIFY trayIconColorChanged)
 public:
+    enum class CloseBehavior {
+        Ask = 0,
+        MinimizeToTray = 1,
+        Exit = 2
+    };
+    Q_ENUM(CloseBehavior)
     explicit SettingsManager(QObject *parent = nullptr);
 
     Q_INVOKABLE void load();
@@ -68,29 +77,35 @@ public:
     int notificationsDurationMs() const { return m_notificationsDurationMs; }
     QString notificationsSize() const { return m_notificationsSize; }
     QString notificationsPosition() const { return m_notificationsPosition; }
+    CloseBehavior closeBehavior() const { return m_closeBehavior; }
+    bool hasShownFirstHideNotification() const { return m_hasShownFirstHideNotification; }
+    QString trayIconColor() const { return m_trayIconColor; }
 
     // Setters
-    void setSources(const QList<AudioSource> &sources);
-    void setSoundBoardSlots(const QList<SoundPlayerSlot> &soundBoardSlots);
-    void setReplayEnabled(bool enabled);
-    void setReplayDuration(int duration);
-    void setBaseDirectory(const QString &dir);
-    void setRecordingDirectoryOverride(const QString &dir);
-    void setReplayDirectoryOverride(const QString &dir);
-    void setEnableMicOutput(bool enabled);
-    void setEnableLocalMonitoring(bool enabled);
-    void setMicOutputDevice(const QString &device);
-    void setLocalMonitorDevice(const QString &device);
-    void setEnableMicPassthrough(bool enabled);
-    void setVoiceInputDevice(const QString &device);
-    void setRecordingSampleRate(int sampleRate);
-    void setHotkeysEnabled(bool enabled);
-    void setDefaultPlaybackMode(PlaybackMode mode);
-    void setNotificationsEnabled(bool enabled);
-    void setNotificationsOverlayEnabled(bool enabled);
-    void setNotificationsDurationMs(int durationMs);
-    void setNotificationsSize(const QString &size);
-    void setNotificationsPosition(const QString &position);
+    Q_INVOKABLE void setSources(const QList<AudioSource> &sources);
+    Q_INVOKABLE void setSoundBoardSlots(const QList<SoundPlayerSlot> &soundBoardSlots);
+    Q_INVOKABLE void setReplayEnabled(bool enabled);
+    Q_INVOKABLE void setReplayDuration(int duration);
+    Q_INVOKABLE void setBaseDirectory(const QString &dir);
+    Q_INVOKABLE void setRecordingDirectoryOverride(const QString &dir);
+    Q_INVOKABLE void setReplayDirectoryOverride(const QString &dir);
+    Q_INVOKABLE void setEnableMicOutput(bool enabled);
+    Q_INVOKABLE void setEnableLocalMonitoring(bool enabled);
+    Q_INVOKABLE void setMicOutputDevice(const QString &device);
+    Q_INVOKABLE void setLocalMonitorDevice(const QString &device);
+    Q_INVOKABLE void setEnableMicPassthrough(bool enabled);
+    Q_INVOKABLE void setVoiceInputDevice(const QString &device);
+    Q_INVOKABLE void setRecordingSampleRate(int sampleRate);
+    Q_INVOKABLE void setHotkeysEnabled(bool enabled);
+    Q_INVOKABLE void setDefaultPlaybackMode(PlaybackMode mode);
+    Q_INVOKABLE void setNotificationsEnabled(bool enabled);
+    Q_INVOKABLE void setNotificationsOverlayEnabled(bool enabled);
+    Q_INVOKABLE void setNotificationsDurationMs(int durationMs);
+    Q_INVOKABLE void setNotificationsSize(const QString &size);
+    Q_INVOKABLE void setNotificationsPosition(const QString &position);
+    Q_INVOKABLE void setCloseBehavior(CloseBehavior behavior);
+    Q_INVOKABLE void setHasShownFirstHideNotification(bool value);
+    Q_INVOKABLE void setTrayIconColor(const QString &color);
 
 signals:
     void sourcesChanged();
@@ -116,6 +131,9 @@ signals:
     void notificationsDurationMsChanged();
     void notificationsSizeChanged();
     void notificationsPositionChanged();
+    void closeBehaviorChanged();
+    void hasShownFirstHideNotificationChanged();
+    void trayIconColorChanged();
 
 private:
     QString getSettingsFilePath() const;
@@ -141,6 +159,9 @@ private:
     int m_notificationsDurationMs = 3000;
     QString m_notificationsSize = QStringLiteral("Medium");
     QString m_notificationsPosition = QStringLiteral("BottomRight");
+    CloseBehavior m_closeBehavior = CloseBehavior::Ask;
+    bool m_hasShownFirstHideNotification = false;
+    QString m_trayIconColor = QStringLiteral("#e35d5d");
 };
 
 #endif // SETTINGSMANAGER_H

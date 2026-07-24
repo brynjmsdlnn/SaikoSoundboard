@@ -17,8 +17,8 @@ if(CCACHE_PROGRAM)
     set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
 endif()
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Multimedia Concurrent Quick Qml Test Svg Network)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia Concurrent Quick Qml Test Svg Network)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Multimedia Concurrent Quick Qml Test Svg Network Widgets)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia Concurrent Quick Qml Test Svg Network Widgets)
 
 enable_testing()
 
@@ -50,6 +50,8 @@ set(CORE_ADAPTERS_SOURCES
 set(UI_SOURCES
     src/ui/qmlbackend.cpp
     src/ui/qmlbackend.h
+    src/lifecycle/ApplicationLifecycleManager.h
+    src/lifecycle/ApplicationLifecycleManager.cpp
     src/ui/waveformitem.h
     src/ui/waveformitem.cpp
     src/ui/realtimewaveformitem.h
@@ -133,6 +135,17 @@ target_link_libraries(SaikoAudio
 )
 set_target_properties(SaikoAudio PROPERTIES UNITY_BUILD ON)
 
+# 0. Lifecycle Manager
+add_library(SaikoLifecycle STATIC ${LIFECYCLE_SOURCES})
+target_link_libraries(SaikoLifecycle
+    PUBLIC
+        SaikoLogging
+        SaikoStorage
+        Qt${QT_VERSION_MAJOR}::Core
+        Qt${QT_VERSION_MAJOR}::Gui
+        Qt${QT_VERSION_MAJOR}::Widgets
+)
+
 # 4. Data Models (Value types only, header-only interface)
 add_library(SaikoModels INTERFACE)
 target_include_directories(SaikoModels INTERFACE src)
@@ -154,6 +167,8 @@ target_link_libraries(SaikoManagers
         SaikoAudio
         SaikoModels
         SaikoStorage
+        SaikoLifecycle
+        Qt${QT_VERSION_MAJOR}::Widgets
 )
 set_target_properties(SaikoManagers PROPERTIES UNITY_BUILD ON)
 
@@ -164,9 +179,11 @@ target_link_libraries(SaikoUI
         SaikoManagers
         SaikoModels
         SaikoAudio
+        SaikoLifecycle
         Qt${QT_VERSION_MAJOR}::Quick
         Qt${QT_VERSION_MAJOR}::Qml
         Qt${QT_VERSION_MAJOR}::Svg
+        Qt${QT_VERSION_MAJOR}::Widgets
 )
 
 # Umbrella Core target to maintain compatibility with tests and tools
@@ -180,6 +197,7 @@ target_link_libraries(SaikoSoundboardCore INTERFACE
     SaikoDomain
     SaikoLogging
     SaikoStorage
+    SaikoLifecycle
 )
 
 # --- Precompiled Headers ---
@@ -289,6 +307,7 @@ qt_add_qml_module(SaikoSoundboard
 
         # --- Dialogs ---
         src/qml/dialogs/AboutDialog.qml
+        src/qml/dialogs/CloseConfirmationDialog.qml
         src/qml/dialogs/LogWindow.qml
         src/qml/dialogs/NotificationOverlay.qml
 
@@ -297,6 +316,7 @@ qt_add_qml_module(SaikoSoundboard
         src/qml/settings/SettingsSidebar.qml
         src/qml/settings/SettingsPanelHeader.qml
         src/qml/settings/SettingsPanelWrapper.qml
+        src/qml/settings/GeneralSettingsPanel.qml
         src/qml/settings/StorageSettingsPanel.qml
         src/qml/settings/AudioSettingsPanel.qml
         src/qml/settings/RoutingSettingsPanel.qml

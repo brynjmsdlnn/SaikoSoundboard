@@ -15,6 +15,7 @@
 #include "managers/notificationmanager.h"
 #include "models/soundplayerslotmodel.h"
 #include "models/audiosourcelistmodel.h"
+#include "lifecycle/ApplicationLifecycleManager.h"
 class QMediaPlayer;
 class QAudioOutput;
 class QTimer;
@@ -32,6 +33,7 @@ class QmlBackend : public QObject
     Q_PROPERTY(ActionManager* actions READ actionManager CONSTANT)
     Q_PROPERTY(HotkeyManager* hotkeys READ hotkeyManager CONSTANT)
     Q_PROPERTY(NotificationManager* notifications READ notifications CONSTANT)
+    Q_PROPERTY(ApplicationLifecycleManager* lifecycle READ lifecycle CONSTANT)
     Q_PROPERTY(SoundPlayerSlotModel* slotModel READ slotModel CONSTANT)
     Q_PROPERTY(AudioSourceListModel* sourceModel READ sourceModel CONSTANT)
     Q_PROPERTY(bool isPlaying READ isPlaying NOTIFY playbackStateChanged)
@@ -55,6 +57,7 @@ public:
     ActionManager *actionManager() const { return m_actionManager; }
     HotkeyManager *hotkeyManager() const { return m_hotkeyManager; }
     NotificationManager *notifications() const { return m_notificationManager; }
+    ApplicationLifecycleManager *lifecycle() const { return m_lifecycleManager; }
     SoundPlayerSlotModel *slotModel() const { return m_slotModel; }
     AudioSourceListModel *sourceModel() const { return m_sourceModel; }
 
@@ -112,6 +115,7 @@ private:
     ActionManager *m_actionManager;
     HotkeyManager *m_hotkeyManager;
     NotificationManager *m_notificationManager = nullptr;
+    ApplicationLifecycleManager *m_lifecycleManager = nullptr;
     SoundPlayerSlotModel *m_slotModel = nullptr;
     AudioSourceListModel *m_sourceModel = nullptr;
     void *m_hotkeyBackend;

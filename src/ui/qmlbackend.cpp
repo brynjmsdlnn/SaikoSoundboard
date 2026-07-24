@@ -48,6 +48,7 @@ QmlBackend::QmlBackend(QObject *parent)
     m_hotkeyManager = new HotkeyManager(m_actionManager, backend, this);
 
     m_notificationManager = new NotificationManager(m_settings, m_soundboardManager, m_recordingManager, this);
+    m_lifecycleManager = new ApplicationLifecycleManager(this, this);
 
     m_slotModel = new SoundPlayerSlotModel(m_soundboardManager, this);
     m_sourceModel = new AudioSourceListModel(m_settings, this);

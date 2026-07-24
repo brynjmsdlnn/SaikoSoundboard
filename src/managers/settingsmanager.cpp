@@ -4,6 +4,21 @@
 #include <QDir>
 #include <QFileInfo>
 
+static QString closeBehaviorToString(SettingsManager::CloseBehavior behavior) {
+    switch (behavior) {
+    case SettingsManager::CloseBehavior::MinimizeToTray: return QStringLiteral("minimize");
+    case SettingsManager::CloseBehavior::Exit:           return QStringLiteral("exit");
+    case SettingsManager::CloseBehavior::Ask:
+    default:                                             return QStringLiteral("ask");
+    }
+}
+
+static SettingsManager::CloseBehavior stringToCloseBehavior(const QString &str) {
+    if (str == QStringLiteral("minimize")) return SettingsManager::CloseBehavior::MinimizeToTray;
+    if (str == QStringLiteral("exit"))     return SettingsManager::CloseBehavior::Exit;
+    return SettingsManager::CloseBehavior::Ask;
+}
+
 SettingsManager::SettingsManager(QObject *parent)
     : QObject(parent)
     , m_replayEnabled(false)
@@ -47,6 +62,9 @@ void SettingsManager::load()
     bool notificationsDurationMsDirty = false;
     bool notificationsSizeDirty = false;
     bool notificationsPositionDirty = false;
+    bool closeBehaviorDirty = false;
+    bool hasShownFirstNotifDirty = false;
+    bool trayIconColorDirty = false;
 
     if (doc.isArray()) {
         QList<AudioSource> newSources;
@@ -186,6 +204,25 @@ void SettingsManager::load()
             notificationsPositionDirty = true;
         }
 
+        QString closeStr = obj["closeBehavior"].toString(QStringLiteral("ask"));
+        CloseBehavior newCloseBehavior = stringToCloseBehavior(closeStr);
+        if (newCloseBehavior != m_closeBehavior) {
+            m_closeBehavior = newCloseBehavior;
+            closeBehaviorDirty = true;
+        }
+
+        bool newHasShownFirstNotif = obj["hasShownFirstHideNotification"].toBool(false);
+        if (newHasShownFirstNotif != m_hasShownFirstHideNotification) {
+            m_hasShownFirstHideNotification = newHasShownFirstNotif;
+            hasShownFirstNotifDirty = true;
+        }
+
+        QString newTrayColor = obj["trayIconColor"].toString(QStringLiteral("#e35d5d"));
+        if (newTrayColor != m_trayIconColor) {
+            m_trayIconColor = newTrayColor;
+            trayIconColorDirty = true;
+        }
+
         QList<SoundPlayerSlot> newSlots;
         QJsonArray slotsArr = obj["soundBoardSlots"].toArray();
         for (const QJsonValue& val : std::as_const(slotsArr)) {
@@ -227,6 +264,9 @@ void SettingsManager::load()
     if (notificationsDurationMsDirty) emit notificationsDurationMsChanged();
     if (notificationsSizeDirty) emit notificationsSizeChanged();
     if (notificationsPositionDirty) emit notificationsPositionChanged();
+    if (closeBehaviorDirty) emit closeBehaviorChanged();
+    if (hasShownFirstNotifDirty) emit hasShownFirstHideNotificationChanged();
+    if (trayIconColorDirty) emit trayIconColorChanged();
 }
 
 void SettingsManager::save()
@@ -264,6 +304,9 @@ void SettingsManager::save()
     root["notificationsDurationMs"] = m_notificationsDurationMs;
     root["notificationsSize"] = m_notificationsSize;
     root["notificationsPosition"] = m_notificationsPosition;
+    root["closeBehavior"] = closeBehaviorToString(m_closeBehavior);
+    root["hasShownFirstHideNotification"] = m_hasShownFirstHideNotification;
+    root["trayIconColor"] = m_trayIconColor;
 
     QJsonDocument doc(root);
     QString settingsPath = getSettingsFilePath();
@@ -477,5 +520,32 @@ void SettingsManager::setNotificationsPosition(const QString &position)
     if (m_notificationsPosition != position) {
         m_notificationsPosition = position;
         emit notificationsPositionChanged();
+    }
+}
+
+void SettingsManager::setCloseBehavior(CloseBehavior behavior)
+{
+    if (m_closeBehavior != behavior) {
+        m_closeBehavior = behavior;
+        emit closeBehaviorChanged();
+        save();
+    }
+}
+
+void SettingsManager::setHasShownFirstHideNotification(bool value)
+{
+    if (m_hasShownFirstHideNotification != value) {
+        m_hasShownFirstHideNotification = value;
+        emit hasShownFirstHideNotificationChanged();
+        save();
+    }
+}
+
+void SettingsManager::setTrayIconColor(const QString &color)
+{
+    if (m_trayIconColor != color) {
+        m_trayIconColor = color;
+        emit trayIconColorChanged();
+        save();
     }
 }

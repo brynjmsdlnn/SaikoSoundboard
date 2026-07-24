@@ -84,9 +84,10 @@ Default section order:
 - C++ standard: C++17 with `-std=gnu++17`
 - `QT_QUICK_CONTROLS_STYLE = "Basic"` set at startup
 - `CMAKE_AUTOMOC_COMPILER_PREDEFINES OFF` required for MinGW 13.1
-- `CMAKE_CXX_COMPILER_LAUNCHER` set to `ccache` when available (configured in CMakeLists.txt)
-
 ## Child DOX Index
+
+### `src/lifecycle/`
+Application lifecycle coordinator — `ApplicationLifecycleManager.h/.cpp` (state machine, system tray icon, window restoration, idempotent teardown sequence). Never call `QCoreApplication::quit()` or `Qt.quit()` directly outside `ApplicationLifecycleManager`. See `src/lifecycle/AGENTS.md` for contracts.
 
 ### `src/qml/`
 QML UI layer — 25 QML files + 2 JS utilities. All part of the `Saiko 1.0` module. Uses `Theme` singleton, `SaikoButton`, `helpers.js`, `utils.js`, `AboutDialog`. See `src/qml/AGENTS.md` for conventions.

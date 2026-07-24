@@ -57,7 +57,7 @@ Reusable UI primitives — SaikoButton, SaikoCheckBox, SaikoComboBox, SaikoToolt
 Shared singleton and utilities — Theme.qml (singleton), utils.js (JS utility functions). Owned by this doc.
 
 ### `dialogs/`
-Standalone windows and popups — AboutDialog, LogWindow, NotificationOverlay. Owned by this doc.
+Standalone windows and popups — AboutDialog, CloseConfirmationDialog, LogWindow, NotificationOverlay. Owned by this doc.
 
 ### `settings/`
 Settings dialog components — SettingsDialog (shell), SettingsSidebar (tab navigation), SettingsPanelHeader (reusable title/subtitle header), SettingsPanelWrapper (standardized panel container), StorageSettingsPanel (directory paths), AudioSettingsPanel (sample rate), RoutingSettingsPanel (soundboard routing + voice passthrough), NotificationSettingsPanel. Owned by this doc.

@@ -30,8 +30,7 @@ bool SingleInstanceGuard::tryStart()
         socket.waitForBytesWritten(1000);
         socket.disconnectFromServer();
         LOG_INFO(LogCategory::General,
-                 "[SingleInstanceGuard] Another instance detected, sent ACTIVATE (server: %1).",
-                 m_serverName);
+                 QStringLiteral("[SingleInstanceGuard] Another instance detected, sent ACTIVATE (server: %1).").arg(m_serverName));
         return false;
     }
 
@@ -46,9 +45,7 @@ bool SingleInstanceGuard::tryStart()
 
     if (!m_server->listen(m_serverName)) {
         LOG_WARN(LogCategory::General,
-                 "[SingleInstanceGuard] Failed to start server (server: %1, error: %2).",
-                 m_serverName,
-                 m_server->errorString());
+                 QStringLiteral("[SingleInstanceGuard] Failed to start server (server: %1, error: %2).").arg(m_serverName).arg(m_server->errorString()));
         // Fallback: allow the app to continue anyway. If two instances end
         // up running it's a minor UX issue, not a crash.
         return true;
@@ -57,8 +54,7 @@ bool SingleInstanceGuard::tryStart()
     connect(m_server, &QLocalServer::newConnection, this, &SingleInstanceGuard::onNewConnection);
 
     LOG_INFO(LogCategory::General,
-             "[SingleInstanceGuard] Single instance server listening (server: %1).",
-             m_serverName);
+             QStringLiteral("[SingleInstanceGuard] Single instance server listening (server: %1).").arg(m_serverName));
     return true;
 }
 
@@ -73,8 +69,7 @@ void SingleInstanceGuard::onNewConnection()
         const QByteArray data = clientSocket->readAll().trimmed();
         if (data == kActivateMessage) {
             LOG_DEBUG(LogCategory::General,
-                      "[SingleInstanceGuard] Received activate request from second instance (server: %1).",
-                      m_serverName);
+                      QStringLiteral("[SingleInstanceGuard] Received activate request from second instance (server: %1).").arg(m_serverName));
             emit activateRequested();
         }
     }

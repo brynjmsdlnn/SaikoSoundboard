@@ -14,7 +14,7 @@ SaikoFramelessPopup {
     signal resetRecordingRequested()
     signal resetReplayRequested()
 
-    property string activeTab: "storage"
+    property string activeTab: "general"
 
     RowLayout {
         anchors.fill: parent
@@ -41,6 +41,11 @@ SaikoFramelessPopup {
                 onChangeReplayRequested: root.changeReplayRequested()
                 onResetRecordingRequested: root.resetRecordingRequested()
                 onResetReplayRequested: root.resetReplayRequested()
+            }
+
+            GeneralSettingsPanel {
+                id: generalContent
+                visible: root.activeTab === "general"
             }
 
             AudioSettingsPanel {
